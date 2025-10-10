@@ -1,0 +1,58 @@
+##
+## Version Catalog — единое место для управления версиями зависимостей ADB Deck.
+##
+
+[versions]
+# Kotlin и плагины компилятора
+kotlin = "2.0.20"
+
+# Jetpack Compose Multiplatform (Desktop UI)
+compose = "1.7.0"
+
+# Decompose — навигация и component-based architecture
+decompose = "3.2.0"
+
+# Essenty — lifecycle для Decompose
+essenty = "2.4.0"
+
+# Koin — dependency injection
+koin = "3.5.6"
+
+# Kotlin Coroutines
+coroutines = "1.8.1"
+
+# Kotlinx Serialization — хранение настроек в JSON
+serialization = "1.7.2"
+
+[libraries]
+# Coroutines
+coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+# Swing-провайдер Dispatchers.Main — обязателен для desktop-приложений на Compose
+coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "coroutines" }
+
+# Decompose
+decompose = { group = "com.arkivanov.decompose", name = "decompose", version.ref = "decompose" }
+decompose-extensions-compose = { group = "com.arkivanov.decompose", name = "extensions-compose", version.ref = "decompose" }
+
+# Essenty lifecycle
+essenty-lifecycle = { group = "com.arkivanov.essenty", name = "lifecycle", version.ref = "essenty" }
+essenty-lifecycle-coroutines = { group = "com.arkivanov.essenty", name = "lifecycle-coroutines", version.ref = "essenty" }
+
+# Koin
+koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+
+# Kotlinx Serialization
+serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+
+[plugins]
+# Kotlin JVM для non-compose модулей
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+# Kotlin Serialization
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+# Compose Multiplatform (JetBrains)
+compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
+
+# Compose Compiler Plugin (начиная с Kotlin 2.0 — отдельный плагин)
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
