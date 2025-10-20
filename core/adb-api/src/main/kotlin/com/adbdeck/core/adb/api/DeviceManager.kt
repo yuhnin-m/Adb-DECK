@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
  * - Wi-Fi подключение (`adb connect ip:port`)
  * - Отключение (`adb disconnect`)
  * - Перевод USB-устройства в TCP/IP-режим (`adb tcpip`)
- * - Хранение избранных endpoint-ов (сохранённые IP-адреса)
+ * - Хранение избранных endpoint-ов (сохраненные IP-адреса)
  * - Выбор активного устройства для целевых команд
  *
- * Живёт как singleton на весь lifecycle приложения.
+ * Живет как singleton на весь lifecycle приложения.
  */
 interface DeviceManager {
 
@@ -33,7 +33,7 @@ interface DeviceManager {
     /** Последнее сообщение об ошибке. `null` если ошибок нет. */
     val errorFlow: StateFlow<String?>
 
-    /** Поток сохранённых endpoint-ов (из настроек приложения). */
+    /** Поток сохраненных endpoint-ов (из настроек приложения). */
     val savedEndpointsFlow: StateFlow<List<DeviceEndpoint>>
 
     /**
@@ -76,13 +76,13 @@ interface DeviceManager {
     fun selectDevice(device: AdbDevice)
 
     /**
-     * Добавить endpoint в список сохранённых (если ещё не сохранён).
+     * Добавить endpoint в список сохраненных (если еще не сохранен).
      * Сохраняется в настройках приложения.
      */
     suspend fun saveEndpoint(endpoint: DeviceEndpoint)
 
     /**
-     * Удалить endpoint из списка сохранённых.
+     * Удалить endpoint из списка сохраненных.
      * Изменения сохраняются в настройках приложения.
      */
     suspend fun removeEndpoint(endpoint: DeviceEndpoint)

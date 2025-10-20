@@ -8,25 +8,28 @@ import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.SettingsRepository
 
 /**
- * Реализация [AdbClient] через вызов системного исполняемого файла `adb`.
+ * Реализация [AdbClient] через вызов системного исполняемого файла adb
  *
- * Путь к adb берётся из [SettingsRepository]. Если пользователь указал
- * абсолютный путь — используется он; иначе adb ищется в системном PATH.
+ * Путь к adb берется из [SettingsRepository]. Если пользователь указал
+ * абсолютный путь — используется он; иначе adb ищется в системном PATH
  *
- * @param processRunner Исполнитель внешних процессов.
- * @param settingsRepository Репозиторий настроек для получения пути к adb.
+ * @param processRunner Исполнитель внешних процессов
+ * @param settingsRepository Репозиторий настроек для получения пути к adb
  */
 class SystemAdbClient(
     private val processRunner: ProcessRunner,
     private val settingsRepository: SettingsRepository,
 ) : AdbClient {
 
-    /** Возвращает актуальный путь к adb из настроек. */
-    private fun adbPath(): String = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+    /** Возвращает путь к adb: override (если задан) или значение из настроек. */
+    private fun adbPath(adbPathOverride: String? = null): String {
+        val normalizedOverride = adbPathOverride?.trim()?.ifBlank { null }
+        return normalizedOverride ?: settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+    }
 
-    override suspend fun checkAvailability(): AdbCheckResult {
+    override suspend fun checkAvailability(adbPathOverride: String?): AdbCheckResult {
         return try {
-            val result = processRunner.run(adbPath(), "version")
+            val result = processRunner.run(adbPath(adbPathOverride), "version")
             if (result.isSuccess) {
                 val version = result.firstOutputLine
                 AdbCheckResult.Available(version)

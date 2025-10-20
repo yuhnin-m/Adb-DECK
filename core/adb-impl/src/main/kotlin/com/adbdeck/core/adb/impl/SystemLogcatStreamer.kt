@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -44,10 +45,25 @@ class SystemLogcatStreamer : LogcatStreamer {
             close() // сигнализируем callbackFlow о завершении
         }
 
+        // stderr также нужно читать, иначе adb-процесс может блокироваться при переполнении буфера.
+        val stderrJob = launch(Dispatchers.IO) {
+            try {
+                process.errorStream.bufferedReader().use { reader ->
+                    while (isActive) {
+                        if (reader.readLine() == null) break
+                    }
+                }
+            } catch (_: Exception) {
+                // Игнорируем: поток ошибок закрывается при завершении процесса/отмене.
+            }
+        }
+
         // Вызывается при отмене коллектора
         awaitClose {
             readJob.cancel()
+            stderrJob.cancel()
             process.destroyForcibly()
         }
     }
+        .flowOn(Dispatchers.IO)
 }

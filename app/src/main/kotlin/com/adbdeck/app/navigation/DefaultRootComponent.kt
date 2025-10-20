@@ -18,15 +18,15 @@ import com.arkivanov.decompose.value.Value
 /**
  * Реализация [RootComponent].
  *
- * Создаёт child stack через Decompose [StackNavigation].
+ * Создает child stack через Decompose [StackNavigation].
  * Каждый экран представлен своим [Screen] конфигом — при переключении
  * Decompose сохраняет жизненный цикл компонентов в стеке.
  *
  * @param componentContext   Контекст Decompose root-компонента.
- * @param adbClient          ADB-клиент, передаётся в нужные дочерние компоненты.
+ * @param adbClient          ADB-клиент, передается в нужные дочерние компоненты.
  * @param settingsRepository Репозиторий настроек.
- * @param deviceManager      Singleton менеджер устройств — передаётся в LogcatComponent.
- * @param logcatStreamer      Singleton streamer logcat — передаётся в LogcatComponent.
+ * @param deviceManager      Singleton менеджер устройств — передается в LogcatComponent.
+ * @param logcatStreamer      Singleton streamer logcat — передается в LogcatComponent.
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -74,7 +74,7 @@ class DefaultRootComponent(
         is Screen.Devices -> RootComponent.Child.Devices(
             DefaultDevicesComponent(
                 componentContext = componentContext,
-                adbClient = adbClient,
+                deviceManager = deviceManager,
             )
         )
 

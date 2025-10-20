@@ -1,4 +1,4 @@
-/** Модуль feature:devices — экран со списком подключённых устройств. */
+/** Модуль feature:devices — экран со списком подключенных устройств. */
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.compose.multiplatform)
@@ -11,6 +11,7 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
     implementation(compose.ui)
+    implementation(compose.components.uiToolingPreview)
 
     implementation(libs.decompose)
     implementation(libs.decompose.extensions.compose)

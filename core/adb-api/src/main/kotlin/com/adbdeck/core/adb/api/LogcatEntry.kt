@@ -64,7 +64,7 @@ object LogcatParser {
         }
 
         val (date, time, millis, pid, tid, levelStr) = match.destructured
-        // Всё после совпавшего заголовка: "TAG    : Message"
+        // Все после совпавшего заголовка: "TAG    : Message"
         val rest = trimmed.substring(match.range.last + 1)
         val colonIdx = rest.indexOf(": ")
         val tag = if (colonIdx >= 0) rest.substring(0, colonIdx).trim() else rest.trim()
@@ -84,7 +84,7 @@ object LogcatParser {
         )
     }
 
-    /** Сбросить счётчик ID (только для тестов). */
+    /** Сбросить счетчик ID (только для тестов). */
     internal fun resetIdCounter() {
         idCounter.set(0)
     }

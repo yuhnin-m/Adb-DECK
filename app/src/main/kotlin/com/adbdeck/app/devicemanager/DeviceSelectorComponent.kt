@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Компонент выбора и управления устройствами для UI (DeviceBar).
  *
- * Тонкая обёртка над [DeviceManager], адаптированная для Compose-слоя:
+ * Тонкая обертка над [DeviceManager], адаптированная для Compose-слоя:
  * - Экспонирует потоки для наблюдения из composable-функций
  * - Предоставляет синхронные callback-и для пользовательских действий
  *   (suspend-вызовы выполняются во внутреннем CoroutineScope)
  *
- * Живёт на весь lifecycle приложения (создаётся в Main.kt).
+ * Живет на весь lifecycle приложения (создается в Main.kt).
  */
 interface DeviceSelectorComponent {
 
@@ -28,7 +28,7 @@ interface DeviceSelectorComponent {
     /** Последнее сообщение об ошибке или `null`. */
     val error: StateFlow<String?>
 
-    /** Сохранённые endpoint-ы для быстрого переподключения. */
+    /** Сохраненные endpoint-ы для быстрого переподключения. */
     val savedEndpoints: StateFlow<List<DeviceEndpoint>>
 
     /** Обновить список устройств (`adb devices`). */
@@ -46,7 +46,7 @@ interface DeviceSelectorComponent {
     /** Выбрать активное устройство из списка. */
     fun onSelectDevice(device: AdbDevice)
 
-    /** Подключиться к сохранённому endpoint-у. */
+    /** Подключиться к сохраненному endpoint-у. */
     fun onConnectSaved(endpoint: DeviceEndpoint)
 
     /**
@@ -55,7 +55,7 @@ interface DeviceSelectorComponent {
      */
     fun onSwitchToTcpIp(serialId: String, port: Int = 5555)
 
-    /** Удалить endpoint из сохранённых. */
+    /** Удалить endpoint из сохраненных. */
     fun onRemoveEndpoint(endpoint: DeviceEndpoint)
 
     /** Сбросить текущую ошибку. */

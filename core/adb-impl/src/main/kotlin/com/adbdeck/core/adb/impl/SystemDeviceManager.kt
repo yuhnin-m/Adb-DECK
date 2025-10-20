@@ -16,11 +16,11 @@ import kotlinx.coroutines.flow.asStateFlow
  * Использует [AdbClient] для получения списка устройств (`adb devices`) и
  * [ProcessRunner] для операций подключения/отключения/tcpip.
  *
- * Singleton — живёт всё время работы приложения.
+ * Singleton — живет все время работы приложения.
  *
  * @param adbClient          ADB-клиент для получения списка устройств.
  * @param processRunner      Исполнитель внешних процессов.
- * @param settingsRepository Репозиторий настроек (путь к adb, сохранённые endpoints).
+ * @param settingsRepository Репозиторий настроек (путь к adb, сохраненные endpoints).
  */
 class SystemDeviceManager(
     private val adbClient: AdbClient,
@@ -47,7 +47,7 @@ class SystemDeviceManager(
     private fun adbPath(): String =
         settingsRepository.getSettings().adbPath.ifBlank { "adb" }
 
-    /** Загружает сохранённые endpoints из настроек. */
+    /** Загружает сохраненные endpoints из настроек. */
     private fun loadEndpointsFromSettings(): List<DeviceEndpoint> =
         settingsRepository.getSettings().knownEndpoints
             .mapNotNull { DeviceEndpoint.fromAddress(it) }
@@ -72,7 +72,7 @@ class SystemDeviceManager(
 
     /**
      * После обновления списка устройств синхронизирует [_selectedDeviceFlow]:
-     * - Если выбранное устройство ещё присутствует — обновляет его состояние.
+     * - Если выбранное устройство еще присутствует — обновляет его состояние.
      * - Если пропало — сбрасывает выбор.
      * - Если ничего не выбрано и устройство одно — выбирает автоматически.
      */
@@ -95,7 +95,7 @@ class SystemDeviceManager(
             // adb connect возвращает код 0 даже при неудаче; проверяем stdout
             if (output.startsWith("connected") || output.startsWith("already connected")) {
                 refresh()
-                // Автоматически выбрать только что подключённое устройство
+                // Автоматически выбрать только что подключенное устройство
                 _devicesFlow.value.find { it.deviceId == "$host:$port" }?.let {
                     _selectedDeviceFlow.value = it
                 }
@@ -121,7 +121,20 @@ class SystemDeviceManager(
     override suspend fun disconnect(deviceId: String): Result<Unit> {
         _isConnecting.value = true
         return try {
-            processRunner.run(adbPath(), "disconnect", deviceId)
+            val result = processRunner.run(adbPath(), "disconnect", deviceId)
+            val output = sequenceOf(result.stdout, result.stderr)
+                .joinToString(separator = "\n")
+                .trim()
+
+            val failedByOutput = output.contains("error", ignoreCase = true)
+            if (!result.isSuccess || failedByOutput) {
+                val message = output.ifBlank {
+                    "Не удалось отключить устройство $deviceId (exitCode=${result.exitCode})"
+                }
+                _errorFlow.value = message
+                return Result.failure(Exception(message))
+            }
+
             // Сброс выбора если отключили активное устройство
             if (_selectedDeviceFlow.value?.deviceId == deviceId) {
                 _selectedDeviceFlow.value = null

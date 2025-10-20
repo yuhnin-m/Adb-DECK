@@ -12,7 +12,7 @@ import com.adbdeck.core.adb.api.LogcatLevel
  *
  * @param entries          Буфер всех полученных строк (ограничен [maxBufferedLines]).
  * @param filteredEntries  Строки после применения активных фильтров.
- * @param totalLineCount   Общий счётчик принятых строк (включая вытесненные).
+ * @param totalLineCount   Общий счетчик принятых строк (включая вытесненные).
  *
  * @param searchQuery      Текстовый поиск в tag + message.
  * @param tagFilter        Фильтр по тегу (case-insensitive substring).

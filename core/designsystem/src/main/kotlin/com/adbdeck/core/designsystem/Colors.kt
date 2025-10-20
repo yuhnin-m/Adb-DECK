@@ -55,10 +55,10 @@ val LightColorScheme = lightColorScheme(
 )
 
 // ────────────────────────────────────────────────────────────────
-// Тёмная тема
+// Темная тема
 // ────────────────────────────────────────────────────────────────
 
-/** ColorScheme для тёмной темы. */
+/** ColorScheme для темной темы. */
 val DarkColorScheme = darkColorScheme(
     primary = Color(0xFF90CAF9),
     onPrimary = Color(0xFF0D47A1),

@@ -71,7 +71,7 @@ fun main() = application {
         val settings by settingsRepository.settingsFlow.collectAsState()
         val scope = rememberCoroutineScope()
 
-        // DeviceSelectorComponent создаётся один раз и живёт пока открыто окно.
+        // DeviceSelectorComponent создается один раз и живет пока открыто окно.
         // scope из rememberCoroutineScope привязан к Window-composition.
         val deviceSelectorComponent = remember(scope) {
             DefaultDeviceSelectorComponent(

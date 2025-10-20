@@ -1,7 +1,7 @@
 package com.adbdeck.core.adb.api
 
 /**
- * Модель подключённого ADB-устройства.
+ * Модель подключенного ADB-устройства.
  *
  * @param deviceId Уникальный идентификатор устройства (serial number или IP:port).
  * @param state    Текущее состояние устройства.

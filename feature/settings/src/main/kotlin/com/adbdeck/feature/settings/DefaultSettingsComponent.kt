@@ -69,14 +69,7 @@ class DefaultSettingsComponent(
         if (_state.value.isCheckingAdb) return
         scope.launch {
             _state.update { it.copy(isCheckingAdb = true, adbCheckResult = "") }
-
-            val savedSettings = settingsRepository.getSettings()
-            settingsRepository.saveSettings(savedSettings.copy(adbPath = _state.value.adbPath))
-
-            val result = adbClient.checkAvailability()
-
-            // Восстанавливаем прежние настройки, если Save не был нажат
-            settingsRepository.saveSettings(savedSettings)
+            val result = adbClient.checkAvailability(_state.value.adbPath)
 
             val resultText = when (result) {
                 is AdbCheckResult.Available -> "✓ Доступен: ${result.version}"

@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  *
  * @param deviceManager Singleton-менеджер устройств.
  * @param scope         CoroutineScope для запуска аsync-операций.
- *                      Обычно передаётся из `rememberCoroutineScope()`.
+ *                      Обычно передается из `rememberCoroutineScope()`.
  */
 class DefaultDeviceSelectorComponent(
     private val deviceManager: DeviceManager,

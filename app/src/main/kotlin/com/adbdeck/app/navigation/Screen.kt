@@ -12,7 +12,7 @@ sealed interface Screen {
     /** Стартовый экран с кнопками быстрых действий. */
     data object Dashboard : Screen
 
-    /** Экран списка подключённых устройств. */
+    /** Экран списка подключенных устройств. */
     data object Devices : Screen
 
     /** Экран просмотра logcat. */

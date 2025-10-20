@@ -12,7 +12,7 @@ import com.arkivanov.decompose.value.Value
  *
  * Управляет стеком дочерних компонентов через Decompose [ChildStack].
  * Desktop-навигация: переключение разделов через боковую панель,
- * без привычного mobile-стека "назад-вперёд".
+ * без привычного mobile-стека "назад-вперед".
  */
 interface RootComponent {
 

@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.core.designsystem.Dimensions
 
 /**
- * Экран загрузки — отображается, пока данные ещё загружаются.
+ * Экран загрузки — отображается, пока данные еще загружаются.
  *
  * @param message Текстовое сообщение под индикатором (опционально).
  * @param modifier Модификатор контейнера.

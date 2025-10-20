@@ -18,7 +18,7 @@ sealed class DevicesState {
     /**
      * Данные загружены, список устройств непуст.
      *
-     * @param devices Список подключённых устройств.
+     * @param devices Список подключенных устройств.
      */
     data class Success(val devices: List<AdbDevice>) : DevicesState()
 

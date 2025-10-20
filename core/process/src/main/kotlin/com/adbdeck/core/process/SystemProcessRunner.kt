@@ -1,6 +1,8 @@
 package com.adbdeck.core.process
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
 /**
@@ -12,19 +14,31 @@ import kotlinx.coroutines.withContext
 class SystemProcessRunner : ProcessRunner {
 
     override suspend fun run(command: List<String>): ProcessResult = withContext(Dispatchers.IO) {
-        val process = ProcessBuilder(command)
-            .redirectErrorStream(false)
-            .start()
+        coroutineScope {
+            val process = ProcessBuilder(command)
+                .redirectErrorStream(false)
+                .start()
 
-        // Читаем оба потока до завершения процесса
-        val stdoutFuture = process.inputStream.bufferedReader().readText()
-        val stderrFuture = process.errorStream.bufferedReader().readText()
-        val exitCode = process.waitFor()
+            try {
+                // Важно читать stdout/stderr параллельно: иначе можно зависнуть на заполненном буфере.
+                val stdoutDeferred = async(Dispatchers.IO) {
+                    process.inputStream.bufferedReader().use { it.readText() }
+                }
+                val stderrDeferred = async(Dispatchers.IO) {
+                    process.errorStream.bufferedReader().use { it.readText() }
+                }
 
-        ProcessResult(
-            exitCode = exitCode,
-            stdout = stdoutFuture,
-            stderr = stderrFuture,
-        )
+                val exitCode = process.waitFor()
+
+                ProcessResult(
+                    exitCode = exitCode,
+                    stdout = stdoutDeferred.await(),
+                    stderr = stderrDeferred.await(),
+                )
+            } catch (e: Exception) {
+                process.destroyForcibly()
+                throw e
+            }
+        }
     }
 }

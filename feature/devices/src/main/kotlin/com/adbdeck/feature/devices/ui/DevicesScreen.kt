@@ -41,7 +41,7 @@ import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
 
 /**
- * Экран списка подключённых ADB-устройств.
+ * Экран списка подключенных ADB-устройств.
  *
  * Отображает состояние загрузки, список устройств, пустое состояние или ошибку.
  *
@@ -59,7 +59,7 @@ fun DevicesScreen(component: DevicesComponent) {
         // ── Контент в зависимости от состояния ──────────────────
         when (val s = state) {
             is DevicesState.Loading -> LoadingView(message = "Получение списка устройств…")
-            is DevicesState.Empty -> EmptyView(message = "Нет подключённых устройств.\nПодключите устройство по USB или запустите эмулятор.")
+            is DevicesState.Empty -> EmptyView(message = "Нет подключенных устройств.\nПодключите устройство по USB или запустите эмулятор.")
             is DevicesState.Error -> ErrorView(message = s.message, onRetry = component::onRefresh)
             is DevicesState.Success -> DevicesList(devices = s.devices)
         }

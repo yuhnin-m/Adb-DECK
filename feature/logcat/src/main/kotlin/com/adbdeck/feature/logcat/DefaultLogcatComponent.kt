@@ -75,6 +75,7 @@ class DefaultLogcatComponent(
      * При переполнении `trySend` отбрасывает строки (acceptable — лучше drop, чем OOM).
      */
     private val pendingChannel = Channel<LogcatEntry>(capacity = 4096)
+    private val entriesBuffer = ArrayDeque<LogcatEntry>()
 
     private var streamJob: Job? = null
 
@@ -120,19 +121,26 @@ class DefaultLogcatComponent(
 
         val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
         val maxLines = settingsRepository.getSettings().logcatMaxBufferedLines.coerceAtLeast(100)
+        val current = _state.value
+
+        trimBufferTo(maxLines)
+        val trimmedEntries = entriesBuffer.toList()
+        val trimmedFiltered = applyFilters(trimmedEntries, buildFilter(current))
 
         _state.update {
             it.copy(
                 isRunning = true,
-                activeDeviceId = device!!.deviceId,
+                activeDeviceId = device.deviceId,
                 error = null,
                 maxBufferedLines = maxLines,
+                entries = trimmedEntries,
+                filteredEntries = trimmedFiltered,
             )
         }
 
         streamJob = scope.launch {
             try {
-                logcatStreamer.stream(device!!.deviceId, adbPath).collect { line ->
+                logcatStreamer.stream(device.deviceId, adbPath).collect { line ->
                     pendingChannel.trySend(LogcatParser.parse(line))
                 }
             } catch (e: CancellationException) {
@@ -149,8 +157,8 @@ class DefaultLogcatComponent(
 
     override fun onClear() {
         // Дренируем канал — иначе батчер добавит старые данные после очистки
-        @Suppress("ControlFlowWithEmptyBody")
         while (pendingChannel.tryReceive().isSuccess) { /* drain */ }
+        entriesBuffer.clear()
         _state.update {
             it.copy(
                 entries = emptyList(),
@@ -167,29 +175,53 @@ class DefaultLogcatComponent(
         _state.update { it.copy(isRunning = false, error = reason) }
     }
 
-    // ── Batcher ────────────────────────────────────────────────────────────────
+    private fun trimBufferTo(maxLines: Int) {
+        val overflow = (entriesBuffer.size - maxLines).coerceAtLeast(0)
+        repeat(overflow) { entriesBuffer.removeFirst() }
+    }
 
+    // Сборщик
+
+    /**
+     *  собирает их пачкой и обновляет state редко, но крупно
+     *  adb logcat может выдавать тысячи строк в секунду
+     */
     private fun drainAndUpdateState() {
-        val batch = buildList<LogcatEntry> {
-            while (true) add(pendingChannel.tryReceive().getOrNull() ?: break)
+        val batch = mutableListOf<LogcatEntry>()
+        while (true) {
+            val next = pendingChannel.tryReceive().getOrNull() ?: break
+            batch.add(next)
         }
         if (batch.isEmpty()) return
 
         _state.update { current ->
-            val combined = current.entries + batch
-            val newEntries = if (combined.size > current.maxBufferedLines) {
-                combined.subList(combined.size - current.maxBufferedLines, combined.size)
-            } else combined
+            batch.forEach(entriesBuffer::addLast)
+            val previousSize = entriesBuffer.size - batch.size
+            trimBufferTo(current.maxBufferedLines)
+            val overflow = (previousSize + batch.size - current.maxBufferedLines).coerceAtLeast(0)
+
+            val newEntries = entriesBuffer.toList()
+            val filter = buildFilter(current)
+            val hasActiveFilter = hasActiveFilter(filter)
+
+            val newFiltered = when {
+                !hasActiveFilter -> newEntries
+                overflow == 0 -> {
+                    val matchedBatch = batch.filter { matchesFilter(it, filter) }
+                    if (matchedBatch.isEmpty()) current.filteredEntries else current.filteredEntries + matchedBatch
+                }
+                else -> applyFilters(newEntries, filter)
+            }
 
             current.copy(
                 entries = newEntries,
-                filteredEntries = applyFilters(newEntries, current),
+                filteredEntries = newFiltered,
                 totalLineCount = current.totalLineCount + batch.size,
             )
         }
     }
 
-    // ── Filters ────────────────────────────────────────────────────────────────
+    // Фильры
 
     override fun onSearchChanged(query: String) = updateFilter { copy(searchQuery = query) }
     override fun onTagFilterChanged(tag: String) = updateFilter { copy(tagFilter = tag) }
@@ -199,28 +231,57 @@ class DefaultLogcatComponent(
     private inline fun updateFilter(transform: LogcatState.() -> LogcatState) {
         _state.update { current ->
             val updated = current.transform()
-            updated.copy(filteredEntries = applyFilters(current.entries, updated))
+            val filter = buildFilter(updated)
+            updated.copy(filteredEntries = applyFilters(current.entries, filter))
         }
     }
 
-    private fun applyFilters(entries: List<LogcatEntry>, state: LogcatState): List<LogcatEntry> {
-        val search = state.searchQuery.trim()
-        val tagF = state.tagFilter.trim()
-        val pkgF = state.packageFilter.trim()
-        val levelF = state.levelFilter
-        if (search.isEmpty() && tagF.isEmpty() && pkgF.isEmpty() && levelF == null) return entries
-        return entries.filter { e ->
-            (search.isEmpty() || e.tag.contains(search, ignoreCase = true) || e.message.contains(search, ignoreCase = true)) &&
-                    (tagF.isEmpty() || e.tag.contains(tagF, ignoreCase = true)) &&
-                    (pkgF.isEmpty() || e.tag.contains(pkgF, ignoreCase = true)) &&
-                    (levelF == null || e.level.priority >= levelF.priority)
-        }
+    private data class LogcatFilter(
+        val search: String,
+        val tag: String,
+        val pkg: String,
+        val level: LogcatLevel?,
+    )
+
+    private fun buildFilter(state: LogcatState): LogcatFilter = LogcatFilter(
+        search = state.searchQuery.trim(),
+        tag = state.tagFilter.trim(),
+        pkg = state.packageFilter.trim(),
+        level = state.levelFilter,
+    )
+
+    private fun hasActiveFilter(filter: LogcatFilter): Boolean =
+        filter.search.isNotEmpty() || filter.tag.isNotEmpty() || filter.pkg.isNotEmpty() || filter.level != null
+
+    private fun applyFilters(entries: List<LogcatEntry>, filter: LogcatFilter): List<LogcatEntry> {
+        if (!hasActiveFilter(filter)) return entries
+        return entries.filter { matchesFilter(it, filter) }
     }
 
-    // ── Display ────────────────────────────────────────────────────────────────
+    private fun matchesFilter(entry: LogcatEntry, filter: LogcatFilter): Boolean {
+        if (filter.search.isNotEmpty()) {
+            val matchesSearch = entry.tag.contains(filter.search, ignoreCase = true) ||
+                entry.message.contains(filter.search, ignoreCase = true)
+            if (!matchesSearch) return false
+        }
+        if (filter.tag.isNotEmpty() && !entry.tag.contains(filter.tag, ignoreCase = true)) return false
+        if (filter.pkg.isNotEmpty() && !entry.tag.contains(filter.pkg, ignoreCase = true)) return false
+        if (filter.level != null && entry.level.priority < filter.level.priority) return false
+        return true
+    }
 
+    // Отображение вывода
+
+    /**
+     * Компактный или полный режим отображения
+     */
     override fun onDisplayModeChanged(mode: LogcatDisplayMode) = _state.update { it.copy(displayMode = mode) }
+
+    /**
+     * отбражать дату или нет
+     */
     override fun onToggleShowDate() = _state.update { it.copy(showDate = !it.showDate) }
+
     override fun onToggleShowTime() = _state.update { it.copy(showTime = !it.showTime) }
     override fun onToggleShowMillis() = _state.update { it.copy(showMillis = !it.showMillis) }
     override fun onToggleColoredLevels() = _state.update { it.copy(coloredLevels = !it.coloredLevels) }

@@ -22,7 +22,7 @@ import java.io.File
  * - Инфраструктурный слой ([ProcessRunner])
  * - Настройки ([SettingsRepository])
  * - ADB-клиент ([AdbClient])
- * - Менеджер устройств ([DeviceManager]) — singleton, живёт весь lifecycle приложения
+ * - Менеджер устройств ([DeviceManager]) — singleton, живет весь lifecycle приложения
  * - Streamer логкэта ([LogcatStreamer]) — singleton, stateless factory потоков
  *
  * Все зависимости — singletons, создаются один раз при старте приложения.

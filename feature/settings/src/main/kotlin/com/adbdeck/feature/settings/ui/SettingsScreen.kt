@@ -42,7 +42,7 @@ import com.adbdeck.feature.settings.SettingsComponent
  *
  * Секции:
  * - ADB — путь к исполняемому файлу adb + проверка.
- * - Тема — выбор светлой/тёмной/системной темы.
+ * - Тема — выбор светлой/темной/системной темы.
  * - Logcat — настройки отображения и производительности потокового лога.
  *
  * @param component Компонент настроек.
@@ -103,16 +103,6 @@ fun SettingsScreen(component: SettingsComponent) {
                         Text("Проверяется…")
                     } else {
                         Text("Проверить ADB")
-                    }
-                }
-
-                Button(onClick = component::onSave) {
-                    if (state.isSaved) {
-                        Icon(Icons.Outlined.Check, contentDescription = null)
-                        Spacer(Modifier.width(Dimensions.paddingXSmall))
-                        Text("Сохранено")
-                    } else {
-                        Text("Сохранить")
                     }
                 }
             }
@@ -205,13 +195,32 @@ fun SettingsScreen(component: SettingsComponent) {
                 onValueChange = component::onLogcatMaxBufferedLinesChanged,
             )
         }
+
+        Spacer(Modifier.height(Dimensions.paddingLarge))
+        HorizontalDivider()
+        Spacer(Modifier.height(Dimensions.paddingMedium))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            Button(onClick = component::onSave) {
+                if (state.isSaved) {
+                    Icon(Icons.Outlined.Check, contentDescription = null)
+                    Spacer(Modifier.width(Dimensions.paddingXSmall))
+                    Text("Сохранено")
+                } else {
+                    Text("Сохранить")
+                }
+            }
+        }
     }
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Обёртка для именованной секции настроек.
+ * Обертка для именованной секции настроек.
  */
 @Composable
 private fun SettingsSection(
@@ -291,7 +300,7 @@ private fun ThemeSelector(
 ) {
     val themes = listOf(
         AppTheme.LIGHT to "Светлая",
-        AppTheme.DARK to "Тёмная",
+        AppTheme.DARK to "Темная",
         AppTheme.SYSTEM to "Системная",
     )
 

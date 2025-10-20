@@ -1,7 +1,6 @@
 package com.adbdeck.feature.logcat.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -62,7 +60,7 @@ import kotlinx.coroutines.launch
  * - [LogcatToolbar]   — управление потоком + переключение режимов отображения
  * - [FilterBar]       — текстовые фильтры + выбор минимального уровня лога
  * - [LogList]         — LazyColumn записей с автоскроллом и FAB «вниз»
- * - [LogcatStatusBar] — индикатор потока, активное устройство, счётчик строк
+ * - [LogcatStatusBar] — индикатор потока, активное устройство, счетчик строк
  *
  * @param component Компонент Logcat.
  */
@@ -352,10 +350,10 @@ private fun LevelChip(
  * Область отображения записей лога с автоскроллом.
  *
  * Автоскролл:
- * - Включён → прокручивает вниз при каждом новом пакете строк.
+ * - Включен → прокручивает вниз при каждом новом пакете строк.
  * - Пользователь прокрутил вверх → автоскролл выключается.
  * - Пользователь вернулся вниз → автоскролл снова включается.
- * - FAB «стрелка вниз» появляется, когда автоскролл отключён.
+ * - FAB «стрелка вниз» появляется, когда автоскролл отключен.
  */
 @Composable
 private fun LogList(
@@ -379,7 +377,7 @@ private fun LogList(
         }
     }
 
-    // Прокрутка вниз при поступлении новых строк (totalLineCount растёт монотонно)
+    // Прокрутка вниз при поступлении новых строк (totalLineCount растет монотонно)
     LaunchedEffect(state.totalLineCount) {
         if (currentAutoScroll && currentEntries.isNotEmpty()) {
             listState.scrollToItem(currentEntries.size - 1)
@@ -417,7 +415,7 @@ private fun LogList(
             }
         }
 
-        // FAB «прокрутить вниз» — показывается, когда автоскролл отключён
+        // FAB «прокрутить вниз» — показывается, когда автоскролл отключен
         if (!state.autoScroll && state.filteredEntries.isNotEmpty()) {
             SmallFloatingActionButton(
                 onClick = {
@@ -548,7 +546,17 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
     val lColor = levelColor(entry.level)
     val textColor = if (state.coloredLevels) lColor else MaterialTheme.colorScheme.onSurface
     val ts = buildTimestamp(entry, state)
-    val headerScrollState = rememberScrollState()
+    val metaText = buildString {
+        if (ts.isNotEmpty()) {
+            append(ts)
+            append("  ")
+        }
+        if (entry.pid.isNotEmpty()) {
+            append(entry.pid)
+            append('/')
+            append(entry.tid)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -557,22 +565,16 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
     ) {
         // Шапка: timestamp PID/TID [L] tag
         Row(
-            modifier = Modifier.horizontalScroll(headerScrollState),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (ts.isNotEmpty()) {
+            if (metaText.isNotEmpty()) {
                 Text(
-                    text = ts,
+                    text = metaText,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (entry.pid.isNotEmpty()) {
-                Text(
-                    text = "${entry.pid}/${entry.tid}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
             }
             Surface(
@@ -590,6 +592,9 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
                 text = entry.tag,
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                 color = textColor,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -611,7 +616,7 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
 /**
  * Строка состояния потока logcat.
  *
- * Показывает: индикатор (зелёный/серый), статус, устройство, счётчик строк, ошибку.
+ * Показывает: индикатор (зеленый/серый), статус, устройство, счетчик строк, ошибку.
  */
 @Composable
 private fun LogcatStatusBar(state: LogcatState) {

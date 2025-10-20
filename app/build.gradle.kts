@@ -12,6 +12,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
+    implementation(compose.components.uiToolingPreview)
 
     // Навигация и lifecycle
     implementation(libs.decompose)

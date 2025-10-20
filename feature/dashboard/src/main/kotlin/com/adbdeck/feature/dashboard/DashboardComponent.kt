@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
  * Контракт компонента экрана Dashboard.
  *
  * Содержит только публичное состояние и обработчики действий пользователя.
- * Реализация живёт в [DefaultDashboardComponent].
+ * Реализация живет в [DefaultDashboardComponent].
  */
 interface DashboardComponent {
 

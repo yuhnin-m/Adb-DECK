@@ -17,7 +17,7 @@ interface SettingsRepository {
     val settingsFlow: StateFlow<AppSettings>
 
     /**
-     * Возвращает текущие настройки синхронно (последнее сохранённое значение).
+     * Возвращает текущие настройки синхронно (последнее сохраненное значение).
      */
     fun getSettings(): AppSettings
 

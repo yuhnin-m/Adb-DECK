@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
  *
  * @param adbPath                Путь к adb. Пусто → системный PATH.
  * @param theme                  Режим темы приложения.
- * @param knownEndpoints         Сохранённые TCP/IP endpoint-ы ("host:port").
+ * @param knownEndpoints         Сохраненные TCP/IP endpoint-ы ("host:port").
  *
  * Logcat:
  * @param logcatCompactMode      true = компактный режим, false = полный (все поля).

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
@@ -43,6 +44,29 @@ fun AppContent(
     // subscribeAsState() возвращает Compose State<ChildStack>
     val childStack by rootComponent.childStack.subscribeAsState()
     val activeChild = childStack.active.instance
+    val devices by deviceSelectorComponent.devices.collectAsState()
+
+    val logcatComponent = childStack.items
+        .asSequence()
+        .map { it.instance }
+        .filterIsInstance<RootComponent.Child.Logcat>()
+        .map { it.component }
+        .firstOrNull()
+    val isLogcatRunning = logcatComponent?.let {
+        val logcatState by it.state.collectAsState()
+        logcatState.isRunning
+    } ?: false
+
+    val settingsComponent = childStack.items
+        .asSequence()
+        .map { it.instance }
+        .filterIsInstance<RootComponent.Child.Settings>()
+        .map { it.component }
+        .firstOrNull()
+    val hasUnsavedSettings = settingsComponent?.let {
+        val settingsState by it.state.collectAsState()
+        !settingsState.isSaved
+    } ?: false
 
     // Определяем активный экран по типу дочернего компонента
     val activeScreen: Screen = when (activeChild) {
@@ -64,6 +88,9 @@ fun AppContent(
                 onNavigate = rootComponent::navigate,
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme,
+                devicesCount = devices.size,
+                isLogcatRunning = isLogcatRunning,
+                hasUnsavedSettings = hasUnsavedSettings,
             )
 
             // ── Основная область ──────────────────────────────────

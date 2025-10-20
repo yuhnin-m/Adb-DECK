@@ -1,7 +1,7 @@
 package com.adbdeck.core.adb.api
 
 /**
- * Сохранённый TCP/IP endpoint ADB-устройства.
+ * Сохраненный TCP/IP endpoint ADB-устройства.
  *
  * Используется для:
  * - Wi-Fi подключений через `adb connect host:port`

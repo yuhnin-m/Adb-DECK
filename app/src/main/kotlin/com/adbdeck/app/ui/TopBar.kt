@@ -25,7 +25,7 @@ import com.adbdeck.core.designsystem.Dimensions
  *
  * @param title          Заголовок текущего раздела.
  * @param trailingContent Composable-слот для правой части (например, DeviceBar).
- *                        Если `null` — правая часть остаётся пустой.
+ *                        Если `null` — правая часть остается пустой.
  */
 @Composable
 fun TopBar(

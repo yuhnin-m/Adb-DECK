@@ -65,7 +65,7 @@ import kotlinx.coroutines.delay
  * - Кнопку обновления (или индикатор прогресса во время операции)
  * - Кнопку отключения (только если устройство выбрано)
  * - Кнопку подключения (только если устройств нет)
- * - Dropdown со всеми устройствами, сохранёнными endpoint-ами и "Подключить..."
+ * - Dropdown со всеми устройствами, сохраненными endpoint-ами и "Подключить..."
  *
  * @param component Компонент-делегат, управляющий логикой устройств.
  * @param modifier  Модификатор Compose.
@@ -260,7 +260,7 @@ private fun DeviceChip(
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 maxLines = 1,
             )
-            // Счётчик остальных устройств
+            // Счетчик остальных устройств
             if (extraCount > 0) {
                 Text(
                     text = "+$extraCount",
@@ -304,9 +304,9 @@ private fun DeviceDropdownContent(
     onConnectNew: () -> Unit,
     onSwitchToTcpIp: (String) -> Unit,
 ) {
-    // ── Подключённые устройства ──────────────────────────────────
+    // ── Подключенные устройства ──────────────────────────────────
     if (devices.isNotEmpty()) {
-        DropdownSectionLabel("Подключённые устройства")
+        DropdownSectionLabel("Подключенные устройства")
         devices.forEach { device ->
             val isSelected = device.deviceId == selectedDevice?.deviceId
             val isUsbDevice = !device.deviceId.contains(":")
@@ -364,10 +364,10 @@ private fun DeviceDropdownContent(
         }
     }
 
-    // ── Сохранённые endpoint-ы ───────────────────────────────────
+    // ── Сохраненные endpoint-ы ───────────────────────────────────
     if (savedEndpoints.isNotEmpty()) {
         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        DropdownSectionLabel("Сохранённые устройства")
+        DropdownSectionLabel("Сохраненные устройства")
         savedEndpoints.forEach { endpoint ->
             val isAlreadyConnected = devices.any { it.deviceId == endpoint.address }
             DropdownMenuItem(
@@ -402,14 +402,14 @@ private fun DeviceDropdownContent(
                                 )
                             }
                         }
-                        // Удалить из сохранённых
+                        // Удалить из сохраненных
                         IconButton(
                             onClick = { onRemoveEndpoint(endpoint) },
                             modifier = Modifier.size(28.dp),
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Close,
-                                contentDescription = "Удалить из сохранённых",
+                                contentDescription = "Удалить из сохраненных",
                                 modifier = Modifier.size(12.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -519,7 +519,7 @@ private fun ConnectDialog(
 /** Цвет индикатора для состояния устройства. */
 @Composable
 private fun deviceStateColor(state: DeviceState): Color = when (state) {
-    DeviceState.DEVICE -> Color(0xFF4CAF50)                         // зелёный
+    DeviceState.DEVICE -> Color(0xFF4CAF50)                         // зеленый
     DeviceState.OFFLINE -> MaterialTheme.colorScheme.error          // красный из темы
     DeviceState.UNAUTHORIZED -> Color(0xFFFF9800)                   // оранжевый
     DeviceState.UNKNOWN -> MaterialTheme.colorScheme.outlineVariant // серый
