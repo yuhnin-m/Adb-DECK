@@ -2,6 +2,7 @@ package com.adbdeck.feature.logcat
 
 import com.adbdeck.core.adb.api.LogcatEntry
 import com.adbdeck.core.adb.api.LogcatLevel
+import com.adbdeck.feature.logcat.LogcatFontFamily
 
 /**
  * Полное состояние экрана Logcat.
@@ -26,6 +27,8 @@ import com.adbdeck.core.adb.api.LogcatLevel
  * @param coloredLevels    Цветовая подсветка по уровню.
  * @param autoScroll       Автоскролл вниз при поступлении новых строк.
  * @param maxBufferedLines Лимит буфера (из AppSettings на момент старта).
+ * @param fontFamily       Шрифтовое семейство для строк лога.
+ * @param fontSizeSp       Размер шрифта строк лога в sp (диапазон 8–24).
  */
 data class LogcatState(
     val isRunning: Boolean = false,
@@ -48,4 +51,6 @@ data class LogcatState(
     val coloredLevels: Boolean = true,
     val autoScroll: Boolean = true,
     val maxBufferedLines: Int = 5_000,
+    val fontFamily: LogcatFontFamily = LogcatFontFamily.MONOSPACE,
+    val fontSizeSp: Int = 12,
 )

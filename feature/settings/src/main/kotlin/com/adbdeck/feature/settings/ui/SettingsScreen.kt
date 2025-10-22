@@ -8,16 +8,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -194,6 +198,21 @@ fun SettingsScreen(component: SettingsComponent) {
                 value = state.logcatMaxBufferedLines,
                 onValueChange = component::onLogcatMaxBufferedLinesChanged,
             )
+
+            Spacer(Modifier.height(Dimensions.paddingMedium))
+
+            // Шрифт
+            FontFamilySelector(
+                current = state.logcatFontFamily,
+                onSelected = component::onLogcatFontFamilyChanged,
+            )
+
+            Spacer(Modifier.height(Dimensions.paddingSmall))
+
+            FontSizePicker(
+                value = state.logcatFontSizeSp,
+                onValueChange = component::onLogcatFontSizeChanged,
+            )
         }
 
         Spacer(Modifier.height(Dimensions.paddingLarge))
@@ -317,6 +336,84 @@ private fun ThemeSelector(
                     { Icon(Icons.Outlined.Check, contentDescription = null) }
                 } else null,
             )
+        }
+    }
+}
+
+/**
+ * Выбор шрифтового семейства для строк logcat.
+ */
+@Composable
+private fun FontFamilySelector(
+    current: String,
+    onSelected: (String) -> Unit,
+) {
+    val families = listOf(
+        "MONOSPACE" to "Monospace",
+        "SANS_SERIF" to "Sans Serif",
+        "SERIF" to "Serif",
+        "DEFAULT" to "System",
+    )
+
+    Column {
+        Text(
+            text = "Шрифт logcat",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Spacer(Modifier.height(Dimensions.paddingXSmall))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            families.forEach { (key, label) ->
+                FilterChip(
+                    selected = current == key,
+                    onClick = { onSelected(key) },
+                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                    leadingIcon = if (current == key) {
+                        { Icon(Icons.Outlined.Check, contentDescription = null) }
+                    } else null,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Выбор размера шрифта строк logcat (кнопки − / + с текущим значением).
+ */
+@Composable
+private fun FontSizePicker(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
+    ) {
+        Text(
+            text = "Размер шрифта logcat",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(
+            onClick = { onValueChange(value - 1) },
+            enabled = value > 8,
+            modifier = Modifier.size(32.dp),
+        ) {
+            Icon(Icons.Outlined.Remove, contentDescription = "Уменьшить")
+        }
+        Text(
+            text = "$value sp",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.width(40.dp),
+        )
+        IconButton(
+            onClick = { onValueChange(value + 1) },
+            enabled = value < 24,
+            modifier = Modifier.size(32.dp),
+        ) {
+            Icon(Icons.Outlined.Add, contentDescription = "Увеличить")
         }
     }
 }

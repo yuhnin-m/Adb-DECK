@@ -42,6 +42,8 @@ class DefaultSettingsComponent(
                 logcatColoredLevels = s.logcatColoredLevels,
                 logcatMaxBufferedLines = s.logcatMaxBufferedLines,
                 logcatAutoScroll = s.logcatAutoScroll,
+                logcatFontFamily = s.logcatFontFamily,
+                logcatFontSizeSp = s.logcatFontSizeSp,
             )
         }
     )
@@ -121,6 +123,17 @@ class DefaultSettingsComponent(
         saveLogcatSettings()
     }
 
+    override fun onLogcatFontFamilyChanged(family: String) {
+        _state.update { it.copy(logcatFontFamily = family) }
+        saveLogcatSettings()
+    }
+
+    override fun onLogcatFontSizeChanged(size: Int) {
+        val coerced = size.coerceIn(8, 24)
+        _state.update { it.copy(logcatFontSizeSp = coerced) }
+        saveLogcatSettings()
+    }
+
     /** Сохраняет только logcat-поля в [SettingsRepository] асинхронно. */
     private fun saveLogcatSettings() {
         scope.launch {
@@ -135,6 +148,8 @@ class DefaultSettingsComponent(
                     logcatColoredLevels = ui.logcatColoredLevels,
                     logcatMaxBufferedLines = ui.logcatMaxBufferedLines,
                     logcatAutoScroll = ui.logcatAutoScroll,
+                    logcatFontFamily = ui.logcatFontFamily,
+                    logcatFontSizeSp = ui.logcatFontSizeSp,
                 )
             )
         }

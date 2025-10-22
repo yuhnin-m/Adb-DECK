@@ -57,4 +57,18 @@ interface SettingsComponent {
 
     /** Переключить автоскролл по умолчанию для logcat. */
     fun onLogcatAutoScrollChanged(value: Boolean)
+
+    /**
+     * Изменить шрифтовое семейство строк logcat.
+     *
+     * @param family Имя [com.adbdeck.feature.logcat.LogcatFontFamily] (строковое представление).
+     */
+    fun onLogcatFontFamilyChanged(family: String)
+
+    /**
+     * Изменить размер шрифта строк logcat.
+     *
+     * @param size Размер в sp, допустимый диапазон 8–24.
+     */
+    fun onLogcatFontSizeChanged(size: Int)
 }

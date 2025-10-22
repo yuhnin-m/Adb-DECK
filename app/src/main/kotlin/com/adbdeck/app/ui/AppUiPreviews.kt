@@ -131,6 +131,8 @@ private class PreviewLogcatComponent : LogcatComponent {
     override fun onToggleShowMillis() = Unit
     override fun onToggleColoredLevels() = Unit
     override fun onAutoScrollChanged(value: Boolean) = Unit
+    override fun onFontFamilyChanged(family: com.adbdeck.feature.logcat.LogcatFontFamily) = Unit
+    override fun onFontSizeChanged(size: Int) = Unit
 }
 
 private class PreviewSettingsComponent : SettingsComponent {
@@ -161,6 +163,8 @@ private class PreviewSettingsComponent : SettingsComponent {
     override fun onLogcatColoredLevelsChanged(value: Boolean) = Unit
     override fun onLogcatMaxBufferedLinesChanged(lines: Int) = Unit
     override fun onLogcatAutoScrollChanged(value: Boolean) = Unit
+    override fun onLogcatFontFamilyChanged(family: String) = Unit
+    override fun onLogcatFontSizeChanged(size: Int) = Unit
 }
 
 private class PreviewRootComponent(

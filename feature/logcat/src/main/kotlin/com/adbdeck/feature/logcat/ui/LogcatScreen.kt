@@ -17,9 +17,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -45,6 +47,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.adbdeck.core.adb.api.LogcatEntry
 import com.adbdeck.core.adb.api.LogcatLevel
 import com.adbdeck.core.designsystem.Dimensions
@@ -138,6 +142,48 @@ private fun LogcatToolbar(
             }
 
             Spacer(Modifier.weight(1f))
+
+            // ── Font size ──────────────────────────────────────────
+            Text(
+                text = "A",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            IconButton(
+                onClick = { component.onFontSizeChanged(state.fontSizeSp - 1) },
+                modifier = Modifier.size(24.dp),
+                enabled = state.fontSizeSp > 8,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Remove,
+                    contentDescription = "Уменьшить шрифт",
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+            Text(
+                text = "${state.fontSizeSp}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.width(20.dp),
+            )
+            IconButton(
+                onClick = { component.onFontSizeChanged(state.fontSizeSp + 1) },
+                modifier = Modifier.size(24.dp),
+                enabled = state.fontSizeSp < 24,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = "Увеличить шрифт",
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+            Text(
+                text = "A",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 14.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.width(Dimensions.paddingSmall))
 
             // ── Mode ───────────────────────────────────────────────
             Text(
@@ -528,7 +574,10 @@ private fun CompactRow(entry: LogcatEntry, state: LogcatState) {
             append(": ")
             append(entry.message)
         },
-        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+        style = MaterialTheme.typography.bodySmall.copy(
+            fontFamily = state.fontFamily.toComposeFontFamily(),
+            fontSize = state.fontSizeSp.sp,
+        ),
         color = color,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -558,6 +607,9 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
         }
     }
 
+    val logFont = state.fontFamily.toComposeFontFamily()
+    val logFontSize = state.fontSizeSp.sp
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -572,7 +624,10 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
             if (metaText.isNotEmpty()) {
                 Text(
                     text = metaText,
-                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = logFont,
+                        fontSize = (state.fontSizeSp - 1).coerceAtLeast(8).sp,
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
@@ -584,13 +639,19 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
             ) {
                 Text(
                     text = " ${entry.level.code} ",
-                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = logFont,
+                        fontSize = (state.fontSizeSp - 1).coerceAtLeast(8).sp,
+                    ),
                     color = if (state.coloredLevels) lColor else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Text(
                 text = entry.tag,
-                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = logFont,
+                    fontSize = (state.fontSizeSp - 1).coerceAtLeast(8).sp,
+                ),
                 color = textColor,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
@@ -601,7 +662,10 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
         // Тело сообщения
         Text(
             text = entry.message,
-            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+            style = MaterialTheme.typography.bodySmall.copy(
+                fontFamily = logFont,
+                fontSize = logFontSize,
+            ),
             color = MaterialTheme.colorScheme.onSurface,
         )
 
@@ -718,6 +782,16 @@ private fun buildTimestamp(entry: LogcatEntry, state: LogcatState): String = bui
             append(entry.millis)
         }
     }
+}
+
+/**
+ * Конвертирует [LogcatFontFamily] в Compose [FontFamily].
+ */
+private fun LogcatFontFamily.toComposeFontFamily(): FontFamily = when (this) {
+    LogcatFontFamily.MONOSPACE -> FontFamily.Monospace
+    LogcatFontFamily.SANS_SERIF -> FontFamily.SansSerif
+    LogcatFontFamily.SERIF -> FontFamily.Serif
+    LogcatFontFamily.DEFAULT -> FontFamily.Default
 }
 
 /**

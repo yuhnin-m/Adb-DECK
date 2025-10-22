@@ -19,6 +19,8 @@ import com.adbdeck.core.settings.AppTheme
  * @param logcatColoredLevels    Цветовая подсветка уровней лога.
  * @param logcatMaxBufferedLines Максимум строк в буфере памяти (FIFO).
  * @param logcatAutoScroll       Автоматический скролл вниз при поступлении новых строк.
+ * @param logcatFontFamily       Шрифтовое семейство строк лога (имя LogcatFontFamily).
+ * @param logcatFontSizeSp       Размер шрифта строк лога в sp (диапазон 8–24).
  */
 data class SettingsUiState(
     val adbPath: String = "adb",
@@ -35,4 +37,6 @@ data class SettingsUiState(
     val logcatColoredLevels: Boolean = true,
     val logcatMaxBufferedLines: Int = 5_000,
     val logcatAutoScroll: Boolean = true,
+    val logcatFontFamily: String = "MONOSPACE",
+    val logcatFontSizeSp: Int = 12,
 )

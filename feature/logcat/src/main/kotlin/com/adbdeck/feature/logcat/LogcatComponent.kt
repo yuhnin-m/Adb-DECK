@@ -58,4 +58,16 @@ interface LogcatComponent {
      * Вызывается из UI при детектировании прокрутки пользователем.
      */
     fun onAutoScrollChanged(value: Boolean)
+
+    // ── Font settings ──────────────────────────────────────────
+
+    /** Изменить шрифтовое семейство строк лога. */
+    fun onFontFamilyChanged(family: LogcatFontFamily)
+
+    /**
+     * Изменить размер шрифта строк лога.
+     *
+     * @param size Размер в sp, допустимый диапазон 8–24.
+     */
+    fun onFontSizeChanged(size: Int)
 }

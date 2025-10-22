@@ -41,6 +41,8 @@ private class SettingsPreviewComponent : SettingsComponent {
     override fun onLogcatColoredLevelsChanged(value: Boolean) = Unit
     override fun onLogcatMaxBufferedLinesChanged(lines: Int) = Unit
     override fun onLogcatAutoScrollChanged(value: Boolean) = Unit
+    override fun onLogcatFontFamilyChanged(family: String) = Unit
+    override fun onLogcatFontSizeChanged(size: Int) = Unit
 }
 
 @Composable

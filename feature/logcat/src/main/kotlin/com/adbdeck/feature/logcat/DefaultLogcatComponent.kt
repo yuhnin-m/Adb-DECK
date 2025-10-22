@@ -7,6 +7,7 @@ import com.adbdeck.core.adb.api.LogcatLevel
 import com.adbdeck.core.adb.api.LogcatParser
 import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
@@ -65,6 +66,8 @@ class DefaultLogcatComponent(
                 autoScroll = s.logcatAutoScroll,
                 maxBufferedLines = s.logcatMaxBufferedLines.coerceAtLeast(100),
                 activeDeviceId = deviceManager.selectedDeviceFlow.value?.deviceId,
+                fontFamily = LogcatFontFamily.fromString(s.logcatFontFamily),
+                fontSizeSp = s.logcatFontSizeSp.coerceIn(8, 24),
             )
         }
     )
@@ -286,4 +289,30 @@ class DefaultLogcatComponent(
     override fun onToggleShowMillis() = _state.update { it.copy(showMillis = !it.showMillis) }
     override fun onToggleColoredLevels() = _state.update { it.copy(coloredLevels = !it.coloredLevels) }
     override fun onAutoScrollChanged(value: Boolean) = _state.update { it.copy(autoScroll = value) }
+
+    // ── Font ───────────────────────────────────────────────────────────────────
+
+    override fun onFontFamilyChanged(family: LogcatFontFamily) {
+        _state.update { it.copy(fontFamily = family) }
+        saveFontSettings()
+    }
+
+    override fun onFontSizeChanged(size: Int) {
+        val coerced = size.coerceIn(8, 24)
+        _state.update { it.copy(fontSizeSp = coerced) }
+        saveFontSettings()
+    }
+
+    /** Сохраняет только шрифтовые настройки асинхронно. */
+    private fun saveFontSettings() {
+        scope.launch {
+            val current = settingsRepository.getSettings()
+            settingsRepository.saveSettings(
+                current.copy(
+                    logcatFontFamily = _state.value.fontFamily.name,
+                    logcatFontSizeSp = _state.value.fontSizeSp,
+                )
+            )
+        }
+    }
 }
