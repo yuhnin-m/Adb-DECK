@@ -16,6 +16,7 @@ import com.adbdeck.app.ui.AppContent
 import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
+import com.adbdeck.core.adb.api.PackageClient
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
@@ -54,6 +55,7 @@ fun main() = application {
         settingsRepository = settingsRepository,
         deviceManager = deviceManager,
         logcatStreamer = logcatStreamer,
+        packageClient = get(PackageClient::class.java),
     )
 
     lifecycle.resume()

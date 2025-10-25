@@ -3,9 +3,11 @@ package com.adbdeck.app.di
 import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
+import com.adbdeck.core.adb.api.PackageClient
 import com.adbdeck.core.adb.impl.SystemAdbClient
 import com.adbdeck.core.adb.impl.SystemDeviceManager
 import com.adbdeck.core.adb.impl.SystemLogcatStreamer
+import com.adbdeck.core.adb.impl.SystemPackageClient
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.process.SystemProcessRunner
 import com.adbdeck.core.settings.FileSettingsRepository
@@ -61,4 +63,7 @@ val appModule = module {
 
     // ── LogcatStreamer ────────────────────────────────────────────
     singleOf(::SystemLogcatStreamer) bind LogcatStreamer::class
+
+    // ── PackageClient ─────────────────────────────────────────────
+    singleOf(::SystemPackageClient) bind PackageClient::class
 }

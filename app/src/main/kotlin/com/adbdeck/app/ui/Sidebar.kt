@@ -77,6 +77,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.Logcat) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.Apps,
+            label = "Packages",
+            isActive = activeScreen is Screen.Packages,
+            onClick = { onNavigate(Screen.Packages) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Settings,
             label = "Settings",
             isActive = activeScreen is Screen.Settings,

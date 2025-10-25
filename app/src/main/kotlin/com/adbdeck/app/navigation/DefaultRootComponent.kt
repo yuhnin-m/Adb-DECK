@@ -3,10 +3,12 @@ package com.adbdeck.app.navigation
 import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
+import com.adbdeck.core.adb.api.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
+import com.adbdeck.feature.packages.DefaultPackagesComponent
 import com.adbdeck.feature.settings.DefaultSettingsComponent
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -27,6 +29,7 @@ import com.arkivanov.decompose.value.Value
  * @param settingsRepository Репозиторий настроек.
  * @param deviceManager      Singleton менеджер устройств — передается в LogcatComponent.
  * @param logcatStreamer      Singleton streamer logcat — передается в LogcatComponent.
+ * @param packageClient      ADB-клиент для работы с пакетами — передается в PackagesComponent.
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -34,6 +37,7 @@ class DefaultRootComponent(
     private val settingsRepository: SettingsRepository,
     private val deviceManager: DeviceManager,
     private val logcatStreamer: LogcatStreamer,
+    private val packageClient: PackageClient,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
@@ -91,6 +95,15 @@ class DefaultRootComponent(
             DefaultSettingsComponent(
                 componentContext = componentContext,
                 adbClient = adbClient,
+                settingsRepository = settingsRepository,
+            )
+        )
+
+        is Screen.Packages -> RootComponent.Child.Packages(
+            DefaultPackagesComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                packageClient = packageClient,
                 settingsRepository = settingsRepository,
             )
         )

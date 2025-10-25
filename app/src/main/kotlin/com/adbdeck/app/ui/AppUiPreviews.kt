@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
+import com.adbdeck.core.adb.api.AppPackage
 import com.adbdeck.core.adb.api.AdbDevice
 import com.adbdeck.core.adb.api.DeviceEndpoint
 import com.adbdeck.core.adb.api.DeviceState
@@ -26,6 +27,10 @@ import com.adbdeck.feature.devices.DevicesState
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
 import com.adbdeck.feature.logcat.LogcatState
+import com.adbdeck.feature.packages.PackagesComponent
+import com.adbdeck.feature.packages.PackageSortOrder
+import com.adbdeck.feature.packages.PackagesState
+import com.adbdeck.feature.packages.PackageTypeFilter
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.settings.SettingsUiState
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -167,6 +172,28 @@ private class PreviewSettingsComponent : SettingsComponent {
     override fun onLogcatFontSizeChanged(size: Int) = Unit
 }
 
+private class PreviewPackagesComponent : PackagesComponent {
+    override val state: StateFlow<PackagesState> = MutableStateFlow(PackagesState())
+
+    override fun onRefresh() = Unit
+    override fun onSearchChanged(query: String) = Unit
+    override fun onTypeFilterChanged(filter: PackageTypeFilter) = Unit
+    override fun onSortOrderChanged(order: PackageSortOrder) = Unit
+    override fun onSelectPackage(pkg: AppPackage) = Unit
+    override fun onClearSelection() = Unit
+    override fun onLaunchApp(pkg: AppPackage) = Unit
+    override fun onForceStop(pkg: AppPackage) = Unit
+    override fun onOpenAppInfo(pkg: AppPackage) = Unit
+    override fun onCopyPackageName(pkg: AppPackage) = Unit
+    override fun onRequestClearData(pkg: AppPackage) = Unit
+    override fun onRequestUninstall(pkg: AppPackage) = Unit
+    override fun onConfirmAction() = Unit
+    override fun onCancelAction() = Unit
+    override fun onGrantPermission(pkg: AppPackage, permission: String) = Unit
+    override fun onRevokePermission(pkg: AppPackage, permission: String) = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -174,6 +201,7 @@ private class PreviewRootComponent(
     private val devices = PreviewDevicesComponent()
     private val logcat = PreviewLogcatComponent()
     private val settings = PreviewSettingsComponent()
+    private val packages = PreviewPackagesComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -191,6 +219,7 @@ private class PreviewRootComponent(
         Screen.Devices -> RootComponent.Child.Devices(devices)
         Screen.Logcat -> RootComponent.Child.Logcat(logcat)
         Screen.Settings -> RootComponent.Child.Settings(settings)
+        Screen.Packages -> RootComponent.Child.Packages(packages)
     }
 }
 

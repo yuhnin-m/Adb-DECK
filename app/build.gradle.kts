@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":feature:devices"))
     implementation(project(":feature:logcat"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:packages"))
 }
 
 compose.desktop {

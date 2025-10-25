@@ -20,4 +20,7 @@ sealed interface Screen {
 
     /** Экран настроек приложения. */
     data object Settings : Screen
+
+    /** Экран установленных пакетов / приложений. */
+    data object Packages : Screen
 }
