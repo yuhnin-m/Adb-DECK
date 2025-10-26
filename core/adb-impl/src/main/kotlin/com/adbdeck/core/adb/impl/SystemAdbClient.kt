@@ -6,6 +6,7 @@ import com.adbdeck.core.adb.api.AdbDevice
 import com.adbdeck.core.adb.api.DeviceState
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
  * Реализация [AdbClient] через вызов системного исполняемого файла adb
@@ -28,33 +29,33 @@ class SystemAdbClient(
     }
 
     override suspend fun checkAvailability(adbPathOverride: String?): AdbCheckResult {
-        return try {
-            val result = processRunner.run(adbPath(adbPathOverride), "version")
-            if (result.isSuccess) {
-                val version = result.firstOutputLine
-                AdbCheckResult.Available(version)
-            } else {
-                AdbCheckResult.NotAvailable(
-                    result.stderr.ifBlank { "adb завершился с кодом ${result.exitCode}" }
-                )
-            }
-        } catch (e: Exception) {
-            AdbCheckResult.NotAvailable("Не удалось запустить adb: ${e.message}")
-        }
+        return runCatchingPreserveCancellation {
+            processRunner.run(adbPath(adbPathOverride), "version")
+        }.fold(
+            onSuccess = { result ->
+                if (result.isSuccess) {
+                    AdbCheckResult.Available(result.firstOutputLine)
+                } else {
+                    AdbCheckResult.NotAvailable(
+                        result.stderr.ifBlank { "adb завершился с кодом ${result.exitCode}" }
+                    )
+                }
+            },
+            onFailure = { e ->
+                AdbCheckResult.NotAvailable("Не удалось запустить adb: ${e.message}")
+            },
+        )
     }
 
-    override suspend fun getDevices(): Result<List<AdbDevice>> {
-        return try {
+    override suspend fun getDevices(): Result<List<AdbDevice>> =
+        runCatchingPreserveCancellation {
             val result = processRunner.run(adbPath(), "devices")
             if (result.isSuccess) {
-                Result.success(parseDevicesOutput(result.stdout))
+                parseDevicesOutput(result.stdout)
             } else {
-                Result.failure(Exception(result.stderr.ifBlank { "adb devices завершился с ошибкой" }))
+                error(result.stderr.ifBlank { "adb devices завершился с ошибкой" })
             }
-        } catch (e: Exception) {
-            Result.failure(Exception("Не удалось получить список устройств: ${e.message}"))
         }
-    }
 
     /**
      * Парсит вывод команды `adb devices` в список [AdbDevice].

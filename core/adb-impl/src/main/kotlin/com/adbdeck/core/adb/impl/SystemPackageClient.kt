@@ -5,6 +5,7 @@ import com.adbdeck.core.adb.api.PackageClient
 import com.adbdeck.core.adb.api.PackageDetails
 import com.adbdeck.core.adb.api.PackageType
 import com.adbdeck.core.process.ProcessRunner
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
  * Реализация [PackageClient] поверх системного `adb`.
@@ -30,7 +31,7 @@ class SystemPackageClient(
     override suspend fun getPackages(
         deviceId: String,
         adbPath: String,
-    ): Result<List<AppPackage>> = runCatching {
+    ): Result<List<AppPackage>> = runCatchingPreserveCancellation {
         val result = processRunner.run(adbPath, "-s", deviceId, "shell", "pm", "list", "packages", "-f")
         if (!result.isSuccess && result.stdout.isBlank()) {
             error("Не удалось получить список пакетов: ${result.stderr.take(200)}")
@@ -88,7 +89,7 @@ class SystemPackageClient(
         deviceId: String,
         packageName: String,
         adbPath: String,
-    ): Result<PackageDetails> = runCatching {
+    ): Result<PackageDetails> = runCatchingPreserveCancellation {
         val result = processRunner.run(adbPath, "-s", deviceId, "shell", "dumpsys", "package", packageName)
         if (!result.isSuccess && result.stdout.isBlank()) {
             error("Не удалось получить информацию о пакете '$packageName': ${result.stderr.take(200)}")
@@ -252,7 +253,7 @@ class SystemPackageClient(
         deviceId: String,
         packageName: String,
         adbPath: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingPreserveCancellation {
         val result = processRunner.run(
             adbPath, "-s", deviceId, "shell",
             "monkey", "-p", packageName, "-c", "android.intent.category.LAUNCHER", "1",
@@ -271,7 +272,7 @@ class SystemPackageClient(
         deviceId: String,
         packageName: String,
         adbPath: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingPreserveCancellation {
         val result = processRunner.run(adbPath, "-s", deviceId, "shell", "am", "force-stop", packageName)
         if (!result.isSuccess) {
             error(result.stderr.ifBlank { "Не удалось остановить приложение" })
@@ -283,7 +284,7 @@ class SystemPackageClient(
         deviceId: String,
         packageName: String,
         adbPath: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingPreserveCancellation {
         val result = processRunner.run(adbPath, "-s", deviceId, "shell", "pm", "clear", packageName)
         if (!result.stdout.contains("Success")) {
             error(result.stdout.ifBlank { result.stderr }.trim().take(200))
@@ -299,7 +300,7 @@ class SystemPackageClient(
         packageName: String,
         keepData: Boolean,
         adbPath: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingPreserveCancellation {
         val cmd = buildList {
             add(adbPath); add("-s"); add(deviceId)
             add("shell"); add("pm"); add("uninstall")
@@ -318,7 +319,7 @@ class SystemPackageClient(
         deviceId: String,
         packageName: String,
         adbPath: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingPreserveCancellation {
         val result = processRunner.run(
             adbPath, "-s", deviceId, "shell",
             "am", "start",
@@ -336,7 +337,7 @@ class SystemPackageClient(
         packageName: String,
         permission: String,
         adbPath: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingPreserveCancellation {
         val result = processRunner.run(
             adbPath, "-s", deviceId, "shell", "pm", "grant", packageName, permission,
         )
@@ -351,7 +352,7 @@ class SystemPackageClient(
         packageName: String,
         permission: String,
         adbPath: String,
-    ): Result<Unit> = runCatching {
+    ): Result<Unit> = runCatchingPreserveCancellation {
         val result = processRunner.run(
             adbPath, "-s", deviceId, "shell", "pm", "revoke", packageName, permission,
         )

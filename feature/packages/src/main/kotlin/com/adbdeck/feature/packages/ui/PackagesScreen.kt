@@ -297,13 +297,24 @@ private fun PackagesList(
 // ── Строка пакета ─────────────────────────────────────────────────────────────
 
 /**
+ * Читаемое отображаемое имя, производное от имени пакета.
+ *
+ * Берёт последний сегмент reverse-DNS-имени и капитализирует его:
+ * `com.android.settings` → `Settings`, `org.mozilla.firefox` → `Firefox`.
+ *
+ * Используется как заголовок строки в списке, пока настоящий appLabel не загружен.
+ */
+private val AppPackage.displayName: String
+    get() = packageName.substringAfterLast('.').replaceFirstChar { it.uppercase() }
+
+/**
  * Строка одного пакета в списке.
  *
  * Структура:
  * ```
- * [Иконка] [Имя пакета]              [USER/SYSTEM]
- *          [Путь к APK, truncated]
- *          [Launch] [Stop] [Copy] [Info] [Удалить]
+ * [Иконка]  [Название приложения (displayName)]   [USER/SYSTEM]
+ *           [com.package.name (monospace, мелко)]
+ *           [Launch] [Stop] [Copy] [Info] [Удалить]
  * ```
  *
  * При выборе подсвечивается primaryContainer-фоном.
@@ -334,7 +345,7 @@ private fun PackageRow(
             .padding(horizontal = Dimensions.paddingDefault, vertical = Dimensions.paddingSmall),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        // ── Строка заголовка: имя + бейдж типа ───────────────────
+        // ── Строка заголовка: название + бейдж типа ──────────────
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
@@ -346,27 +357,27 @@ private fun PackageRow(
                 tint = if (isSelected) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = pkg.packageName,
-                style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            // Название и имя пакета — вертикально
+            Column(modifier = Modifier.weight(1f)) {
+                // Заголовок: человекочитаемое название (последний сегмент package name)
+                Text(
+                    text = pkg.displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isSelected) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                // Подзаголовок: полное reverse-DNS имя пакета
+                Text(
+                    text = pkg.packageName,
+                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             PackageTypeBadge(type = pkg.type)
-        }
-
-        // ── Путь к APK ────────────────────────────────────────────
-        if (pkg.apkPath.isNotBlank()) {
-            Text(
-                text = pkg.apkPath,
-                style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 24.dp),
-            )
         }
 
         // ── Кнопки действий ──────────────────────────────────────

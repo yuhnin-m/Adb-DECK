@@ -8,4 +8,5 @@ dependencies {
     implementation(project(":core:process"))
     implementation(project(":core:adb-api"))
     implementation(project(":core:settings"))
+    implementation(project(":core:utils"))
 }

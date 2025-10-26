@@ -51,40 +51,44 @@ class DefaultPackagesComponent(
     /** Job автоочистки [ActionFeedback]. Перезапускается при каждом новом feedback. */
     private var feedbackJob: Job? = null
 
+    /** Последний известный selected device, с которым синхронизировано состояние экрана. */
+    private var activeDeviceId: String? = null
+
     init {
         // Подписываемся на изменение активного устройства
         scope.launch {
             deviceManager.selectedDeviceFlow.collect { device ->
-                val currentDevice = _state.value.listState
-                    .let { it as? PackagesListState.Success }
-                    ?.packages?.firstOrNull()
-                    ?.let { deviceManager.selectedDeviceFlow.value?.deviceId }
-
                 when {
                     // Устройство недоступно или отключено
                     device == null || device.state != DeviceState.DEVICE -> {
                         loadJob?.cancel()
                         detailJob?.cancel()
+                        activeDeviceId = null
                         _state.update {
                             it.copy(
                                 listState = PackagesListState.NoDevice,
                                 filteredPackages = emptyList(),
                                 selectedPackage = null,
                                 detailState = PackageDetailState.Idle,
+                                pendingAction = null,
                             )
                         }
                     }
                     // Устройство изменилось или это первая загрузка
                     else -> {
+                        val isDeviceChanged = activeDeviceId != device.deviceId
                         // Сбросить выделение при смене устройства
-                        if (currentDevice != device.deviceId) {
+                        if (isDeviceChanged) {
+                            detailJob?.cancel()
                             _state.update {
                                 it.copy(
                                     selectedPackage = null,
                                     detailState = PackageDetailState.Idle,
+                                    pendingAction = null,
                                 )
                             }
                         }
+                        activeDeviceId = device.deviceId
                         loadPackages()
                     }
                 }
@@ -105,20 +109,44 @@ class DefaultPackagesComponent(
         loadJob?.cancel()
         loadJob = scope.launch {
             val device = deviceManager.selectedDeviceFlow.value ?: return@launch
+            if (device.state != DeviceState.DEVICE) return@launch
+
+            val requestDeviceId = device.deviceId
             val adbPath = settingsRepository.getSettings().adbPath
 
             _state.update { it.copy(listState = PackagesListState.Loading) }
 
-            packageClient.getPackages(deviceId = device.deviceId, adbPath = adbPath)
+            packageClient.getPackages(deviceId = requestDeviceId, adbPath = adbPath)
                 .onSuccess { packages ->
+                    if (deviceManager.selectedDeviceFlow.value?.deviceId != requestDeviceId) return@onSuccess
+                    activeDeviceId = requestDeviceId
                     _state.update { current ->
+                        val selectedStillExists = current.selectedPackage
+                            ?.let { selected -> packages.any { it.packageName == selected.packageName } }
+                            ?: false
+                        val pendingActionStillExists = when (val pending = current.pendingAction) {
+                            is PendingPackageAction.ClearData ->
+                                packages.any { it.packageName == pending.pkg.packageName }
+                            is PendingPackageAction.Uninstall ->
+                                packages.any { it.packageName == pending.pkg.packageName }
+                            null -> true
+                        }
+
                         current.copy(
                             listState = PackagesListState.Success(packages),
                             filteredPackages = applyFilters(packages, current),
+                            selectedPackage = if (selectedStillExists) current.selectedPackage else null,
+                            detailState = if (selectedStillExists) {
+                                current.detailState
+                            } else {
+                                PackageDetailState.Idle
+                            },
+                            pendingAction = if (pendingActionStillExists) current.pendingAction else null,
                         )
                     }
                 }
                 .onFailure { error ->
+                    if (deviceManager.selectedDeviceFlow.value?.deviceId != requestDeviceId) return@onFailure
                     _state.update {
                         it.copy(
                             listState = PackagesListState.Error(
@@ -193,8 +221,10 @@ class DefaultPackagesComponent(
 
         // Сортировка
         result = when (state.sortOrder) {
-            PackageSortOrder.BY_NAME -> result.sortedBy { it.packageName }
-            PackageSortOrder.BY_LABEL -> result.sortedBy { it.packageName } // label пока недоступен в AppPackage
+            // Источник уже отсортирован по имени пакета; фильтрация порядок не нарушает.
+            PackageSortOrder.BY_NAME -> result
+            // appLabel пока недоступен в AppPackage, поэтому сохраняем текущий порядок.
+            PackageSortOrder.BY_LABEL -> result
         }
 
         return result
@@ -216,16 +246,22 @@ class DefaultPackagesComponent(
         detailJob = scope.launch {
             val device = deviceManager.selectedDeviceFlow.value ?: return@launch
             val adbPath = settingsRepository.getSettings().adbPath
+            val requestDeviceId = device.deviceId
+            val requestPackageName = pkg.packageName
 
             packageClient.getPackageDetails(
-                deviceId = device.deviceId,
-                packageName = pkg.packageName,
+                deviceId = requestDeviceId,
+                packageName = requestPackageName,
                 adbPath = adbPath,
             )
                 .onSuccess { details ->
+                    if (deviceManager.selectedDeviceFlow.value?.deviceId != requestDeviceId) return@onSuccess
+                    if (_state.value.selectedPackage?.packageName != requestPackageName) return@onSuccess
                     _state.update { it.copy(detailState = PackageDetailState.Success(details)) }
                 }
                 .onFailure { error ->
+                    if (deviceManager.selectedDeviceFlow.value?.deviceId != requestDeviceId) return@onFailure
+                    if (_state.value.selectedPackage?.packageName != requestPackageName) return@onFailure
                     _state.update {
                         it.copy(detailState = PackageDetailState.Error(error.message ?: "Ошибка загрузки"))
                     }
@@ -240,17 +276,17 @@ class DefaultPackagesComponent(
 
     // ── Быстрые действия ──────────────────────────────────────────────────────
 
-    override fun onLaunchApp(pkg: AppPackage) = runAction(pkg, "Приложение запущено") {
+    override fun onLaunchApp(pkg: AppPackage) = runAction("Приложение запущено") {
         val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
         packageClient.launchApp(device, pkg.packageName, adbPath)
     }
 
-    override fun onForceStop(pkg: AppPackage) = runAction(pkg, "Приложение остановлено") {
+    override fun onForceStop(pkg: AppPackage) = runAction("Приложение остановлено") {
         val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
         packageClient.forceStop(device, pkg.packageName, adbPath)
     }
 
-    override fun onOpenAppInfo(pkg: AppPackage) = runAction(pkg, "Открыта информация о приложении") {
+    override fun onOpenAppInfo(pkg: AppPackage) = runAction("Открыта информация о приложении") {
         val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
         packageClient.openAppInfo(device, pkg.packageName, adbPath)
     }
@@ -282,13 +318,13 @@ class DefaultPackagesComponent(
 
         when (action) {
             is PendingPackageAction.ClearData ->
-                runAction(action.pkg, "Данные очищены") {
+                runAction("Данные очищены") {
                     val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
                     packageClient.clearData(device, action.pkg.packageName, adbPath)
                 }
 
             is PendingPackageAction.Uninstall ->
-                runAction(action.pkg, "Пакет удалён") {
+                runAction("Пакет удалён") {
                     val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
                     val result = packageClient.uninstall(
                         device, action.pkg.packageName, action.keepData, adbPath,
@@ -315,30 +351,24 @@ class DefaultPackagesComponent(
     // ── Разрешения ────────────────────────────────────────────────────────────
 
     override fun onGrantPermission(pkg: AppPackage, permission: String) {
-        scope.launch {
-            val (device, adbPath) = requireDeviceAndPath() ?: return@launch
-            packageClient.grantPermission(device, pkg.packageName, permission, adbPath)
-                .onSuccess {
-                    showFeedback(ActionFeedback("Разрешение выдано: $permission", isError = false))
-                    reloadDetails(pkg)
-                }
-                .onFailure { e ->
-                    showFeedback(ActionFeedback(e.message ?: "Ошибка при выдаче разрешения", isError = true))
-                }
+        runAction("Разрешение выдано: $permission") {
+            val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
+            val result = packageClient.grantPermission(device, pkg.packageName, permission, adbPath)
+            if (result.isSuccess) {
+                reloadDetails(pkg)
+            }
+            result
         }
     }
 
     override fun onRevokePermission(pkg: AppPackage, permission: String) {
-        scope.launch {
-            val (device, adbPath) = requireDeviceAndPath() ?: return@launch
-            packageClient.revokePermission(device, pkg.packageName, permission, adbPath)
-                .onSuccess {
-                    showFeedback(ActionFeedback("Разрешение отозвано: $permission", isError = false))
-                    reloadDetails(pkg)
-                }
-                .onFailure { e ->
-                    showFeedback(ActionFeedback(e.message ?: "Ошибка при отзыве разрешения", isError = true))
-                }
+        runAction("Разрешение отозвано: $permission") {
+            val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
+            val result = packageClient.revokePermission(device, pkg.packageName, permission, adbPath)
+            if (result.isSuccess) {
+                reloadDetails(pkg)
+            }
+            result
         }
     }
 
@@ -357,17 +387,25 @@ class DefaultPackagesComponent(
      * [block] должен вернуть [Result]<Unit> или `null` (если операция невозможна).
      * При успехе показывает [successMessage], при ошибке — текст исключения.
      *
-     * @param pkg            Пакет, над которым выполняется действие.
      * @param successMessage Сообщение об успехе для [ActionFeedback].
      * @param block          Suspend-блок, выполняющий действие; возвращает `null` для отмены.
      */
     private fun runAction(
-        pkg: AppPackage,
         successMessage: String,
         block: suspend () -> Result<Unit>?,
     ) {
+        var shouldStart = false
+        _state.update { current ->
+            if (current.isActionRunning) {
+                current
+            } else {
+                shouldStart = true
+                current.copy(isActionRunning = true)
+            }
+        }
+        if (!shouldStart) return
+
         scope.launch {
-            _state.update { it.copy(isActionRunning = true) }
             try {
                 val result = block() ?: return@launch
                 result
@@ -405,9 +443,18 @@ class DefaultPackagesComponent(
     /** Перезагружает детали выбранного пакета (после grant/revoke разрешений). */
     private suspend fun reloadDetails(pkg: AppPackage) {
         val (device, adbPath) = requireDeviceAndPath() ?: return
-        packageClient.getPackageDetails(device, pkg.packageName, adbPath)
+        val requestDeviceId = device
+        val requestPackageName = pkg.packageName
+        packageClient.getPackageDetails(requestDeviceId, requestPackageName, adbPath)
             .onSuccess { details ->
-                _state.update { it.copy(detailState = PackageDetailState.Success(details)) }
+                if (deviceManager.selectedDeviceFlow.value?.deviceId != requestDeviceId) return@onSuccess
+                _state.update { current ->
+                    if (current.selectedPackage?.packageName != requestPackageName) {
+                        current
+                    } else {
+                        current.copy(detailState = PackageDetailState.Success(details))
+                    }
+                }
             }
     }
 }

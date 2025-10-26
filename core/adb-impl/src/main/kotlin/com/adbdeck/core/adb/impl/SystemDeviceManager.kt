@@ -6,6 +6,7 @@ import com.adbdeck.core.adb.api.DeviceEndpoint
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.SettingsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -107,6 +108,8 @@ class SystemDeviceManager(
                 _errorFlow.value = errorMsg
                 Result.failure(Exception(errorMsg))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = "Ошибка подключения к $host:$port — ${e.message}"
             _errorFlow.value = msg
@@ -141,6 +144,8 @@ class SystemDeviceManager(
             }
             refresh()
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = "Ошибка отключения устройства $deviceId — ${e.message}"
             _errorFlow.value = msg
@@ -165,6 +170,8 @@ class SystemDeviceManager(
                 _errorFlow.value = errorMsg
                 Result.failure(Exception(errorMsg))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             val msg = "Ошибка переключения в TCP/IP — ${e.message}"
             _errorFlow.value = msg
