@@ -40,6 +40,7 @@ dependencies {
     implementation(project(":feature:logcat"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:packages"))
+    implementation(project(":feature:system-monitor"))
 }
 
 compose.desktop {

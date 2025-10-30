@@ -4,6 +4,8 @@ import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.adb.api.PackageClient
+import com.adbdeck.core.adb.api.SystemMonitorClient
+import com.adbdeck.core.adb.impl.DefaultSystemMonitorClient
 import com.adbdeck.core.adb.impl.SystemAdbClient
 import com.adbdeck.core.adb.impl.SystemDeviceManager
 import com.adbdeck.core.adb.impl.SystemLogcatStreamer
@@ -66,4 +68,7 @@ val appModule = module {
 
     // ── PackageClient ─────────────────────────────────────────────
     singleOf(::SystemPackageClient) bind PackageClient::class
+
+    // ── SystemMonitorClient ───────────────────────────────────────
+    singleOf(::DefaultSystemMonitorClient) bind SystemMonitorClient::class
 }

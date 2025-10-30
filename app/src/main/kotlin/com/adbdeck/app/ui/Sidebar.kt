@@ -31,6 +31,7 @@ import com.adbdeck.core.designsystem.Dimensions
  * @param devicesCount Количество видимых ADB-устройств
  * @param isLogcatRunning Флаг активного захвата logcat
  * @param hasUnsavedSettings Флаг несохраненных настроек
+ * @param isProcessMonitoring Флаг активного мониторинга процессов (badge «MON» в System Monitor)
  */
 @Composable
 fun Sidebar(
@@ -41,6 +42,7 @@ fun Sidebar(
     devicesCount: Int,
     isLogcatRunning: Boolean,
     hasUnsavedSettings: Boolean,
+    isProcessMonitoring: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -81,6 +83,14 @@ fun Sidebar(
             label = "Packages",
             isActive = activeScreen is Screen.Packages,
             onClick = { onNavigate(Screen.Packages) },
+        )
+        SidebarNavItem(
+            icon = Icons.Outlined.Monitor,
+            label = "System",
+            isActive = activeScreen is Screen.SystemMonitor,
+            badgeText = if (isProcessMonitoring) "MON" else null,
+            badgeKind = SidebarBadgeKind.Positive,
+            onClick = { onNavigate(Screen.SystemMonitor) },
         )
         SidebarNavItem(
             icon = Icons.Outlined.Settings,

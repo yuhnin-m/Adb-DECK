@@ -33,6 +33,13 @@ import com.adbdeck.feature.packages.PackagesState
 import com.adbdeck.feature.packages.PackageTypeFilter
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.settings.SettingsUiState
+import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
+import com.adbdeck.feature.systemmonitor.SystemMonitorTab
+import com.adbdeck.feature.systemmonitor.processes.ProcessesComponent
+import com.adbdeck.feature.systemmonitor.processes.ProcessesState
+import com.adbdeck.feature.systemmonitor.processes.ProcessSortField
+import com.adbdeck.feature.systemmonitor.storage.StorageComponent
+import com.adbdeck.feature.systemmonitor.storage.StorageState
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
@@ -181,6 +188,7 @@ private class PreviewPackagesComponent : PackagesComponent {
     override fun onSortOrderChanged(order: PackageSortOrder) = Unit
     override fun onSelectPackage(pkg: AppPackage) = Unit
     override fun onClearSelection() = Unit
+    override fun onRevealPackage(packageName: String) = Unit
     override fun onLaunchApp(pkg: AppPackage) = Unit
     override fun onForceStop(pkg: AppPackage) = Unit
     override fun onOpenAppInfo(pkg: AppPackage) = Unit
@@ -194,6 +202,30 @@ private class PreviewPackagesComponent : PackagesComponent {
     override fun onDismissFeedback() = Unit
 }
 
+private class PreviewSystemMonitorComponent : SystemMonitorComponent {
+    override val activeTab: StateFlow<SystemMonitorTab> = MutableStateFlow(SystemMonitorTab.PROCESSES)
+    override val isProcessMonitoring: StateFlow<Boolean> = MutableStateFlow(false)
+    override val processesComponent: ProcessesComponent = object : ProcessesComponent {
+        override val state: StateFlow<ProcessesState> = MutableStateFlow(ProcessesState())
+        override fun onStartMonitoring() = Unit
+        override fun onStopMonitoring() = Unit
+        override fun onRefresh() = Unit
+        override fun onSearchChanged(query: String) = Unit
+        override fun onSortFieldChanged(field: ProcessSortField) = Unit
+        override fun onSelectProcess(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
+        override fun onClearSelection() = Unit
+        override fun onKillProcess(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
+        override fun onForceStopApp(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
+        override fun onOpenPackageDetails(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
+        override fun onDismissFeedback() = Unit
+    }
+    override val storageComponent: StorageComponent = object : StorageComponent {
+        override val state: StateFlow<StorageState> = MutableStateFlow(StorageState())
+        override fun onRefresh() = Unit
+    }
+    override fun onTabSelected(tab: SystemMonitorTab) = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -202,6 +234,7 @@ private class PreviewRootComponent(
     private val logcat = PreviewLogcatComponent()
     private val settings = PreviewSettingsComponent()
     private val packages = PreviewPackagesComponent()
+    private val systemMonitor = PreviewSystemMonitorComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -220,6 +253,7 @@ private class PreviewRootComponent(
         Screen.Logcat -> RootComponent.Child.Logcat(logcat)
         Screen.Settings -> RootComponent.Child.Settings(settings)
         Screen.Packages -> RootComponent.Child.Packages(packages)
+        Screen.SystemMonitor -> RootComponent.Child.SystemMonitor(systemMonitor)
     }
 }
 

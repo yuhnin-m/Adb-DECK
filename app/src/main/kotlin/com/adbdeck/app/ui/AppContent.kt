@@ -18,6 +18,7 @@ import com.adbdeck.feature.devices.ui.DevicesScreen
 import com.adbdeck.feature.logcat.ui.LogcatScreen
 import com.adbdeck.feature.packages.ui.PackagesScreen
 import com.adbdeck.feature.settings.ui.SettingsScreen
+import com.adbdeck.feature.systemmonitor.ui.SystemMonitorScreen
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 
 /**
@@ -69,6 +70,18 @@ fun AppContent(
         !settingsState.isSaved
     } ?: false
 
+    // Получаем флаг мониторинга процессов из SystemMonitor-компонента (для badge в Sidebar)
+    val systemMonitorComponent = childStack.items
+        .asSequence()
+        .map { it.instance }
+        .filterIsInstance<RootComponent.Child.SystemMonitor>()
+        .map { it.component }
+        .firstOrNull()
+    val isProcessMonitoring = systemMonitorComponent?.let {
+        val monitoringState by it.isProcessMonitoring.collectAsState()
+        monitoringState
+    } ?: false
+
     // Определяем активный экран по типу дочернего компонента
     val activeScreen: Screen = when (activeChild) {
         is RootComponent.Child.Dashboard -> Screen.Dashboard
@@ -76,6 +89,7 @@ fun AppContent(
         is RootComponent.Child.Logcat -> Screen.Logcat
         is RootComponent.Child.Settings -> Screen.Settings
         is RootComponent.Child.Packages -> Screen.Packages
+        is RootComponent.Child.SystemMonitor -> Screen.SystemMonitor
         else -> Screen.Dashboard
     }
 
@@ -93,6 +107,7 @@ fun AppContent(
                 devicesCount = devices.size,
                 isLogcatRunning = isLogcatRunning,
                 hasUnsavedSettings = hasUnsavedSettings,
+                isProcessMonitoring = isProcessMonitoring,
             )
 
             // ── Основная область ──────────────────────────────────
@@ -113,6 +128,7 @@ fun AppContent(
                         is RootComponent.Child.Logcat -> LogcatScreen(instance.component)
                         is RootComponent.Child.Settings -> SettingsScreen(instance.component)
                         is RootComponent.Child.Packages -> PackagesScreen(instance.component)
+                        is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(instance.component)
                     }
                 }
 
@@ -131,4 +147,5 @@ private fun Screen.title(): String = when (this) {
     is Screen.Logcat -> "Logcat"
     is Screen.Settings -> "Settings"
     is Screen.Packages -> "Packages"
+    is Screen.SystemMonitor -> "System Monitor"
 }

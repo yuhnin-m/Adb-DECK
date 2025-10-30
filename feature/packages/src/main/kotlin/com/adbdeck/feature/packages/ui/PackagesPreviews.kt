@@ -95,6 +95,7 @@ private class PackagesPreviewComponent(
     override fun onSortOrderChanged(order: PackageSortOrder) = Unit
     override fun onSelectPackage(pkg: AppPackage) = Unit
     override fun onClearSelection() = Unit
+    override fun onRevealPackage(packageName: String) = Unit
     override fun onLaunchApp(pkg: AppPackage) = Unit
     override fun onForceStop(pkg: AppPackage) = Unit
     override fun onOpenAppInfo(pkg: AppPackage) = Unit

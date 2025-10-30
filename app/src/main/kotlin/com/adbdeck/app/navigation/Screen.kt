@@ -23,4 +23,7 @@ sealed interface Screen {
 
     /** Экран установленных пакетов / приложений. */
     data object Packages : Screen
+
+    /** Экран мониторинга системы (процессы + хранилище). */
+    data object SystemMonitor : Screen
 }

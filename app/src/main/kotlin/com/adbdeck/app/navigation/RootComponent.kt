@@ -5,6 +5,7 @@ import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.settings.SettingsComponent
+import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 
@@ -47,5 +48,8 @@ interface RootComponent {
 
         /** Дочерний компонент Packages. */
         class Packages(val component: PackagesComponent) : Child()
+
+        /** Дочерний компонент System Monitor. */
+        class SystemMonitor(val component: SystemMonitorComponent) : Child()
     }
 }
