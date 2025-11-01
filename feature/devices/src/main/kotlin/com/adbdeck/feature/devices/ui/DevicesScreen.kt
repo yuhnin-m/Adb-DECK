@@ -1,49 +1,51 @@
 package com.adbdeck.feature.devices.ui
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceState
-import com.adbdeck.core.designsystem.AdbDeckAmber
-import com.adbdeck.core.designsystem.AdbDeckGreen
-import com.adbdeck.core.designsystem.AdbDeckRed
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.feature.devices.DeviceActionFeedback
+import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
 
 /**
- * Экран списка подключенных ADB-устройств.
+ * Основной экран управления ADB-устройствами.
  *
- * Отображает состояние загрузки, список устройств, пустое состояние или ошибку.
+ * ## Компоновка
+ *
+ * ```
+ * Row {
+ *   Column(weight 1f) {         // Левая панель — список
+ *     DevicesToolbar
+ *     HorizontalDivider
+ *     DevicesList | Loading | Empty | Error
+ *   }
+ *   AnimatedVisibility {        // Правая панель — детали (slideIn/Out)
+ *     VerticalDivider
+ *     DeviceDetailsPanel(300.dp)
+ *   }
+ * }
+ * AlertDialog (pendingAction)   // Подтверждение опасного действия
+ * FeedbackBar (actionFeedback)  // Краткосрочное уведомление
+ * ```
  *
  * @param component Компонент, управляющий состоянием экрана.
  */
@@ -51,55 +53,162 @@ import com.adbdeck.feature.devices.DevicesState
 fun DevicesScreen(component: DevicesComponent) {
     val state by component.state.collectAsState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // ── Заголовок + кнопка обновления ───────────────────────
-        DevicesToolbar(onRefresh = component::onRefresh)
-        HorizontalDivider()
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        // ── Контент в зависимости от состояния ──────────────────
-        when (val s = state) {
-            is DevicesState.Loading -> LoadingView(message = "Получение списка устройств…")
-            is DevicesState.Empty -> EmptyView(message = "Нет подключенных устройств.\nПодключите устройство по USB или запустите эмулятор.")
-            is DevicesState.Error -> ErrorView(message = s.message, onRetry = component::onRefresh)
-            is DevicesState.Success -> DevicesList(devices = s.devices)
+        // ── Двухпанельный layout ───────────────────────────────────────────────
+        Row(modifier = Modifier.fillMaxSize()) {
+
+            // Левая панель — список устройств
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+            ) {
+                DevicesToolbar(
+                    isRefreshing = state.listState == DeviceListState.Loading,
+                    onRefresh    = component::onRefresh,
+                )
+                HorizontalDivider()
+
+                Box(modifier = Modifier.weight(1f)) {
+                    when (val ls = state.listState) {
+                        is DeviceListState.Loading ->
+                            LoadingView(message = "Получение списка устройств…")
+
+                        is DeviceListState.Empty ->
+                            EmptyView(
+                                message = "Нет подключенных устройств.\n" +
+                                          "Подключите устройство по USB или запустите эмулятор."
+                            )
+
+                        is DeviceListState.Error ->
+                            ErrorView(message = ls.message, onRetry = component::onRefresh)
+
+                        is DeviceListState.Success ->
+                            DevicesList(
+                                devices   = ls.devices,
+                                state     = state,
+                                component = component,
+                            )
+                    }
+                }
+            }
+
+            // Правая панель — детали выбранного устройства
+            val detailsDevice = (state.listState as? DeviceListState.Success)
+                ?.devices?.find { it.deviceId == state.detailsDeviceId }
+
+            AnimatedVisibility(
+                visible = detailsDevice != null,
+                enter   = slideInHorizontally { it },
+                exit    = slideOutHorizontally { it },
+            ) {
+                if (detailsDevice != null) {
+                    Row {
+                        VerticalDivider()
+                        DeviceDetailsPanel(
+                            device                    = detailsDevice,
+                            infoState                 = state.deviceInfos[detailsDevice.deviceId],
+                            onClose                   = component::onCloseDetails,
+                            onRefreshInfo             = { component.onRefreshDeviceInfo(detailsDevice) },
+                            onRequestReboot           = { component.onRequestReboot(detailsDevice) },
+                            onRequestRebootRecovery   = { component.onRequestRebootRecovery(detailsDevice) },
+                            onRequestRebootBootloader = { component.onRequestRebootBootloader(detailsDevice) },
+                            onRequestDisconnect       = { component.onRequestDisconnect(detailsDevice) },
+                            modifier                  = Modifier
+                                .width(300.dp)
+                                .fillMaxHeight(),
+                        )
+                    }
+                }
+            }
         }
-    }
-}
 
-/**
- * Панель инструментов экрана устройств с заголовком и кнопкой обновления.
- */
-@Composable
-private fun DevicesToolbar(onRefresh: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(Dimensions.topBarHeight)
-            .padding(horizontal = Dimensions.paddingDefault),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            text = "Устройства",
-            style = MaterialTheme.typography.titleLarge,
-        )
-        IconButton(onClick = onRefresh) {
-            Icon(
-                imageVector = Icons.Outlined.Refresh,
-                contentDescription = "Обновить список устройств",
-                modifier = Modifier.size(Dimensions.iconSizeNav),
+        // ── Диалог подтверждения действия ─────────────────────────────────────
+        val pending = state.pendingAction
+        if (pending != null) {
+            AlertDialog(
+                onDismissRequest = { if (!state.isActionRunning) component.onCancelAction() },
+                title   = { Text(pending.title) },
+                text    = { Text(pending.message) },
+                confirmButton = {
+                    if (state.isActionRunning) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Button(onClick = component::onConfirmAction) {
+                            Text("Подтвердить")
+                        }
+                    }
+                },
+                dismissButton = {
+                    if (!state.isActionRunning) {
+                        OutlinedButton(onClick = component::onCancelAction) {
+                            Text("Отмена")
+                        }
+                    }
+                },
+            )
+        }
+
+        // ── Баннер обратной связи ──────────────────────────────────────────────
+        val feedback = state.actionFeedback
+        if (feedback != null) {
+            FeedbackBar(
+                feedback  = feedback,
+                onDismiss = component::onDismissFeedback,
+                modifier  = Modifier.align(Alignment.BottomCenter),
             )
         }
     }
 }
 
-/**
- * Прокручиваемый список устройств.
- *
- * @param devices Список устройств для отображения.
- */
+// ── Тулбар ────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun DevicesList(devices: List<AdbDevice>) {
+private fun DevicesToolbar(
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(Dimensions.topBarHeight)
+            .padding(horizontal = Dimensions.paddingDefault),
+        verticalAlignment   = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text  = "Устройства",
+            style = MaterialTheme.typography.titleLarge,
+        )
+        IconButton(onClick = onRefresh, enabled = !isRefreshing) {
+            if (isRefreshing) {
+                CircularProgressIndicator(
+                    modifier    = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Icon(
+                    imageVector        = Icons.Outlined.Refresh,
+                    contentDescription = "Обновить список устройств",
+                    modifier           = Modifier.size(Dimensions.iconSizeNav),
+                )
+            }
+        }
+    }
+}
+
+// ── Список устройств ──────────────────────────────────────────────────────────
+
+@Composable
+private fun DevicesList(
+    devices: List<AdbDevice>,
+    state: DevicesState,
+    component: DevicesComponent,
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -107,77 +216,96 @@ private fun DevicesList(devices: List<AdbDevice>) {
         verticalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
         items(devices, key = { it.deviceId }) { device ->
-            DeviceItem(device = device)
+            DeviceCard(
+                device                    = device,
+                infoState                 = state.deviceInfos[device.deviceId],
+                isSelected                = device.deviceId == state.selectedDeviceId,
+                isDetailsOpen             = device.deviceId == state.detailsDeviceId,
+                onSelect                  = { component.onSelectDevice(device) },
+                onOpenDetails             = { component.onOpenDetails(device) },
+                onRefreshInfo             = { component.onRefreshDeviceInfo(device) },
+                onNavigateLogcat          = component::onNavigateToLogcat,
+                onNavigatePackages        = component::onNavigateToPackages,
+                onNavigateMonitor         = component::onNavigateToSystemMonitor,
+                onRequestReboot           = { component.onRequestReboot(device) },
+                onRequestRebootRecovery   = { component.onRequestRebootRecovery(device) },
+                onRequestRebootBootloader = { component.onRequestRebootBootloader(device) },
+                onRequestDisconnect       = { component.onRequestDisconnect(device) },
+            )
         }
     }
 }
 
+// ── Баннер обратной связи ─────────────────────────────────────────────────────
+
 /**
- * Карточка одного устройства.
+ * Всплывающий баннер с результатом последнего действия.
  *
- * @param device Модель устройства для отображения.
+ * Отображается в нижней части экрана; цвет зависит от типа сообщения.
+ *
+ * @param feedback  Данные уведомления.
+ * @param onDismiss Callback закрытия.
+ * @param modifier  Modifier для внешнего контейнера.
  */
 @Composable
-private fun DeviceItem(device: AdbDevice) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+private fun FeedbackBar(
+    feedback: DeviceActionFeedback,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val containerColor = if (feedback.isError) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.tertiaryContainer
+    }
+    val contentColor = if (feedback.isError) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onTertiaryContainer
+    }
+    val iconColor = if (feedback.isError) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.tertiary
+    }
+    val icon = if (feedback.isError) Icons.Outlined.Error else Icons.Outlined.CheckCircle
+
+    Surface(
+        modifier      = modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        color         = containerColor,
+        shape         = MaterialTheme.shapes.medium,
+        tonalElevation = 4.dp,
+    ) {
         Row(
-            modifier = Modifier.padding(Dimensions.paddingDefault),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier            = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment   = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Outlined.PhoneAndroid,
+                imageVector        = icon,
                 contentDescription = null,
-                modifier = Modifier.size(Dimensions.iconSizeCard),
-                tint = MaterialTheme.colorScheme.primary,
+                modifier           = Modifier.size(18.dp),
+                tint               = iconColor,
             )
-            Spacer(Modifier.width(Dimensions.paddingDefault))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = device.deviceId,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontFamily = FontFamily.Monospace,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface,
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text     = feedback.message,
+                modifier = Modifier.weight(1f),
+                style    = MaterialTheme.typography.bodyMedium,
+                color    = contentColor,
+            )
+            IconButton(
+                onClick  = onDismiss,
+                modifier = Modifier.size(28.dp),
+            ) {
+                Icon(
+                    imageVector        = Icons.Outlined.Close,
+                    contentDescription = "Закрыть",
+                    modifier           = Modifier.size(16.dp),
+                    tint               = contentColor,
                 )
-                if (device.info.isNotBlank()) {
-                    Text(
-                        text = device.info,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
-            Spacer(Modifier.width(Dimensions.paddingDefault))
-            DeviceStateBadge(state = device.state)
         }
-    }
-}
-
-/**
- * Цветной бейдж, отображающий состояние устройства.
- *
- * @param state Состояние устройства.
- */
-@Composable
-private fun DeviceStateBadge(state: DeviceState) {
-    val (color, label) = when (state) {
-        DeviceState.DEVICE -> Pair(AdbDeckGreen, "device")
-        DeviceState.OFFLINE -> Pair(AdbDeckRed, "offline")
-        DeviceState.UNAUTHORIZED -> Pair(AdbDeckAmber, "unauthorized")
-        DeviceState.UNKNOWN -> Pair(MaterialTheme.colorScheme.outline, state.rawValue)
-    }
-    Surface(
-        color = color.copy(alpha = 0.15f),
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(
-                horizontal = Dimensions.paddingSmall,
-                vertical = Dimensions.paddingXSmall,
-            ),
-            style = MaterialTheme.typography.labelMedium,
-            color = color,
-        )
     }
 }

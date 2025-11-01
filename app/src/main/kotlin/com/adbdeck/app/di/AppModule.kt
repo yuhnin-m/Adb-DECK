@@ -1,12 +1,16 @@
 package com.adbdeck.app.di
 
 import com.adbdeck.core.adb.api.AdbClient
+import com.adbdeck.core.adb.api.DeviceControlClient
+import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.adb.api.PackageClient
 import com.adbdeck.core.adb.api.SystemMonitorClient
 import com.adbdeck.core.adb.impl.DefaultSystemMonitorClient
 import com.adbdeck.core.adb.impl.SystemAdbClient
+import com.adbdeck.core.adb.impl.SystemDeviceControlClient
+import com.adbdeck.core.adb.impl.SystemDeviceInfoClient
 import com.adbdeck.core.adb.impl.SystemDeviceManager
 import com.adbdeck.core.adb.impl.SystemLogcatStreamer
 import com.adbdeck.core.adb.impl.SystemPackageClient
@@ -71,4 +75,10 @@ val appModule = module {
 
     // ── SystemMonitorClient ───────────────────────────────────────
     singleOf(::DefaultSystemMonitorClient) bind SystemMonitorClient::class
+
+    // ── DeviceInfoClient ─────────────────────────────────────────
+    singleOf(::SystemDeviceInfoClient) bind DeviceInfoClient::class
+
+    // ── DeviceControlClient ───────────────────────────────────────
+    singleOf(::SystemDeviceControlClient) bind DeviceControlClient::class
 }

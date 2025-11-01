@@ -14,6 +14,8 @@ import com.adbdeck.app.di.appModule
 import com.adbdeck.app.navigation.DefaultRootComponent
 import com.adbdeck.app.ui.AppContent
 import com.adbdeck.core.adb.api.AdbClient
+import com.adbdeck.core.adb.api.DeviceControlClient
+import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.adb.api.PackageClient
@@ -51,13 +53,15 @@ fun main() = application {
     val logcatStreamer: LogcatStreamer = get(LogcatStreamer::class.java)
 
     val rootComponent = DefaultRootComponent(
-        componentContext = DefaultComponentContext(lifecycle = lifecycle),
-        adbClient = get(AdbClient::class.java),
-        settingsRepository = settingsRepository,
-        deviceManager = deviceManager,
-        logcatStreamer = logcatStreamer,
-        packageClient = get(PackageClient::class.java),
+        componentContext    = DefaultComponentContext(lifecycle = lifecycle),
+        adbClient           = get(AdbClient::class.java),
+        settingsRepository  = settingsRepository,
+        deviceManager       = deviceManager,
+        logcatStreamer      = logcatStreamer,
+        packageClient       = get(PackageClient::class.java),
         systemMonitorClient = get(SystemMonitorClient::class.java),
+        deviceInfoClient    = get(DeviceInfoClient::class.java),
+        deviceControlClient = get(DeviceControlClient::class.java),
     )
 
     lifecycle.resume()

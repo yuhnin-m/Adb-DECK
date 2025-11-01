@@ -22,6 +22,7 @@ import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.feature.dashboard.DashboardComponent
 import com.adbdeck.feature.dashboard.DashboardState
+import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
 import com.adbdeck.feature.logcat.LogcatComponent
@@ -108,10 +109,28 @@ private class PreviewDashboardComponent : DashboardComponent {
 }
 
 private class PreviewDevicesComponent : DevicesComponent {
-    override val state: StateFlow<DevicesState> =
-        MutableStateFlow(DevicesState.Success(previewDevices))
+    override val state: StateFlow<DevicesState> = MutableStateFlow(
+        DevicesState(
+            listState        = DeviceListState.Success(previewDevices),
+            selectedDeviceId = previewDevices.first().deviceId,
+        )
+    )
 
     override fun onRefresh() = Unit
+    override fun onSelectDevice(device: AdbDevice) = Unit
+    override fun onOpenDetails(device: AdbDevice) = Unit
+    override fun onCloseDetails() = Unit
+    override fun onRefreshDeviceInfo(device: AdbDevice) = Unit
+    override fun onNavigateToLogcat() = Unit
+    override fun onNavigateToPackages() = Unit
+    override fun onNavigateToSystemMonitor() = Unit
+    override fun onRequestReboot(device: AdbDevice) = Unit
+    override fun onRequestRebootRecovery(device: AdbDevice) = Unit
+    override fun onRequestRebootBootloader(device: AdbDevice) = Unit
+    override fun onRequestDisconnect(device: AdbDevice) = Unit
+    override fun onConfirmAction() = Unit
+    override fun onCancelAction() = Unit
+    override fun onDismissFeedback() = Unit
 }
 
 private class PreviewLogcatComponent : LogcatComponent {

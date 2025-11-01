@@ -1,6 +1,8 @@
 package com.adbdeck.app.navigation
 
 import com.adbdeck.core.adb.api.AdbClient
+import com.adbdeck.core.adb.api.DeviceControlClient
+import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.adb.api.PackageClient
@@ -33,6 +35,8 @@ import com.arkivanov.decompose.value.Value
  * @param logcatStreamer        Singleton streamer logcat — передается в LogcatComponent.
  * @param packageClient        ADB-клиент для работы с пакетами — передается в PackagesComponent.
  * @param systemMonitorClient  ADB-клиент мониторинга процессов и хранилища.
+ * @param deviceInfoClient     ADB-клиент расширенной информации об устройстве.
+ * @param deviceControlClient  ADB-клиент управления устройством (перезагрузка, disconnect).
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -42,6 +46,8 @@ class DefaultRootComponent(
     private val logcatStreamer: LogcatStreamer,
     private val packageClient: PackageClient,
     private val systemMonitorClient: SystemMonitorClient,
+    private val deviceInfoClient: DeviceInfoClient,
+    private val deviceControlClient: DeviceControlClient,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
@@ -102,8 +108,14 @@ class DefaultRootComponent(
 
         is Screen.Devices -> RootComponent.Child.Devices(
             DefaultDevicesComponent(
-                componentContext = componentContext,
-                deviceManager = deviceManager,
+                componentContext          = componentContext,
+                deviceManager             = deviceManager,
+                deviceInfoClient          = deviceInfoClient,
+                deviceControlClient       = deviceControlClient,
+                settingsRepository        = settingsRepository,
+                onNavigateToLogcat        = { navigate(Screen.Logcat) },
+                onNavigateToPackages      = { navigate(Screen.Packages) },
+                onNavigateToSystemMonitor = { navigate(Screen.SystemMonitor) },
             )
         )
 

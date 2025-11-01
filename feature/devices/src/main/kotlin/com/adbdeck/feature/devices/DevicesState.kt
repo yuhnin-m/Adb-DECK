@@ -1,31 +1,104 @@
 package com.adbdeck.feature.devices
 
 import com.adbdeck.core.adb.api.AdbDevice
+import com.adbdeck.core.adb.api.DeviceInfoLoadState
+
+// ── Состояние списка устройств ────────────────────────────────────────────────
 
 /**
- * Состояние экрана списка устройств.
- *
- * Отражает все возможные фазы жизненного цикла данных на экране.
+ * Состояние загрузки списка ADB-устройств.
  */
-sealed class DevicesState {
+sealed class DeviceListState {
+    /** Список загружается (первый запрос или ручной refresh). */
+    data object Loading : DeviceListState()
 
-    /** Данные загружаются. */
-    data object Loading : DevicesState()
-
-    /** Данные загружены, список пуст. */
-    data object Empty : DevicesState()
+    /** Список загружен, но устройств нет. */
+    data object Empty : DeviceListState()
 
     /**
-     * Данные загружены, список устройств непуст.
+     * Список успешно получен.
      *
      * @param devices Список подключенных устройств.
      */
-    data class Success(val devices: List<AdbDevice>) : DevicesState()
+    data class Success(val devices: List<AdbDevice>) : DeviceListState()
 
     /**
-     * Произошла ошибка при загрузке.
+     * Ошибка при получении списка.
      *
-     * @param message Описание ошибки для отображения пользователю.
+     * @param message Описание ошибки.
      */
-    data class Error(val message: String) : DevicesState()
+    data class Error(val message: String) : DeviceListState()
 }
+
+// ── Действия, требующие подтверждения ─────────────────────────────────────────
+
+/**
+ * Тип потенциально опасного действия над устройством, требующего подтверждения.
+ */
+enum class PendingDeviceActionType {
+    /** Обычная перезагрузка устройства. */
+    REBOOT,
+
+    /** Перезагрузка в Recovery. */
+    REBOOT_RECOVERY,
+
+    /** Перезагрузка в Bootloader / Fastboot. */
+    REBOOT_BOOTLOADER,
+
+    /** Отключение Wi-Fi-устройства (`adb disconnect`). */
+    DISCONNECT,
+}
+
+/**
+ * Незавершённое действие, ожидающее подтверждения пользователем.
+ *
+ * @param device  Целевое устройство.
+ * @param type    Тип действия.
+ * @param title   Заголовок диалога подтверждения.
+ * @param message Пояснение к действию.
+ */
+data class PendingDeviceAction(
+    val device: AdbDevice,
+    val type: PendingDeviceActionType,
+    val title: String,
+    val message: String,
+)
+
+// ── Обратная связь по действиям ───────────────────────────────────────────────
+
+/**
+ * Краткосрочное уведомление о результате действия над устройством.
+ *
+ * Автоматически убирается через 3 секунды (управляется компонентом).
+ *
+ * @param message Текст сообщения.
+ * @param isError `true` → красный баннер (ошибка).
+ */
+data class DeviceActionFeedback(
+    val message: String,
+    val isError: Boolean,
+)
+
+// ── Главное состояние экрана ──────────────────────────────────────────────────
+
+/**
+ * Полное состояние экрана Devices.
+ *
+ * @param listState          Состояние загрузки списка устройств.
+ * @param selectedDeviceId   ID активного (выбранного) устройства.
+ * @param deviceInfos        Расширенная информация об устройствах по deviceId.
+ *                           Загружается асинхронно после появления устройства в списке.
+ * @param detailsDeviceId    ID устройства, открытого в панели деталей. `null` = панель скрыта.
+ * @param actionFeedback     Краткосрочное уведомление о результате последнего действия.
+ * @param pendingAction      Действие, ожидающее подтверждения в диалоге.
+ * @param isActionRunning    Флаг выполнения текущего действия (блокирует кнопки).
+ */
+data class DevicesState(
+    val listState: DeviceListState = DeviceListState.Loading,
+    val selectedDeviceId: String? = null,
+    val deviceInfos: Map<String, DeviceInfoLoadState> = emptyMap(),
+    val detailsDeviceId: String? = null,
+    val actionFeedback: DeviceActionFeedback? = null,
+    val pendingAction: PendingDeviceAction? = null,
+    val isActionRunning: Boolean = false,
+)
