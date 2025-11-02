@@ -1,13 +1,13 @@
 package com.adbdeck.feature.devices.ui
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,7 +34,7 @@ import com.adbdeck.core.designsystem.AdbDeckRed
  * - Название устройства и deviceId
  * - Бейджи состояния и типа подключения
  * - Расширенную информацию (модель, Android, батарея) если загружена
- * - Кнопки быстрых действий + overflow-меню
+ * - Кнопку открытия child-панели деталей
  *
  * Подсвечивается рамкой при [isSelected] == `true`.
  *
@@ -42,16 +42,7 @@ import com.adbdeck.core.designsystem.AdbDeckRed
  * @param infoState       Состояние загрузки расширенной информации.
  * @param isSelected      `true` если устройство является активным (выбранным).
  * @param isDetailsOpen   `true` если панель деталей этого устройства открыта.
- * @param onSelect        Установить как активное.
  * @param onOpenDetails   Открыть панель деталей.
- * @param onRefreshInfo   Перезагрузить расширенную информацию.
- * @param onNavigateLogcat    Перейти в Logcat.
- * @param onNavigatePackages  Перейти в Packages.
- * @param onNavigateMonitor   Перейти в System Monitor.
- * @param onRequestReboot         Запросить обычную перезагрузку (открывает диалог).
- * @param onRequestRebootRecovery Запросить перезагрузку в Recovery.
- * @param onRequestRebootBootloader Запросить перезагрузку в Bootloader.
- * @param onRequestDisconnect     Запросить отключение Wi-Fi-устройства.
  */
 @Composable
 fun DeviceCard(
@@ -59,21 +50,11 @@ fun DeviceCard(
     infoState: DeviceInfoLoadState?,
     isSelected: Boolean,
     isDetailsOpen: Boolean,
-    onSelect: () -> Unit,
     onOpenDetails: () -> Unit,
-    onRefreshInfo: () -> Unit,
-    onNavigateLogcat: () -> Unit,
-    onNavigatePackages: () -> Unit,
-    onNavigateMonitor: () -> Unit,
-    onRequestReboot: () -> Unit,
-    onRequestRebootRecovery: () -> Unit,
-    onRequestRebootBootloader: () -> Unit,
-    onRequestDisconnect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val transport = detectTransportType(device.deviceId)
     val isOnline  = device.state == DeviceState.DEVICE
-    val isWifi    = transport == DeviceTransportType.WIFI
 
     val borderColor = when {
         isSelected     -> MaterialTheme.colorScheme.primary
@@ -85,6 +66,7 @@ fun DeviceCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
+            .clickable(onClick = onOpenDetails)
             .border(borderWidth, borderColor, RoundedCornerShape(12.dp)),
         shape = RoundedCornerShape(12.dp),
         tonalElevation = if (isSelected) 3.dp else 1.dp,
@@ -134,20 +116,13 @@ fun DeviceCard(
                     }
                 }
 
-                Spacer(Modifier.width(8.dp))
-
-                // Кнопка деталей
-                IconButton(
-                    onClick = onOpenDetails,
-                    modifier = Modifier.size(32.dp),
-                ) {
+                if (isDetailsOpen) {
+                    Spacer(Modifier.width(8.dp))
                     Icon(
-                        imageVector = if (isDetailsOpen) Icons.Filled.Info
-                                      else Icons.Outlined.Info,
-                        contentDescription = "Детали",
-                        tint = if (isDetailsOpen) MaterialTheme.colorScheme.primary
-                               else MaterialTheme.colorScheme.onSurfaceVariant,
+                        imageVector = Icons.Outlined.Visibility,
+                        contentDescription = null,
                         modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -159,29 +134,11 @@ fun DeviceCard(
                 HorizontalDivider(thickness = 0.5.dp)
                 Spacer(Modifier.height(8.dp))
                 DeviceInfoSummary(info = loadedInfo)
-            } else if (infoState is DeviceInfoLoadState.Loading) {
+            }
+            if (infoState is DeviceInfoLoadState.Loading) {
                 Spacer(Modifier.height(8.dp))
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth().height(2.dp))
             }
-
-            // ── Кнопки быстрых действий ───────────────────────────────────────
-            Spacer(Modifier.height(10.dp))
-            HorizontalDivider(thickness = 0.5.dp)
-            Spacer(Modifier.height(6.dp))
-            DeviceActionRow(
-                device                    = device,
-                isOnline                  = isOnline,
-                isWifi                    = isWifi,
-                isSelected                = isSelected,
-                onSelect                  = onSelect,
-                onNavigateLogcat          = onNavigateLogcat,
-                onNavigatePackages        = onNavigatePackages,
-                onNavigateMonitor         = onNavigateMonitor,
-                onRequestReboot           = onRequestReboot,
-                onRequestRebootRecovery   = onRequestRebootRecovery,
-                onRequestRebootBootloader = onRequestRebootBootloader,
-                onRequestDisconnect       = onRequestDisconnect,
-            )
         }
     }
 }
@@ -227,151 +184,6 @@ private fun InfoChip(label: String, value: String) {
             text  = value,
             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
             color = MaterialTheme.colorScheme.onSurface,
-        )
-    }
-}
-
-// ── Строка действий ───────────────────────────────────────────────────────────
-
-@Composable
-private fun DeviceActionRow(
-    device: AdbDevice,
-    isOnline: Boolean,
-    isWifi: Boolean,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    onNavigateLogcat: () -> Unit,
-    onNavigatePackages: () -> Unit,
-    onNavigateMonitor: () -> Unit,
-    onRequestReboot: () -> Unit,
-    onRequestRebootRecovery: () -> Unit,
-    onRequestRebootBootloader: () -> Unit,
-    onRequestDisconnect: () -> Unit,
-) {
-    var showOverflow by remember { mutableStateOf(false) }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        // ── Кнопка Set Active ────────────────────────────────────────
-        if (isOnline) {
-            if (isSelected) {
-                SmallActionButton(
-                    icon  = Icons.Outlined.CheckCircle,
-                    label = "Active",
-                    tint  = AdbDeckGreen,
-                    onClick = {},
-                )
-            } else {
-                SmallActionButton(
-                    icon    = Icons.Outlined.RadioButtonUnchecked,
-                    label   = "Set Active",
-                    onClick = onSelect,
-                )
-            }
-        }
-
-        Spacer(Modifier.weight(1f))
-
-        // ── Быстрые навигационные кнопки ────────────────────────────
-        if (isOnline) {
-            QuickIconButton(
-                icon  = Icons.Outlined.Terminal,
-                label = "Logcat",
-                onClick = onNavigateLogcat,
-            )
-            QuickIconButton(
-                icon  = Icons.Outlined.Apps,
-                label = "Packages",
-                onClick = onNavigatePackages,
-            )
-            QuickIconButton(
-                icon  = Icons.Outlined.Monitor,
-                label = "System",
-                onClick = onNavigateMonitor,
-            )
-        }
-
-        // ── Overflow-меню ────────────────────────────────────────────
-        Box {
-            IconButton(
-                onClick  = { showOverflow = true },
-                modifier = Modifier.size(30.dp),
-            ) {
-                Icon(
-                    Icons.Outlined.MoreVert,
-                    contentDescription = "Ещё действия",
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-            DropdownMenu(
-                expanded        = showOverflow,
-                onDismissRequest = { showOverflow = false },
-            ) {
-                if (isOnline) {
-                    DropdownMenuItem(
-                        text        = { Text("Перезагрузить") },
-                        leadingIcon = { Icon(Icons.Outlined.RestartAlt, null) },
-                        onClick     = { showOverflow = false; onRequestReboot() },
-                    )
-                    DropdownMenuItem(
-                        text        = { Text("Recovery Mode") },
-                        leadingIcon = { Icon(Icons.Outlined.Build, null) },
-                        onClick     = { showOverflow = false; onRequestRebootRecovery() },
-                    )
-                    DropdownMenuItem(
-                        text        = { Text("Bootloader / Fastboot") },
-                        leadingIcon = { Icon(Icons.Outlined.FlashOn, null) },
-                        onClick     = { showOverflow = false; onRequestRebootBootloader() },
-                    )
-                }
-                if (isWifi) {
-                    HorizontalDivider()
-                    DropdownMenuItem(
-                        text        = { Text("Отключить Wi-Fi", color = MaterialTheme.colorScheme.error) },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.WifiOff, null, tint = MaterialTheme.colorScheme.error)
-                        },
-                        onClick = { showOverflow = false; onRequestDisconnect() },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SmallActionButton(
-    icon: ImageVector,
-    label: String,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
-    onClick: () -> Unit,
-) {
-    TextButton(
-        onClick = onClick,
-        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-        modifier = Modifier.height(28.dp),
-    ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(14.dp), tint = tint)
-        Spacer(Modifier.width(3.dp))
-        Text(label, fontSize = 11.sp, color = tint)
-    }
-}
-
-@Composable
-private fun QuickIconButton(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-) {
-    IconButton(onClick = onClick, modifier = Modifier.size(30.dp)) {
-        Icon(
-            imageVector        = icon,
-            contentDescription = label,
-            modifier           = Modifier.size(16.dp),
-            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

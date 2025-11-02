@@ -109,8 +109,23 @@ fun DevicesScreen(component: DevicesComponent) {
                         DeviceDetailsPanel(
                             device                    = detailsDevice,
                             infoState                 = state.deviceInfos[detailsDevice.deviceId],
+                            isSelected                = detailsDevice.deviceId == state.selectedDeviceId,
+                            isActionRunning           = state.isActionRunning,
                             onClose                   = component::onCloseDetails,
+                            onSelectDevice            = { component.onSelectDevice(detailsDevice) },
                             onRefreshInfo             = { component.onRefreshDeviceInfo(detailsDevice) },
+                            onNavigateToLogcat        = {
+                                component.onSelectDevice(detailsDevice)
+                                component.onNavigateToLogcat()
+                            },
+                            onNavigateToPackages      = {
+                                component.onSelectDevice(detailsDevice)
+                                component.onNavigateToPackages()
+                            },
+                            onNavigateToSystemMonitor = {
+                                component.onSelectDevice(detailsDevice)
+                                component.onNavigateToSystemMonitor()
+                            },
                             onRequestReboot           = { component.onRequestReboot(detailsDevice) },
                             onRequestRebootRecovery   = { component.onRequestRebootRecovery(detailsDevice) },
                             onRequestRebootBootloader = { component.onRequestRebootBootloader(detailsDevice) },
@@ -221,16 +236,7 @@ private fun DevicesList(
                 infoState                 = state.deviceInfos[device.deviceId],
                 isSelected                = device.deviceId == state.selectedDeviceId,
                 isDetailsOpen             = device.deviceId == state.detailsDeviceId,
-                onSelect                  = { component.onSelectDevice(device) },
                 onOpenDetails             = { component.onOpenDetails(device) },
-                onRefreshInfo             = { component.onRefreshDeviceInfo(device) },
-                onNavigateLogcat          = component::onNavigateToLogcat,
-                onNavigatePackages        = component::onNavigateToPackages,
-                onNavigateMonitor         = component::onNavigateToSystemMonitor,
-                onRequestReboot           = { component.onRequestReboot(device) },
-                onRequestRebootRecovery   = { component.onRequestRebootRecovery(device) },
-                onRequestRebootBootloader = { component.onRequestRebootBootloader(device) },
-                onRequestDisconnect       = { component.onRequestDisconnect(device) },
             )
         }
     }

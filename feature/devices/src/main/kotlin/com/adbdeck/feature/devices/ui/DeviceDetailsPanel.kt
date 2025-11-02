@@ -1,6 +1,7 @@
 package com.adbdeck.feature.devices.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,12 +34,20 @@ import com.adbdeck.core.ui.LoadingView
  * - Секция «Дисплей» (разрешение, плотность)
  * - Секция «Батарея» (уровень, статус)
  * - Секция «Сборка» (fingerprint)
- * - Кнопки управления (Reboot, Recovery, Bootloader, Disconnect)
+ * - Секция «Навигация и контекст» (сделать активным, переходы по экранам)
+ * - Секция «Управление» (обычная перезагрузка)
+ * - Секция «Опасные действия» (Recovery, Bootloader, Disconnect)
  *
  * @param device                  Базовые данные устройства (из `adb devices`).
  * @param infoState               Состояние загрузки расширенной информации.
+ * @param isSelected              `true`, если устройство уже выбрано активным.
+ * @param isActionRunning         `true`, если выполняется подтверждённое действие.
  * @param onClose                 Закрыть панель.
+ * @param onSelectDevice          Сделать устройство активным.
  * @param onRefreshInfo           Перезагрузить расширенную информацию.
+ * @param onNavigateToLogcat      Перейти на экран Logcat.
+ * @param onNavigateToPackages    Перейти на экран Packages.
+ * @param onNavigateToSystemMonitor Перейти на экран System Monitor.
  * @param onRequestReboot         Запросить перезагрузку.
  * @param onRequestRebootRecovery Запросить перезагрузку в Recovery.
  * @param onRequestRebootBootloader Запросить перезагрузку в Bootloader.
@@ -48,8 +58,14 @@ import com.adbdeck.core.ui.LoadingView
 fun DeviceDetailsPanel(
     device: AdbDevice,
     infoState: DeviceInfoLoadState?,
+    isSelected: Boolean,
+    isActionRunning: Boolean,
     onClose: () -> Unit,
+    onSelectDevice: () -> Unit,
     onRefreshInfo: () -> Unit,
+    onNavigateToLogcat: () -> Unit,
+    onNavigateToPackages: () -> Unit,
+    onNavigateToSystemMonitor: () -> Unit,
     onRequestReboot: () -> Unit,
     onRequestRebootRecovery: () -> Unit,
     onRequestRebootBootloader: () -> Unit,
@@ -112,8 +128,18 @@ fun DeviceDetailsPanel(
             // Кнопки управления
             if (isOnline) {
                 HorizontalDivider()
+                DeviceNavigationButtons(
+                    isActionRunning = isActionRunning,
+                    onSelectDevice = onSelectDevice,
+                    onNavigateToLogcat = onNavigateToLogcat,
+                    onNavigateToPackages = onNavigateToPackages,
+                    onNavigateToSystemMonitor = onNavigateToSystemMonitor,
+                    isSelected = isSelected,
+                )
+                Spacer(Modifier.height(8.dp))
                 DeviceControlButtons(
                     isWifi                    = isWifi,
+                    isActionRunning           = isActionRunning,
                     onRequestReboot           = onRequestReboot,
                     onRequestRebootRecovery   = onRequestRebootRecovery,
                     onRequestRebootBootloader = onRequestRebootBootloader,
@@ -227,6 +253,7 @@ private fun DeviceInfoDetails(info: DeviceInfo) {
 @Composable
 private fun DeviceControlButtons(
     isWifi: Boolean,
+    isActionRunning: Boolean,
     onRequestReboot: () -> Unit,
     onRequestRebootRecovery: () -> Unit,
     onRequestRebootBootloader: () -> Unit,
@@ -238,9 +265,11 @@ private fun DeviceControlButtons(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
         )
-        // Перезагрузка
+
+        // Обычное действие
         OutlinedButton(
             onClick = onRequestReboot,
+            enabled = !isActionRunning,
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
         ) {
@@ -248,43 +277,189 @@ private fun DeviceControlButtons(
             Spacer(Modifier.width(6.dp))
             Text("Перезагрузить")
         }
-        // Recovery
-        OutlinedButton(
-            onClick = onRequestRebootRecovery,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+
+        // Destructive-зона
+        DangerZone(
+            isWifi = isWifi,
+            isActionRunning = isActionRunning,
+            onRequestRebootRecovery = onRequestRebootRecovery,
+            onRequestRebootBootloader = onRequestRebootBootloader,
+            onRequestDisconnect = onRequestDisconnect,
+        )
+    }
+}
+
+/**
+ * Блок рискованных действий.
+ *
+ * Выделен отдельной рамкой/фоном, чтобы визуально отделить операции,
+ * которые могут прервать рабочую сессию или перевести устройство в спецрежим.
+ */
+@Composable
+private fun DangerZone(
+    isWifi: Boolean,
+    isActionRunning: Boolean,
+    onRequestRebootRecovery: () -> Unit,
+    onRequestRebootBootloader: () -> Unit,
+    onRequestDisconnect: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(10.dp),
+            ),
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
+    ) {
+        Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Icon(Icons.Outlined.Build, null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Recovery Mode")
-        }
-        // Bootloader
-        OutlinedButton(
-            onClick = onRequestRebootBootloader,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Icon(Icons.Outlined.FlashOn, null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Bootloader / Fastboot")
-        }
-        // Disconnect (только Wi-Fi)
-        if (isWifi) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.WarningAmber,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.error,
+                )
+                Text(
+                    text = "Опасные действия",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
             OutlinedButton(
-                onClick = onRequestDisconnect,
+                onClick = onRequestRebootRecovery,
+                enabled = !isActionRunning,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.error,
                 ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.error)
+                border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                    brush = SolidColor(MaterialTheme.colorScheme.error)
                 ),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
             ) {
-                Icon(Icons.Outlined.WifiOff, null, modifier = Modifier.size(16.dp))
+                Icon(Icons.Outlined.Build, null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Отключить Wi-Fi")
+                Text("Recovery Mode")
             }
+
+            OutlinedButton(
+                onClick = onRequestRebootBootloader,
+                enabled = !isActionRunning,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error,
+                ),
+                border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                    brush = SolidColor(MaterialTheme.colorScheme.error)
+                ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Icon(Icons.Outlined.FlashOn, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Bootloader / Fastboot")
+            }
+
+            if (isWifi) {
+                OutlinedButton(
+                    onClick = onRequestDisconnect,
+                    enabled = !isActionRunning,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
+                        brush = SolidColor(MaterialTheme.colorScheme.error)
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Icon(Icons.Outlined.WifiOff, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("Отключить Wi-Fi")
+                }
+            }
+        }
+    }
+}
+
+// ── Навигация и выбор активного устройства ───────────────────────────────────
+
+/**
+ * Секция действий верхнего уровня:
+ * - сделать устройство активным;
+ * - перейти на связанные экраны (Logcat / Packages / System Monitor).
+ */
+@Composable
+private fun DeviceNavigationButtons(
+    isSelected: Boolean,
+    isActionRunning: Boolean,
+    onSelectDevice: () -> Unit,
+    onNavigateToLogcat: () -> Unit,
+    onNavigateToPackages: () -> Unit,
+    onNavigateToSystemMonitor: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            "Навигация и контекст",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+
+        OutlinedButton(
+            onClick = onSelectDevice,
+            enabled = !isSelected && !isActionRunning,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Icon(Icons.Outlined.CheckCircle, null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(if (isSelected) "Уже активное" else "Сделать активным")
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            OutlinedButton(
+                onClick = onNavigateToLogcat,
+                enabled = !isActionRunning,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+            ) {
+                Icon(Icons.Outlined.Terminal, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Logcat")
+            }
+            OutlinedButton(
+                onClick = onNavigateToPackages,
+                enabled = !isActionRunning,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+            ) {
+                Icon(Icons.Outlined.Apps, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Packages")
+            }
+        }
+
+        OutlinedButton(
+            onClick = onNavigateToSystemMonitor,
+            enabled = !isActionRunning,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Icon(Icons.Outlined.Monitor, null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("System Monitor")
         }
     }
 }
