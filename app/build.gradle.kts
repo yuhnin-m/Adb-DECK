@@ -41,6 +41,7 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":feature:packages"))
     implementation(project(":feature:system-monitor"))
+    implementation(project(":feature:file-explorer"))
 }
 
 compose.desktop {

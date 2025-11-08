@@ -2,6 +2,7 @@ package com.adbdeck.app.navigation
 
 import com.adbdeck.feature.dashboard.DashboardComponent
 import com.adbdeck.feature.devices.DevicesComponent
+import com.adbdeck.feature.fileexplorer.FileExplorerComponent
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.settings.SettingsComponent
@@ -51,5 +52,8 @@ interface RootComponent {
 
         /** Дочерний компонент System Monitor. */
         class SystemMonitor(val component: SystemMonitorComponent) : Child()
+
+        /** Дочерний компонент File Explorer. */
+        class FileExplorer(val component: FileExplorerComponent) : Child()
     }
 }

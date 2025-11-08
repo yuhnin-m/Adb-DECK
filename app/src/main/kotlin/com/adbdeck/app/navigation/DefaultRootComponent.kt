@@ -2,6 +2,7 @@ package com.adbdeck.app.navigation
 
 import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.DeviceControlClient
+import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
@@ -10,9 +11,13 @@ import com.adbdeck.core.adb.api.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
+import com.adbdeck.feature.fileexplorer.DefaultFileExplorerComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
 import com.adbdeck.feature.settings.DefaultSettingsComponent
+import com.adbdeck.feature.fileexplorer.service.DefaultDeviceFileService
+import com.adbdeck.feature.fileexplorer.service.DefaultFileTransferService
+import com.adbdeck.feature.fileexplorer.service.DefaultLocalFileService
 import com.adbdeck.feature.systemmonitor.DefaultSystemMonitorComponent
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -37,6 +42,7 @@ import com.arkivanov.decompose.value.Value
  * @param systemMonitorClient  ADB-клиент мониторинга процессов и хранилища.
  * @param deviceInfoClient     ADB-клиент расширенной информации об устройстве.
  * @param deviceControlClient  ADB-клиент управления устройством (перезагрузка, disconnect).
+ * @param deviceFileClient     ADB-клиент файловых операций на устройстве.
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -48,6 +54,7 @@ class DefaultRootComponent(
     private val systemMonitorClient: SystemMonitorClient,
     private val deviceInfoClient: DeviceInfoClient,
     private val deviceControlClient: DeviceControlClient,
+    private val deviceFileClient: DeviceFileClient,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
@@ -155,6 +162,27 @@ class DefaultRootComponent(
                 settingsRepository = settingsRepository,
                 openPackageDetails = ::openPackageFromSystemMonitor,
             )
+        )
+
+        is Screen.FileExplorer -> RootComponent.Child.FileExplorer(
+            run {
+                val localFileService = DefaultLocalFileService()
+                val deviceFileService = DefaultDeviceFileService(deviceFileClient)
+                val transferService = DefaultFileTransferService(
+                    localFileService = localFileService,
+                    deviceFileService = deviceFileService,
+                )
+
+                DefaultFileExplorerComponent(
+                    componentContext = componentContext,
+                    deviceManager = deviceManager,
+                    settingsRepository = settingsRepository,
+                    systemMonitorClient = systemMonitorClient,
+                    localFileService = localFileService,
+                    deviceFileService = deviceFileService,
+                    fileTransferService = transferService,
+                )
+            }
         )
     }
 }

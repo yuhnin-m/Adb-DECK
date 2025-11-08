@@ -15,6 +15,7 @@ import com.adbdeck.app.navigation.DefaultRootComponent
 import com.adbdeck.app.ui.AppContent
 import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.DeviceControlClient
+import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
@@ -62,6 +63,7 @@ fun main() = application {
         systemMonitorClient = get(SystemMonitorClient::class.java),
         deviceInfoClient    = get(DeviceInfoClient::class.java),
         deviceControlClient = get(DeviceControlClient::class.java),
+        deviceFileClient    = get(DeviceFileClient::class.java),
     )
 
     lifecycle.resume()

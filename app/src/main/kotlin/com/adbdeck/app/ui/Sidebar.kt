@@ -85,6 +85,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.Packages) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.FolderOpen,
+            label = "Files",
+            isActive = activeScreen is Screen.FileExplorer,
+            onClick = { onNavigate(Screen.FileExplorer) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Monitor,
             label = "System",
             isActive = activeScreen is Screen.SystemMonitor,

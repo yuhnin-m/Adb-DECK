@@ -25,6 +25,13 @@ import com.adbdeck.feature.dashboard.DashboardState
 import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
+import com.adbdeck.feature.fileexplorer.ExplorerFileItem
+import com.adbdeck.feature.fileexplorer.ExplorerFileType
+import com.adbdeck.feature.fileexplorer.ExplorerListState
+import com.adbdeck.feature.fileexplorer.ExplorerPanelState
+import com.adbdeck.feature.fileexplorer.ExplorerSide
+import com.adbdeck.feature.fileexplorer.FileExplorerComponent
+import com.adbdeck.feature.fileexplorer.FileExplorerState
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
 import com.adbdeck.feature.logcat.LogcatState
@@ -245,6 +252,85 @@ private class PreviewSystemMonitorComponent : SystemMonitorComponent {
     override fun onTabSelected(tab: SystemMonitorTab) = Unit
 }
 
+private class PreviewFileExplorerComponent : FileExplorerComponent {
+    private val localItems = listOf(
+        ExplorerFileItem(
+            name = "Projects",
+            fullPath = "/Users/demo/Projects",
+            type = ExplorerFileType.DIRECTORY,
+            modifiedEpochMillis = 1_740_000_000_000,
+        ),
+        ExplorerFileItem(
+            name = "notes.txt",
+            fullPath = "/Users/demo/notes.txt",
+            type = ExplorerFileType.FILE,
+            sizeBytes = 8_192,
+            modifiedEpochMillis = 1_740_000_100_000,
+        ),
+    )
+
+    private val deviceItems = listOf(
+        ExplorerFileItem(
+            name = "Download",
+            fullPath = "/sdcard/Download",
+            type = ExplorerFileType.DIRECTORY,
+            modifiedEpochMillis = 1_740_000_200_000,
+        ),
+        ExplorerFileItem(
+            name = "screen.png",
+            fullPath = "/sdcard/Download/screen.png",
+            type = ExplorerFileType.FILE,
+            sizeBytes = 1_527_000,
+            modifiedEpochMillis = 1_740_000_300_000,
+        ),
+    )
+
+    override val state: StateFlow<FileExplorerState> = MutableStateFlow(
+        FileExplorerState(
+            localPanel = ExplorerPanelState(
+                currentPath = "/Users/demo",
+                listState = ExplorerListState.Success(localItems),
+                selectedPath = "/Users/demo/notes.txt",
+            ),
+            devicePanel = ExplorerPanelState(
+                currentPath = "/sdcard",
+                listState = ExplorerListState.Success(deviceItems),
+                selectedPath = "/sdcard/Download/screen.png",
+            ),
+            activeDeviceId = "emulator-5554",
+            deviceRoots = listOf("/sdcard", "/storage/emulated/0", "/data/local/tmp"),
+        )
+    )
+
+    override fun onRefreshLocal() = Unit
+    override fun onLocalUp() = Unit
+    override fun onOpenLocalDirectory(path: String) = Unit
+    override fun onSelectLocal(path: String) = Unit
+    override fun onRefreshDevice() = Unit
+    override fun onDeviceUp() = Unit
+    override fun onOpenDeviceDirectory(path: String) = Unit
+    override fun onSelectDevice(path: String) = Unit
+    override fun onSelectDeviceRoot(path: String) = Unit
+    override fun onRequestDelete(side: ExplorerSide) = Unit
+    override fun onConfirmDelete() = Unit
+    override fun onCancelDelete() = Unit
+    override fun onRequestCreateDirectory(side: ExplorerSide) = Unit
+    override fun onCreateDirectoryNameChanged(value: String) = Unit
+    override fun onConfirmCreateDirectory() = Unit
+    override fun onCancelCreateDirectory() = Unit
+    override fun onRequestRename(side: ExplorerSide) = Unit
+    override fun onRenameValueChanged(value: String) = Unit
+    override fun onConfirmRename() = Unit
+    override fun onCancelRename() = Unit
+    override fun onPushSelected() = Unit
+    override fun onPullSelected() = Unit
+    override fun onConfirmTransferConflict() = Unit
+    override fun onCancelTransferConflict() = Unit
+    override fun onCancelTransfer() = Unit
+    override fun onPathCopied(path: String) = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -254,6 +340,7 @@ private class PreviewRootComponent(
     private val settings = PreviewSettingsComponent()
     private val packages = PreviewPackagesComponent()
     private val systemMonitor = PreviewSystemMonitorComponent()
+    private val fileExplorer = PreviewFileExplorerComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -273,6 +360,7 @@ private class PreviewRootComponent(
         Screen.Settings -> RootComponent.Child.Settings(settings)
         Screen.Packages -> RootComponent.Child.Packages(packages)
         Screen.SystemMonitor -> RootComponent.Child.SystemMonitor(systemMonitor)
+        Screen.FileExplorer -> RootComponent.Child.FileExplorer(fileExplorer)
     }
 }
 

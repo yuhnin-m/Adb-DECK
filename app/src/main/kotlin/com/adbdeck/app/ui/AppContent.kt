@@ -15,6 +15,7 @@ import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
 import com.adbdeck.feature.dashboard.ui.DashboardScreen
 import com.adbdeck.feature.devices.ui.DevicesScreen
+import com.adbdeck.feature.fileexplorer.ui.FileExplorerScreen
 import com.adbdeck.feature.logcat.ui.LogcatScreen
 import com.adbdeck.feature.packages.ui.PackagesScreen
 import com.adbdeck.feature.settings.ui.SettingsScreen
@@ -90,6 +91,7 @@ fun AppContent(
         is RootComponent.Child.Settings -> Screen.Settings
         is RootComponent.Child.Packages -> Screen.Packages
         is RootComponent.Child.SystemMonitor -> Screen.SystemMonitor
+        is RootComponent.Child.FileExplorer -> Screen.FileExplorer
         else -> Screen.Dashboard
     }
 
@@ -129,6 +131,7 @@ fun AppContent(
                         is RootComponent.Child.Settings -> SettingsScreen(instance.component)
                         is RootComponent.Child.Packages -> PackagesScreen(instance.component)
                         is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(instance.component)
+                        is RootComponent.Child.FileExplorer -> FileExplorerScreen(instance.component)
                     }
                 }
 
@@ -148,4 +151,5 @@ private fun Screen.title(): String = when (this) {
     is Screen.Settings -> "Settings"
     is Screen.Packages -> "Packages"
     is Screen.SystemMonitor -> "System Monitor"
+    is Screen.FileExplorer -> "File Explorer"
 }

@@ -26,4 +26,7 @@ sealed interface Screen {
 
     /** Экран мониторинга системы (процессы + хранилище). */
     data object SystemMonitor : Screen
+
+    /** Двухпанельный файловый менеджер (Local + Device). */
+    data object FileExplorer : Screen
 }
