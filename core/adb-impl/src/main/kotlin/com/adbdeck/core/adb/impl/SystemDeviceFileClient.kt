@@ -28,6 +28,8 @@ class SystemDeviceFileClient(
         private const val DIR_NOT_FOUND_PREFIX = "__ERR__NOT_FOUND__:"
         private const val NOT_DIRECTORY_PREFIX = "__ERR__NOT_DIRECTORY__:"
         private const val PERMISSION_DENIED_PREFIX = "__ERR__PERMISSION_DENIED__:"
+        private const val DEBUG_ENV = "ADBDECK_DEBUG_ADB_FILES"
+        private const val DEBUG_PROP = "adbdeck.debug.adb.files"
 
         /**
          * Shell-скрипт листинга директории.
@@ -110,6 +112,11 @@ class SystemDeviceFileClient(
             done
         """.trimIndent()
     }
+
+    /** Включает подробные логи формирования adb shell-команд для диагностики. */
+    private val debugEnabled: Boolean =
+        java.lang.System.getenv(DEBUG_ENV) == "1" ||
+            java.lang.Boolean.getBoolean(DEBUG_PROP)
 
     override suspend fun listDirectory(
         deviceId: String,
@@ -218,6 +225,7 @@ class SystemDeviceFileClient(
         vararg args: String,
     ): ProcessResult {
         val interpolatedScript = interpolateShellArgs(script, args)
+        val quotedScript = shellQuote(interpolatedScript)
         val command = buildList {
             add(adbPath)
             add("-s")
@@ -225,9 +233,29 @@ class SystemDeviceFileClient(
             add("shell")
             add("sh")
             add("-c")
-            add(interpolatedScript)
+            // Важно: adb shell склеивает аргументы в одну строку для удаленного shell.
+            // Если не экранировать целый скрипт, пробелы/переносы разорвут `-c` аргумент.
+            add(quotedScript)
         }
-        return processRunner.run(command)
+
+        debugLog(
+            buildString {
+                append("runAdbShell: ")
+                append(command.take(6).joinToString(" "))
+                append(" <script>")
+                appendLine()
+                append("script=")
+                append(interpolatedScript)
+            }
+        )
+
+        val result = processRunner.run(command)
+        debugLog(
+            "runAdbShell result: exitCode=${result.exitCode}, " +
+                "stdout=\"${truncateForLog(oneLine(result.stdout))}\", " +
+                "stderr=\"${truncateForLog(oneLine(result.stderr))}\""
+        )
+        return result
     }
 
     /**
@@ -243,8 +271,17 @@ class SystemDeviceFileClient(
     ): String {
         var result = script
         for (index in args.indices.reversed()) {
-            val key = Regex("\\$${index + 1}(?!\\d)")
-            result = result.replace(key, shellQuote(args[index]))
+            val tokenNumber = index + 1
+            val token = "$$tokenNumber"
+            val quoted = shellQuote(args[index])
+
+            // Сначала заменяем шаблоны в кавычках: "$1" -> '/path'
+            result = result.replace("\"$token\"", quoted)
+            result = result.replace("'$token'", quoted)
+
+            // Затем остаточные вхождения: $1 -> '/path'
+            val key = Regex("\\$${tokenNumber}(?!\\d)")
+            result = result.replace(key, quoted)
         }
         return result
     }
@@ -252,6 +289,20 @@ class SystemDeviceFileClient(
     /** Экранирует строку для безопасной вставки в shell-команду. */
     private fun shellQuote(value: String): String =
         "'" + value.replace("'", "'\"'\"'") + "'"
+
+    /** Печатает debug-лог в stderr, если включен флаг диагностики. */
+    private fun debugLog(message: String) {
+        if (!debugEnabled) return
+        System.err.println("[ADB-FILES] $message")
+    }
+
+    /** Уплощает многострочный текст в одну строку для компактных логов. */
+    private fun oneLine(value: String): String =
+        value.replace('\n', ' ').replace('\r', ' ').trim()
+
+    /** Ограничивает длину лога, чтобы не засорять вывод. */
+    private fun truncateForLog(value: String, maxLength: Int = 600): String =
+        if (value.length <= maxLength) value else value.take(maxLength) + "…"
 
     /** Парсит stdout shell-листинга в список [DeviceFileEntry]. */
     private fun parseDirectoryListing(parentPath: String, output: String): List<DeviceFileEntry> {
