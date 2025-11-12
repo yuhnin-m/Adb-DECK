@@ -43,6 +43,12 @@ class DefaultDeviceFileService(
         adbPath: String,
     ): Result<Boolean> = deviceFileClient.exists(deviceId, path, adbPath)
 
+    override suspend fun canAccessDirectory(
+        deviceId: String,
+        path: String,
+        adbPath: String,
+    ): Result<Boolean> = deviceFileClient.canAccessDirectory(deviceId, path, adbPath)
+
     override suspend fun createDirectory(
         deviceId: String,
         path: String,

@@ -111,6 +111,49 @@ class SystemDeviceFileClient(
               printf '%s\037%s\037%s\037%s\n' "${'$'}name" "${'$'}type" "${'$'}size" "${'$'}mtime"
             done
         """.trimIndent()
+
+        /**
+         * Лёгкая проверка доступности директории без полного листинга.
+         *
+         * Возвращает exit code:
+         * - 0: директория доступна для чтения/list
+         * - 3: путь не найден
+         * - 4: путь не директория
+         * - 5/6/7: нет доступа / ошибка проверки
+         */
+        private val PROBE_DIRECTORY_SCRIPT = """
+            dir="${'$'}1"
+            probe=${'$'}(ls -ld "${'$'}dir" 2>&1)
+            probe_code=${'$'}?
+            if [ ${'$'}probe_code -ne 0 ]; then
+              case "${'$'}probe" in
+                *"No such file"*|*"not found"*)
+                  exit 3
+                  ;;
+                *"Permission denied"*)
+                  exit 5
+                  ;;
+                *)
+                  echo "${'$'}probe" 1>&2
+                  exit 7
+                  ;;
+              esac
+            fi
+
+            if [ ! -d "${'$'}dir" ]; then
+              exit 4
+            fi
+
+            if [ ! -r "${'$'}dir" ] || [ ! -x "${'$'}dir" ]; then
+              exit 5
+            fi
+
+            if ! ls -A "${'$'}dir" >/dev/null 2>&1; then
+              exit 6
+            fi
+
+            exit 0
+        """.trimIndent()
     }
 
     /** Включает подробные логи формирования adb shell-команд для диагностики. */
@@ -140,6 +183,22 @@ class SystemDeviceFileClient(
     ): Result<Boolean> = runCatchingPreserveCancellation {
         val result = runAdbShell(deviceId, adbPath, "[ -e \"$1\" ]", path)
         result.isSuccess
+    }
+
+    override suspend fun canAccessDirectory(
+        deviceId: String,
+        directoryPath: String,
+        adbPath: String,
+    ): Result<Boolean> = runCatchingPreserveCancellation {
+        val result = runAdbShell(deviceId, adbPath, PROBE_DIRECTORY_SCRIPT, directoryPath)
+        when (result.exitCode) {
+            0 -> true
+            3, 4, 5, 6, 7 -> false
+            else -> {
+                val details = buildAdbDiagnostics(result)
+                error("Проверка доступа к '$directoryPath' завершилась неожиданно. $details")
+            }
+        }
     }
 
     override suspend fun createDirectory(

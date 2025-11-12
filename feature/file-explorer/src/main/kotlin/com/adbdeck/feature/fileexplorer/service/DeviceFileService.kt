@@ -24,6 +24,17 @@ interface DeviceFileService {
         adbPath: String,
     ): Result<Boolean>
 
+    /**
+     * Лёгкая проверка, можно ли открыть директорию [path] для shell-пользователя.
+     *
+     * Используется для фильтрации root-категорий без полного листинга каталога.
+     */
+    suspend fun canAccessDirectory(
+        deviceId: String,
+        path: String,
+        adbPath: String,
+    ): Result<Boolean>
+
     /** Создать директорию [path] на устройстве. */
     suspend fun createDirectory(
         deviceId: String,

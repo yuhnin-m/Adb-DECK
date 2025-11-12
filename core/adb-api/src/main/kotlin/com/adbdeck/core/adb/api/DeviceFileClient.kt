@@ -27,6 +27,17 @@ interface DeviceFileClient {
     ): Result<Boolean>
 
     /**
+     * Быстрая проверка доступности директории [directoryPath] для shell-пользователя.
+     *
+     * В отличие от [listDirectory], не читает содержимое каталога полностью.
+     */
+    suspend fun canAccessDirectory(
+        deviceId: String,
+        directoryPath: String,
+        adbPath: String = "adb",
+    ): Result<Boolean>
+
+    /**
      * Создать директорию по пути [directoryPath].
      *
      * Поведение аналогично `mkdir -p`.

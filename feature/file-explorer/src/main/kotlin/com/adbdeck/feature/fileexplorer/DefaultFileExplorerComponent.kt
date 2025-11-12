@@ -60,6 +60,7 @@ class DefaultFileExplorerComponent(
     private var actionJob: Job? = null
     private var transferJob: Job? = null
     private var feedbackJob: Job? = null
+    private var actionBoundDeviceId: String? = null
 
     private var localLoadRequestId: Long = 0L
     private var deviceLoadRequestId: Long = 0L
@@ -154,8 +155,17 @@ class DefaultFileExplorerComponent(
             return
         }
 
+        val deviceId = if (side == ExplorerSide.DEVICE) requireActiveDeviceIdForUi() else null
+        if (side == ExplorerSide.DEVICE && deviceId == null) return
+
         _state.update {
-            it.copy(deleteDialog = DeleteDialogState(side = side, item = selected))
+            it.copy(
+                deleteDialog = DeleteDialogState(
+                    side = side,
+                    item = selected,
+                    deviceId = deviceId,
+                )
+            )
         }
     }
 
@@ -163,18 +173,30 @@ class DefaultFileExplorerComponent(
         val dialog = _state.value.deleteDialog ?: return
         _state.update { it.copy(deleteDialog = null) }
 
-        runAction(
-            block = {
-            when (dialog.side) {
-                ExplorerSide.LOCAL -> localFileService.delete(dialog.item.fullPath)
-                ExplorerSide.DEVICE -> {
-                    val deviceId = requireActiveDeviceIdForUi() ?: return@runAction Result.failure(
-                        IllegalStateException("Активное устройство недоступно")
-                    )
-                    deviceFileService.delete(deviceId, dialog.item.fullPath, adbPath())
-                }
+        val deviceId = when (dialog.side) {
+            ExplorerSide.LOCAL -> null
+            ExplorerSide.DEVICE -> dialog.deviceId ?: run {
+                showFeedback("Контекст устройства потерян. Повторите действие", isError = true)
+                return
             }
-        },
+        }
+        if (deviceId != null && !ensureActiveDeviceMatches(deviceId)) return
+
+        runAction(
+            deviceBoundId = deviceId,
+            block = {
+                when (dialog.side) {
+                    ExplorerSide.LOCAL -> localFileService.delete(dialog.item.fullPath)
+                    ExplorerSide.DEVICE -> {
+                        if (deviceId == null) {
+                            return@runAction Result.failure(
+                                IllegalStateException("Контекст устройства недоступен")
+                            )
+                        }
+                        deviceFileService.delete(deviceId, dialog.item.fullPath, adbPath())
+                    }
+                }
+            },
             onSuccess = {
                 showFeedback("Удалено: ${dialog.item.name}", isError = false)
                 refreshSide(dialog.side)
@@ -187,6 +209,9 @@ class DefaultFileExplorerComponent(
     }
 
     override fun onRequestCreateDirectory(side: ExplorerSide) {
+        val deviceId = if (side == ExplorerSide.DEVICE) requireActiveDeviceIdForUi() else null
+        if (side == ExplorerSide.DEVICE && deviceId == null) return
+
         val parentPath = when (side) {
             ExplorerSide.LOCAL -> _state.value.localPanel.currentPath
             ExplorerSide.DEVICE -> _state.value.devicePanel.currentPath
@@ -198,6 +223,7 @@ class DefaultFileExplorerComponent(
                     side = side,
                     parentPath = parentPath,
                     name = "",
+                    deviceId = deviceId,
                 )
             )
         }
@@ -220,23 +246,35 @@ class DefaultFileExplorerComponent(
 
         _state.update { it.copy(createDirectoryDialog = null) }
 
-        runAction(
-            block = {
-            when (dialog.side) {
-                ExplorerSide.LOCAL -> {
-                    val targetPath = localFileService.resolveChildPath(dialog.parentPath, normalizedName)
-                    localFileService.createDirectory(targetPath)
-                }
-
-                ExplorerSide.DEVICE -> {
-                    val deviceId = requireActiveDeviceIdForUi() ?: return@runAction Result.failure(
-                        IllegalStateException("Активное устройство недоступно")
-                    )
-                    val targetPath = deviceFileService.resolveChildPath(dialog.parentPath, normalizedName)
-                    deviceFileService.createDirectory(deviceId, targetPath, adbPath())
-                }
+        val deviceId = when (dialog.side) {
+            ExplorerSide.LOCAL -> null
+            ExplorerSide.DEVICE -> dialog.deviceId ?: run {
+                showFeedback("Контекст устройства потерян. Повторите действие", isError = true)
+                return
             }
-        },
+        }
+        if (deviceId != null && !ensureActiveDeviceMatches(deviceId)) return
+
+        runAction(
+            deviceBoundId = deviceId,
+            block = {
+                when (dialog.side) {
+                    ExplorerSide.LOCAL -> {
+                        val targetPath = localFileService.resolveChildPath(dialog.parentPath, normalizedName)
+                        localFileService.createDirectory(targetPath)
+                    }
+
+                    ExplorerSide.DEVICE -> {
+                        if (deviceId == null) {
+                            return@runAction Result.failure(
+                                IllegalStateException("Контекст устройства недоступен")
+                            )
+                        }
+                        val targetPath = deviceFileService.resolveChildPath(dialog.parentPath, normalizedName)
+                        deviceFileService.createDirectory(deviceId, targetPath, adbPath())
+                    }
+                }
+            },
             onSuccess = {
                 showFeedback("Директория создана: $normalizedName", isError = false)
                 refreshSide(dialog.side)
@@ -255,12 +293,16 @@ class DefaultFileExplorerComponent(
             return
         }
 
+        val deviceId = if (side == ExplorerSide.DEVICE) requireActiveDeviceIdForUi() else null
+        if (side == ExplorerSide.DEVICE && deviceId == null) return
+
         _state.update {
             it.copy(
                 renameDialog = RenameDialogState(
                     side = side,
                     item = selected,
                     newName = selected.name,
+                    deviceId = deviceId,
                 )
             )
         }
@@ -289,19 +331,31 @@ class DefaultFileExplorerComponent(
 
         _state.update { it.copy(renameDialog = null) }
 
-        runAction(
-            block = {
-            when (dialog.side) {
-                ExplorerSide.LOCAL -> localFileService.rename(dialog.item.fullPath, newName).map { Unit }
-
-                ExplorerSide.DEVICE -> {
-                    val deviceId = requireActiveDeviceIdForUi() ?: return@runAction Result.failure(
-                        IllegalStateException("Активное устройство недоступно")
-                    )
-                    deviceFileService.rename(deviceId, dialog.item.fullPath, newName, adbPath()).map { Unit }
-                }
+        val deviceId = when (dialog.side) {
+            ExplorerSide.LOCAL -> null
+            ExplorerSide.DEVICE -> dialog.deviceId ?: run {
+                showFeedback("Контекст устройства потерян. Повторите действие", isError = true)
+                return
             }
-        },
+        }
+        if (deviceId != null && !ensureActiveDeviceMatches(deviceId)) return
+
+        runAction(
+            deviceBoundId = deviceId,
+            block = {
+                when (dialog.side) {
+                    ExplorerSide.LOCAL -> localFileService.rename(dialog.item.fullPath, newName).map { Unit }
+
+                    ExplorerSide.DEVICE -> {
+                        if (deviceId == null) {
+                            return@runAction Result.failure(
+                                IllegalStateException("Контекст устройства недоступен")
+                            )
+                        }
+                        deviceFileService.rename(deviceId, dialog.item.fullPath, newName, adbPath()).map { Unit }
+                    }
+                }
+            },
             onSuccess = {
                 showFeedback("Переименовано: ${dialog.item.name} → $newName", isError = false)
                 refreshSide(dialog.side)
@@ -365,10 +419,10 @@ class DefaultFileExplorerComponent(
         val dialog = _state.value.transferConflictDialog ?: return
         _state.update { it.copy(transferConflictDialog = null) }
 
-        val deviceId = requireActiveDeviceIdForUi() ?: return
+        if (!ensureActiveDeviceMatches(dialog.deviceId)) return
         startTransfer(
             direction = dialog.direction,
-            deviceId = deviceId,
+            deviceId = dialog.deviceId,
             sourcePath = dialog.sourcePath,
             targetPath = dialog.targetPath,
             overwrite = true,
@@ -405,16 +459,18 @@ class DefaultFileExplorerComponent(
             device == null -> {
                 cancelDeviceOperations()
                 val defaultRoots = defaultDeviceRoots()
-                _state.update {
-                    it.copy(
-                        activeDeviceId = null,
-                        deviceRoots = defaultRoots,
-                        devicePanel = it.devicePanel.copy(
-                            currentPath = preferredDeviceStartPath(defaultRoots),
-                            listState = ExplorerListState.NoDevice("Активное устройство не выбрано"),
-                            selectedPath = null,
+                _state.update { current ->
+                    clearDeviceScopedTransientState(
+                        current.copy(
+                            activeDeviceId = null,
+                            deviceRoots = defaultRoots,
+                            devicePanel = current.devicePanel.copy(
+                                currentPath = preferredDeviceStartPath(defaultRoots),
+                                listState = ExplorerListState.NoDevice("Активное устройство не выбрано"),
+                                selectedPath = null,
+                            ),
+                            transferState = null,
                         ),
-                        transferState = null,
                     )
                 }
             }
@@ -422,32 +478,38 @@ class DefaultFileExplorerComponent(
             device.state != DeviceState.DEVICE -> {
                 cancelDeviceOperations()
                 val defaultRoots = defaultDeviceRoots()
-                _state.update {
-                    it.copy(
-                        activeDeviceId = null,
-                        deviceRoots = defaultRoots,
-                        devicePanel = it.devicePanel.copy(
-                            currentPath = preferredDeviceStartPath(defaultRoots),
-                            listState = ExplorerListState.NoDevice(
-                                "Устройство недоступно: ${device.state.rawValue}"
+                _state.update { current ->
+                    clearDeviceScopedTransientState(
+                        current.copy(
+                            activeDeviceId = null,
+                            deviceRoots = defaultRoots,
+                            devicePanel = current.devicePanel.copy(
+                                currentPath = preferredDeviceStartPath(defaultRoots),
+                                listState = ExplorerListState.NoDevice(
+                                    "Устройство недоступно: ${device.state.rawValue}"
+                                ),
+                                selectedPath = null,
                             ),
-                            selectedPath = null,
+                            transferState = null,
                         ),
-                        transferState = null,
                     )
                 }
             }
 
             else -> {
                 val isChanged = _state.value.activeDeviceId != device.deviceId
+                if (isChanged) {
+                    cancelDeviceOperations()
+                }
                 val roots = if (isChanged) defaultDeviceRoots() else _state.value.deviceRoots.ifEmpty { defaultDeviceRoots() }
                 val path = if (isChanged) preferredDeviceStartPath(roots) else _state.value.devicePanel.currentPath
-                _state.update {
-                    it.copy(
+                _state.update { current ->
+                    val updated = current.copy(
                         activeDeviceId = device.deviceId,
                         deviceRoots = roots,
-                        devicePanel = it.devicePanel.copy(currentPath = path, selectedPath = null),
+                        devicePanel = current.devicePanel.copy(currentPath = path, selectedPath = null),
                     )
+                    if (isChanged) clearDeviceScopedTransientState(updated) else updated
                 }
 
                 loadDeviceRoots(device.deviceId)
@@ -678,10 +740,10 @@ class DefaultFileExplorerComponent(
     }
 
     /**
-     * Проверяет какие корни реально открываются (`listDirectory`) и оставляет только их.
+     * Проверяет какие корни реально доступны shell-пользователю и оставляет только их.
      *
-     * Нужен для случаев, когда `df` возвращает mount-point, который технически существует,
-     * но недоступен для browse из shell-пользователя ADB.
+     * Использует лёгкий probe вместо полного listDirectory, чтобы не делать дорогой
+     * обход содержимого для каждой категории.
      */
     private suspend fun resolveAccessibleRoots(
         deviceId: String,
@@ -693,11 +755,11 @@ class DefaultFileExplorerComponent(
         for (root in roots) {
             if (!isActiveDevice(deviceId)) return emptyList()
 
-            val canOpen = deviceFileService.listDirectory(
+            val canOpen = deviceFileService.canAccessDirectory(
                 deviceId = deviceId,
                 path = root,
                 adbPath = adbPath,
-            ).isSuccess
+            ).getOrDefault(false)
 
             if (canOpen) {
                 accessible += root
@@ -718,16 +780,20 @@ class DefaultFileExplorerComponent(
         if (_state.value.isActionRunning) return
 
         runAction(
+            deviceBoundId = deviceId,
             block = {
                 when (direction) {
                     TransferDirection.PUSH -> deviceFileService.exists(deviceId, targetPath, adbPath())
                     TransferDirection.PULL -> localFileService.exists(targetPath)
                 }.map { targetExists ->
+                    if (!isActiveDevice(deviceId)) return@map
+
                     if (targetExists) {
                         _state.update {
                             it.copy(
                                 transferConflictDialog = TransferConflictDialogState(
                                     direction = direction,
+                                    deviceId = deviceId,
                                     sourcePath = sourcePath,
                                     targetPath = targetPath,
                                 )
@@ -754,6 +820,8 @@ class DefaultFileExplorerComponent(
         targetPath: String,
         overwrite: Boolean,
     ) {
+        if (!ensureActiveDeviceMatches(deviceId)) return
+
         transferJob?.cancel()
         _state.update {
             it.copy(
@@ -771,56 +839,70 @@ class DefaultFileExplorerComponent(
         }
 
         transferJob = scope.launch {
-            val result = when (direction) {
-                TransferDirection.PUSH -> fileTransferService.push(
-                    deviceId = deviceId,
-                    localSourcePath = sourcePath,
-                    remoteTargetPath = targetPath,
-                    adbPath = adbPath(),
-                    overwrite = overwrite,
-                )
+            try {
+                val result = when (direction) {
+                    TransferDirection.PUSH -> fileTransferService.push(
+                        deviceId = deviceId,
+                        localSourcePath = sourcePath,
+                        remoteTargetPath = targetPath,
+                        adbPath = adbPath(),
+                        overwrite = overwrite,
+                    )
 
-                TransferDirection.PULL -> fileTransferService.pull(
-                    deviceId = deviceId,
-                    remoteSourcePath = sourcePath,
-                    localTargetPath = targetPath,
-                    adbPath = adbPath(),
-                    overwrite = overwrite,
-                )
-            }
+                    TransferDirection.PULL -> fileTransferService.pull(
+                        deviceId = deviceId,
+                        remoteSourcePath = sourcePath,
+                        localTargetPath = targetPath,
+                        adbPath = adbPath(),
+                        overwrite = overwrite,
+                    )
+                }
 
-            result
-                .onSuccess {
-                    _state.update { current ->
-                        current.copy(
-                            transferState = current.transferState?.copy(
-                                status = "Обновление списков…",
+                if (!isActiveDevice(deviceId)) return@launch
+
+                result
+                    .onSuccess {
+                        _state.update { current ->
+                            current.copy(
+                                transferState = current.transferState?.copy(
+                                    status = "Обновление списков…",
+                                )
                             )
+                        }
+
+                        onRefreshLocal()
+                        onRefreshDevice()
+
+                        showFeedback(
+                            message = when (direction) {
+                                TransferDirection.PUSH -> "Push завершён"
+                                TransferDirection.PULL -> "Pull завершён"
+                            },
+                            isError = false,
                         )
                     }
-
-                    onRefreshLocal()
-                    if (_state.value.activeDeviceId == deviceId) {
-                        onRefreshDevice()
+                    .onFailure { e ->
+                        showFeedback(
+                            message = e.message ?: "Ошибка переноса",
+                            isError = true,
+                        )
                     }
-
-                    showFeedback(
-                        message = when (direction) {
-                            TransferDirection.PUSH -> "Push завершён"
-                            TransferDirection.PULL -> "Pull завершён"
-                        },
-                        isError = false,
-                    )
+            } finally {
+                _state.update { current ->
+                    val transfer = current.transferState
+                    if (
+                        transfer != null &&
+                        transfer.direction == direction &&
+                        transfer.sourcePath == sourcePath &&
+                        transfer.targetPath == targetPath
+                    ) {
+                        current.copy(transferState = null)
+                    } else {
+                        current
+                    }
                 }
-                .onFailure { e ->
-                    showFeedback(
-                        message = e.message ?: "Ошибка переноса",
-                        isError = true,
-                    )
-                }
-
-            _state.update { it.copy(transferState = null) }
-            transferJob = null
+                transferJob = null
+            }
         }
     }
 
@@ -828,12 +910,14 @@ class DefaultFileExplorerComponent(
 
     /** Выполняет короткую action-операцию с флагом [FileExplorerState.isActionRunning]. */
     private fun runAction(
+        deviceBoundId: String? = null,
         block: suspend () -> Result<Unit>,
         onSuccess: () -> Unit = {},
     ) {
         if (_state.value.isActionRunning) return
 
         actionJob?.cancel()
+        actionBoundDeviceId = deviceBoundId
         _state.update { it.copy(isActionRunning = true) }
 
         actionJob = scope.launch {
@@ -846,6 +930,7 @@ class DefaultFileExplorerComponent(
             } finally {
                 _state.update { it.copy(isActionRunning = false) }
                 actionJob = null
+                actionBoundDeviceId = null
             }
         }
     }
@@ -889,6 +974,21 @@ class DefaultFileExplorerComponent(
         return device.deviceId
     }
 
+    /**
+     * Проверяет, что активным остаётся именно [expectedDeviceId].
+     *
+     * Нужна для защиты от выполнения подтверждённого действия на другом устройстве
+     * после переключения в верхнем DeviceBar.
+     */
+    private fun ensureActiveDeviceMatches(expectedDeviceId: String): Boolean {
+        if (isActiveDevice(expectedDeviceId)) return true
+        showFeedback(
+            message = "Активное устройство изменилось. Повторите действие для текущего устройства",
+            isError = true,
+        )
+        return false
+    }
+
     /** Путь к adb из настроек приложения. */
     private fun adbPath(): String = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
 
@@ -900,7 +1000,24 @@ class DefaultFileExplorerComponent(
         rootsLoadJob = null
         transferJob?.cancel()
         transferJob = null
+
+        // Device-scoped action (delete/create/rename/exists-check) нужно отменять при смене девайса.
+        if (actionBoundDeviceId != null) {
+            actionJob?.cancel()
+            actionJob = null
+            actionBoundDeviceId = null
+            _state.update { it.copy(isActionRunning = false) }
+        }
     }
+
+    /** Сбрасывает все transient-состояния, которые завязаны на конкретное устройство. */
+    private fun clearDeviceScopedTransientState(state: FileExplorerState): FileExplorerState =
+        state.copy(
+            deleteDialog = state.deleteDialog?.takeUnless { it.side == ExplorerSide.DEVICE },
+            createDirectoryDialog = state.createDirectoryDialog?.takeUnless { it.side == ExplorerSide.DEVICE },
+            renameDialog = state.renameDialog?.takeUnless { it.side == ExplorerSide.DEVICE },
+            transferConflictDialog = null,
+        )
 
     /** Вернёт `true`, если устройство [deviceId] всё ещё активно и доступно. */
     private fun isActiveDevice(deviceId: String): Boolean {

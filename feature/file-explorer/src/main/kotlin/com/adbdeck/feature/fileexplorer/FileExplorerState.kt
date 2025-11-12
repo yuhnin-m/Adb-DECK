@@ -111,6 +111,8 @@ data class TransferState(
 data class DeleteDialogState(
     val side: ExplorerSide,
     val item: ExplorerFileItem,
+    /** Устройство, на котором был выбран элемент (только для [ExplorerSide.DEVICE]). */
+    val deviceId: String? = null,
 )
 
 /**
@@ -120,6 +122,8 @@ data class CreateDirectoryDialogState(
     val side: ExplorerSide,
     val parentPath: String,
     val name: String = "",
+    /** Устройство, для которого открыт диалог (только для [ExplorerSide.DEVICE]). */
+    val deviceId: String? = null,
 )
 
 /**
@@ -129,6 +133,8 @@ data class RenameDialogState(
     val side: ExplorerSide,
     val item: ExplorerFileItem,
     val newName: String,
+    /** Устройство, на котором выбран элемент (только для [ExplorerSide.DEVICE]). */
+    val deviceId: String? = null,
 )
 
 /**
@@ -136,6 +142,8 @@ data class RenameDialogState(
  */
 data class TransferConflictDialogState(
     val direction: TransferDirection,
+    /** Устройство, на котором инициирован перенос. */
+    val deviceId: String,
     val sourcePath: String,
     val targetPath: String,
 )
