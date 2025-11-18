@@ -13,10 +13,13 @@ import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
 import com.adbdeck.core.adb.api.AppPackage
 import com.adbdeck.core.adb.api.AdbDevice
+import com.adbdeck.core.adb.api.Contact
 import com.adbdeck.core.adb.api.DeviceEndpoint
 import com.adbdeck.core.adb.api.DeviceState
+import com.adbdeck.core.adb.api.EmailType
 import com.adbdeck.core.adb.api.LogcatEntry
 import com.adbdeck.core.adb.api.LogcatLevel
+import com.adbdeck.core.adb.api.PhoneType
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.settings.AppTheme
@@ -35,6 +38,8 @@ import com.adbdeck.feature.fileexplorer.FileExplorerState
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
 import com.adbdeck.feature.logcat.LogcatState
+import com.adbdeck.feature.contacts.ContactsComponent
+import com.adbdeck.feature.contacts.ContactsState
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackageSortOrder
 import com.adbdeck.feature.packages.PackagesState
@@ -252,6 +257,38 @@ private class PreviewSystemMonitorComponent : SystemMonitorComponent {
     override fun onTabSelected(tab: SystemMonitorTab) = Unit
 }
 
+private class PreviewContactsComponent : ContactsComponent {
+    override val state: StateFlow<ContactsState> = MutableStateFlow(ContactsState())
+    override fun onRefresh() = Unit
+    override fun onSearchChanged(query: String) = Unit
+    override fun onSelectContact(contact: Contact) = Unit
+    override fun onCloseDetail() = Unit
+    override fun onRefreshDetail() = Unit
+    override fun onShowAddForm() = Unit
+    override fun onAddFormFirstNameChanged(value: String) = Unit
+    override fun onAddFormLastNameChanged(value: String) = Unit
+    override fun onAddFormPhone1Changed(value: String) = Unit
+    override fun onAddFormPhone1TypeChanged(type: PhoneType) = Unit
+    override fun onAddFormPhone2Changed(value: String) = Unit
+    override fun onAddFormPhone2TypeChanged(type: PhoneType) = Unit
+    override fun onAddFormEmailChanged(value: String) = Unit
+    override fun onAddFormEmailTypeChanged(type: EmailType) = Unit
+    override fun onAddFormOrganizationChanged(value: String) = Unit
+    override fun onAddFormNotesChanged(value: String) = Unit
+    override fun onSubmitAddForm() = Unit
+    override fun onDismissAddForm() = Unit
+    override fun onRequestDelete(contact: Contact) = Unit
+    override fun onConfirmDelete() = Unit
+    override fun onCancelDelete() = Unit
+    override fun onExportAllToJson(path: String) = Unit
+    override fun onExportAllToVcf(path: String) = Unit
+    override fun onExportContactToJson(contact: Contact, path: String) = Unit
+    override fun onExportContactToVcf(contact: Contact, path: String) = Unit
+    override fun onImportFromJson(path: String) = Unit
+    override fun onImportFromVcf(path: String) = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewFileExplorerComponent : FileExplorerComponent {
     private val localItems = listOf(
         ExplorerFileItem(
@@ -341,6 +378,7 @@ private class PreviewRootComponent(
     private val packages = PreviewPackagesComponent()
     private val systemMonitor = PreviewSystemMonitorComponent()
     private val fileExplorer = PreviewFileExplorerComponent()
+    private val contacts = PreviewContactsComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -361,6 +399,7 @@ private class PreviewRootComponent(
         Screen.Packages -> RootComponent.Child.Packages(packages)
         Screen.SystemMonitor -> RootComponent.Child.SystemMonitor(systemMonitor)
         Screen.FileExplorer -> RootComponent.Child.FileExplorer(fileExplorer)
+        Screen.Contacts -> RootComponent.Child.Contacts(contacts)
     }
 }
 

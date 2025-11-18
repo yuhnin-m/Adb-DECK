@@ -1,6 +1,7 @@
 package com.adbdeck.app.navigation
 
 import com.adbdeck.core.adb.api.AdbClient
+import com.adbdeck.core.adb.api.ContactsClient
 import com.adbdeck.core.adb.api.DeviceControlClient
 import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
@@ -9,6 +10,7 @@ import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.adb.api.PackageClient
 import com.adbdeck.core.adb.api.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.feature.contacts.DefaultContactsComponent
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.fileexplorer.DefaultFileExplorerComponent
@@ -43,6 +45,7 @@ import com.arkivanov.decompose.value.Value
  * @param deviceInfoClient     ADB-клиент расширенной информации об устройстве.
  * @param deviceControlClient  ADB-клиент управления устройством (перезагрузка, disconnect).
  * @param deviceFileClient     ADB-клиент файловых операций на устройстве.
+ * @param contactsClient       ADB-клиент для работы с контактами.
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -55,6 +58,7 @@ class DefaultRootComponent(
     private val deviceInfoClient: DeviceInfoClient,
     private val deviceControlClient: DeviceControlClient,
     private val deviceFileClient: DeviceFileClient,
+    private val contactsClient: ContactsClient,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
@@ -183,6 +187,15 @@ class DefaultRootComponent(
                     fileTransferService = transferService,
                 )
             }
+        )
+
+        is Screen.Contacts -> RootComponent.Child.Contacts(
+            DefaultContactsComponent(
+                componentContext   = componentContext,
+                deviceManager      = deviceManager,
+                contactsClient     = contactsClient,
+                settingsRepository = settingsRepository,
+            )
         )
     }
 }

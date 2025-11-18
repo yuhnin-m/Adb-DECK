@@ -1,5 +1,6 @@
 package com.adbdeck.app.navigation
 
+import com.adbdeck.feature.contacts.ContactsComponent
 import com.adbdeck.feature.dashboard.DashboardComponent
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.fileexplorer.FileExplorerComponent
@@ -55,5 +56,8 @@ interface RootComponent {
 
         /** Дочерний компонент File Explorer. */
         class FileExplorer(val component: FileExplorerComponent) : Child()
+
+        /** Дочерний компонент Contacts. */
+        class Contacts(val component: ContactsComponent) : Child()
     }
 }

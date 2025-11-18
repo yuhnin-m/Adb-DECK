@@ -29,4 +29,7 @@ sealed interface Screen {
 
     /** Двухпанельный файловый менеджер (Local + Device). */
     data object FileExplorer : Screen
+
+    /** Экран управления контактами Android-устройства. */
+    data object Contacts : Screen
 }

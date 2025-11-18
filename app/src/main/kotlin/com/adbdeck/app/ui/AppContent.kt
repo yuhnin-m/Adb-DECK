@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
+import com.adbdeck.feature.contacts.ui.ContactsScreen
 import com.adbdeck.feature.dashboard.ui.DashboardScreen
 import com.adbdeck.feature.devices.ui.DevicesScreen
 import com.adbdeck.feature.fileexplorer.ui.FileExplorerScreen
@@ -92,6 +93,7 @@ fun AppContent(
         is RootComponent.Child.Packages -> Screen.Packages
         is RootComponent.Child.SystemMonitor -> Screen.SystemMonitor
         is RootComponent.Child.FileExplorer -> Screen.FileExplorer
+        is RootComponent.Child.Contacts -> Screen.Contacts
         else -> Screen.Dashboard
     }
 
@@ -132,6 +134,7 @@ fun AppContent(
                         is RootComponent.Child.Packages -> PackagesScreen(instance.component)
                         is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(instance.component)
                         is RootComponent.Child.FileExplorer -> FileExplorerScreen(instance.component)
+                        is RootComponent.Child.Contacts -> ContactsScreen(instance.component)
                     }
                 }
 
@@ -152,4 +155,5 @@ private fun Screen.title(): String = when (this) {
     is Screen.Packages -> "Packages"
     is Screen.SystemMonitor -> "System Monitor"
     is Screen.FileExplorer -> "File Explorer"
+    is Screen.Contacts -> "Contacts"
 }

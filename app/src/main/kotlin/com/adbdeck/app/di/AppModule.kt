@@ -1,6 +1,7 @@
 package com.adbdeck.app.di
 
 import com.adbdeck.core.adb.api.AdbClient
+import com.adbdeck.core.adb.api.ContactsClient
 import com.adbdeck.core.adb.api.DeviceControlClient
 import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
@@ -10,6 +11,7 @@ import com.adbdeck.core.adb.api.PackageClient
 import com.adbdeck.core.adb.api.SystemMonitorClient
 import com.adbdeck.core.adb.impl.DefaultSystemMonitorClient
 import com.adbdeck.core.adb.impl.SystemAdbClient
+import com.adbdeck.core.adb.impl.SystemContactsClient
 import com.adbdeck.core.adb.impl.SystemDeviceControlClient
 import com.adbdeck.core.adb.impl.SystemDeviceFileClient
 import com.adbdeck.core.adb.impl.SystemDeviceInfoClient
@@ -86,4 +88,7 @@ val appModule = module {
 
     // ── DeviceFileClient ──────────────────────────────────────────
     singleOf(::SystemDeviceFileClient) bind DeviceFileClient::class
+
+    // ── ContactsClient ────────────────────────────────────────────
+    singleOf(::SystemContactsClient) bind ContactsClient::class
 }

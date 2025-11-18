@@ -14,6 +14,7 @@ import com.adbdeck.app.di.appModule
 import com.adbdeck.app.navigation.DefaultRootComponent
 import com.adbdeck.app.ui.AppContent
 import com.adbdeck.core.adb.api.AdbClient
+import com.adbdeck.core.adb.api.ContactsClient
 import com.adbdeck.core.adb.api.DeviceControlClient
 import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
@@ -64,6 +65,7 @@ fun main() = application {
         deviceInfoClient    = get(DeviceInfoClient::class.java),
         deviceControlClient = get(DeviceControlClient::class.java),
         deviceFileClient    = get(DeviceFileClient::class.java),
+        contactsClient      = get(ContactsClient::class.java),
     )
 
     lifecycle.resume()

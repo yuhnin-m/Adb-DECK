@@ -91,6 +91,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.FileExplorer) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.Contacts,
+            label = "Contacts",
+            isActive = activeScreen is Screen.Contacts,
+            onClick = { onNavigate(Screen.Contacts) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Monitor,
             label = "System",
             isActive = activeScreen is Screen.SystemMonitor,
