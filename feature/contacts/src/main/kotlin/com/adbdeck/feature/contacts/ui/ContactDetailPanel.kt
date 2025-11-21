@@ -310,68 +310,65 @@ private fun DetailContent(
 
         Spacer(Modifier.height(16.dp))
 
-        // Кнопки действий в нижней части карточки
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = { component.onRefreshDetail() },
-                modifier = Modifier.weight(1f),
+        // Отдельный блок действий: кнопки расположены в один вертикальный столбец.
+        DetailSection(title = "Действия") {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(text = "Обновить", modifier = Modifier.padding(start = 6.dp))
-            }
-            Button(
-                onClick = { component.onRequestDelete(contact) },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError,
-                ),
-            ) {
-                Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(text = "Удалить", modifier = Modifier.padding(start = 6.dp))
-            }
-        }
+                OutlinedButton(
+                    onClick = { component.onRefreshDetail() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(text = "Обновить", modifier = Modifier.padding(start = 6.dp))
+                }
 
-        Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = {
+                        val path = showSaveFileDialog(
+                            defaultName = "${contact.displayName}.json",
+                            ext = "json",
+                            desc = "JSON-файл",
+                        )
+                        if (path != null) {
+                            component.onExportContactToJson(contact, path)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(text = "Экспорт JSON", modifier = Modifier.padding(start = 6.dp))
+                }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = {
-                    val path = showSaveFileDialog(
-                        defaultName = "${contact.displayName}.json",
-                        ext = "json",
-                        desc = "JSON-файл",
-                    )
-                    if (path != null) {
-                        component.onExportContactToJson(contact, path)
-                    }
-                },
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(text = "Экспорт JSON", modifier = Modifier.padding(start = 6.dp))
-            }
-            OutlinedButton(
-                onClick = {
-                    val path = showSaveFileDialog(
-                        defaultName = "${contact.displayName}.vcf",
-                        ext = "vcf",
-                        desc = "vCard-файл",
-                    )
-                    if (path != null) {
-                        component.onExportContactToVcf(contact, path)
-                    }
-                },
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(text = "Экспорт VCF", modifier = Modifier.padding(start = 6.dp))
+                OutlinedButton(
+                    onClick = {
+                        val path = showSaveFileDialog(
+                            defaultName = "${contact.displayName}.vcf",
+                            ext = "vcf",
+                            desc = "vCard-файл",
+                        )
+                        if (path != null) {
+                            component.onExportContactToVcf(contact, path)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(Icons.Outlined.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(text = "Экспорт VCF", modifier = Modifier.padding(start = 6.dp))
+                }
+
+                Button(
+                    onClick = { component.onRequestDelete(contact) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError,
+                    ),
+                ) {
+                    Icon(Icons.Filled.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Text(text = "Удалить", modifier = Modifier.padding(start = 6.dp))
+                }
             }
         }
 

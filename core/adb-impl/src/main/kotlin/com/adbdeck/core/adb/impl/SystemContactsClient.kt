@@ -1,6 +1,7 @@
 package com.adbdeck.core.adb.impl
 
 import com.adbdeck.core.adb.api.Contact
+import com.adbdeck.core.adb.api.ContactAccount
 import com.adbdeck.core.adb.api.ContactAddress
 import com.adbdeck.core.adb.api.ContactDetails
 import com.adbdeck.core.adb.api.ContactEmail
@@ -65,6 +66,39 @@ class SystemContactsClient(
     private val INSERT_ID_REGEX = Regex("""/(\d+)\s*${'$'}""")
 
     // ── Публичный API ─────────────────────────────────────────────────────────
+
+    override suspend fun getAvailableAccounts(
+        deviceId: String,
+        adbPath: String,
+    ): Result<List<ContactAccount>> = runCatchingPreserveCancellation {
+        withContext(Dispatchers.IO) {
+            val rows = queryRows(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                uri = "content://com.android.contacts/raw_contacts",
+                projection = "account_name:account_type",
+            )
+
+            val accounts = rows
+                .map { row ->
+                    ContactAccount(
+                        accountName = row["account_name"].orEmpty(),
+                        accountType = row["account_type"].orEmpty(),
+                    )
+                }
+                .filter { account ->
+                    account.isLocal || (account.accountName.isNotBlank() && account.accountType.isNotBlank())
+                }
+                .distinctBy { it.stableKey }
+                .sortedWith(compareBy<ContactAccount> { it.isLocal }.thenBy { it.uiLabel().lowercase() })
+                .toMutableList()
+
+            if (accounts.none { it.isLocal }) {
+                accounts.add(0, ContactAccount.local())
+            }
+            accounts
+        }
+    }
 
     override suspend fun getContacts(
         deviceId: String,
@@ -250,13 +284,13 @@ class SystemContactsClient(
         adbPath: String,
     ): Result<Unit> = runCatchingPreserveCancellation {
         withContext(Dispatchers.IO) {
-            // Шаг 1: создать raw_contact с пустым account (локальный контакт)
+            // Шаг 1: создать raw_contact в выбранном аккаунте (или локально, если поля пустые)
             val rawResult = processRunner.run(
                 adbPath, "-s", deviceId,
                 "shell", "content", "insert",
                 "--uri", "content://com.android.contacts/raw_contacts",
-                "--bind", "account_type:s:",
-                "--bind", "account_name:s:",
+                "--bind", "account_type:s:${contact.accountType}",
+                "--bind", "account_name:s:${contact.accountName}",
             )
 
             // Извлекаем rawContactId из вывода «result: uri=.../raw_contacts/123»
@@ -370,6 +404,8 @@ class SystemContactsClient(
                 emailType    = contact.emails.getOrNull(0)?.type  ?: EmailType.HOME,
                 organization = contact.organization,
                 notes        = contact.notes,
+                accountName  = contact.accountName,
+                accountType  = contact.accountType,
             )
 
             addContact(deviceId, newData, adbPath)

@@ -1,6 +1,7 @@
 package com.adbdeck.feature.contacts
 
 import com.adbdeck.core.adb.api.Contact
+import com.adbdeck.core.adb.api.ContactAccount
 import com.adbdeck.core.adb.api.EmailType
 import com.adbdeck.core.adb.api.PhoneType
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +29,9 @@ interface ContactsComponent {
     /** Обновить поисковый запрос и отфильтровать список. */
     fun onSearchChanged(query: String)
 
+    /** Выбрать аккаунт по умолчанию для создания/импорта контактов. */
+    fun onSelectTargetAccount(account: ContactAccount)
+
     // ── Детали ──────────────────────────────────────────────────────────────
 
     /** Выбрать контакт и загрузить его детальную информацию. */
@@ -49,6 +53,9 @@ interface ContactsComponent {
 
     /** Изменить поле "Фамилия" в форме добавления. */
     fun onAddFormLastNameChanged(value: String)
+
+    /** Изменить аккаунт в форме добавления. */
+    fun onAddFormAccountChanged(account: ContactAccount)
 
     /** Изменить первый телефон в форме добавления. */
     fun onAddFormPhone1Changed(value: String)
@@ -132,6 +139,11 @@ interface ContactsComponent {
      * @param path Абсолютный путь к VCF-файлу.
      */
     fun onImportFromVcf(path: String)
+
+    // ── Длительные операции ─────────────────────────────────────────────────
+
+    /** Отменить текущую длительную операцию импорта/экспорта. */
+    fun onCancelOperation()
 
     // ── Feedback ─────────────────────────────────────────────────────────────
 

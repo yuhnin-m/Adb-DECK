@@ -14,6 +14,7 @@ import com.adbdeck.app.navigation.Screen
 import com.adbdeck.core.adb.api.AppPackage
 import com.adbdeck.core.adb.api.AdbDevice
 import com.adbdeck.core.adb.api.Contact
+import com.adbdeck.core.adb.api.ContactAccount
 import com.adbdeck.core.adb.api.DeviceEndpoint
 import com.adbdeck.core.adb.api.DeviceState
 import com.adbdeck.core.adb.api.EmailType
@@ -261,12 +262,14 @@ private class PreviewContactsComponent : ContactsComponent {
     override val state: StateFlow<ContactsState> = MutableStateFlow(ContactsState())
     override fun onRefresh() = Unit
     override fun onSearchChanged(query: String) = Unit
+    override fun onSelectTargetAccount(account: ContactAccount) = Unit
     override fun onSelectContact(contact: Contact) = Unit
     override fun onCloseDetail() = Unit
     override fun onRefreshDetail() = Unit
     override fun onShowAddForm() = Unit
     override fun onAddFormFirstNameChanged(value: String) = Unit
     override fun onAddFormLastNameChanged(value: String) = Unit
+    override fun onAddFormAccountChanged(account: ContactAccount) = Unit
     override fun onAddFormPhone1Changed(value: String) = Unit
     override fun onAddFormPhone1TypeChanged(type: PhoneType) = Unit
     override fun onAddFormPhone2Changed(value: String) = Unit
@@ -286,6 +289,7 @@ private class PreviewContactsComponent : ContactsComponent {
     override fun onExportContactToVcf(contact: Contact, path: String) = Unit
     override fun onImportFromJson(path: String) = Unit
     override fun onImportFromVcf(path: String) = Unit
+    override fun onCancelOperation() = Unit
     override fun onDismissFeedback() = Unit
 }
 

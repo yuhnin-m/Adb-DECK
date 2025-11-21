@@ -1,6 +1,7 @@
 package com.adbdeck.feature.contacts
 
 import com.adbdeck.core.adb.api.Contact
+import com.adbdeck.core.adb.api.ContactAccount
 import com.adbdeck.core.adb.api.ContactDetails
 import com.adbdeck.core.adb.api.ContactImportData
 import com.adbdeck.core.adb.api.ContactsClient
@@ -18,6 +19,7 @@ import com.adbdeck.feature.contacts.io.toImportData
 import com.adbdeck.feature.contacts.io.toJsonEntry
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,21 +28,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 /**
  * Реализация [ContactsComponent].
  *
- * Архитектура:
- * 1. `init` — подписывается на [DeviceManager.selectedDeviceFlow].
- * 2. При изменении устройства перезапускает загрузку списка контактов.
- * 3. Все ADB-операции выполняются в [scope] с проверкой [isRequestStillValid].
- * 4. Экспорт/импорт: файловые пути передаются из UI-слоя (JFileChooser).
- * 5. Feedback-уведомления автоматически скрываются через 3 секунды.
- *
- * @param componentContext   Контекст Decompose (lifecycle, coroutineScope).
- * @param deviceManager      Менеджер устройств (источник активного устройства).
- * @param contactsClient     ADB-клиент для операций с контактами.
- * @param settingsRepository Репозиторий настроек (путь к adb).
+ * Особенности:
+ * - синхронизируется с текущим active device из [DeviceManager];
+ * - поддерживает выбор аккаунта для создания/импорта контактов;
+ * - для длительных операций (импорт/экспорт) показывает модальный прогресс с логом;
+ * - при дисконнекте или переключении устройства корректно прерывает операции.
  */
 class DefaultContactsComponent(
     componentContext: ComponentContext,
@@ -68,6 +66,9 @@ class DefaultContactsComponent(
     /** Job загрузки деталей контакта. */
     private var detailJob: Job? = null
 
+    /** Job длительной операции (импорт/экспорт). */
+    private var operationJob: Job? = null
+
     /** Job автоочистки feedback-уведомления. */
     private var feedbackJob: Job? = null
 
@@ -81,16 +82,30 @@ class DefaultContactsComponent(
             deviceManager.selectedDeviceFlow.collect { device ->
                 when {
                     device == null || device.state != DeviceState.DEVICE -> {
+                        val hadRunningOperation = operationJob?.isActive == true
                         loadJob?.cancel()
                         detailJob?.cancel()
+                        operationJob?.cancel(CancellationException("Операция прервана: устройство недоступно."))
                         activeDeviceId = null
                         _state.update {
                             it.copy(
-                                listState          = ContactsListState.NoDevice,
-                                filteredContacts   = emptyList(),
-                                selectedContactId  = null,
-                                detailState        = ContactDetailState.Idle,
+                                listState = ContactsListState.NoDevice,
+                                filteredContacts = emptyList(),
+                                availableAccounts = listOf(ContactAccount.local()),
+                                selectedAccount = ContactAccount.local(),
+                                selectedContactId = null,
+                                detailState = ContactDetailState.Idle,
+                                addForm = null,
                                 pendingDeleteContact = null,
+                                operationState = null,
+                            )
+                        }
+                        if (hadRunningOperation) {
+                            showFeedback(
+                                ContactFeedback(
+                                    message = "Операция прервана: устройство отключено или недоступно",
+                                    isError = true,
+                                ),
                             )
                         }
                     }
@@ -100,11 +115,17 @@ class DefaultContactsComponent(
                         val needsReload = _state.value.listState !is ContactsListState.Success
                         if (isDeviceChanged) {
                             detailJob?.cancel()
+                            if (operationJob?.isActive == true) {
+                                operationJob?.cancel(
+                                    CancellationException("Операция прервана: выбрано другое устройство."),
+                                )
+                            }
                             _state.update {
                                 it.copy(
-                                    selectedContactId    = null,
-                                    detailState          = ContactDetailState.Idle,
+                                    selectedContactId = null,
+                                    detailState = ContactDetailState.Idle,
                                     pendingDeleteContact = null,
+                                    operationState = null,
                                 )
                             }
                         }
@@ -126,6 +147,31 @@ class DefaultContactsComponent(
         loadContacts()
     }
 
+    override fun onSearchChanged(query: String) {
+        _state.update { current ->
+            val allContacts = (current.listState as? ContactsListState.Success)?.contacts ?: return
+            current.copy(
+                searchQuery = query,
+                filteredContacts = applySearch(allContacts, query),
+            )
+        }
+    }
+
+    override fun onSelectTargetAccount(account: ContactAccount) {
+        _state.update { current ->
+            val resolved = current.availableAccounts.firstOrNull { it.stableKey == account.stableKey }
+                ?: current.selectedAccount
+            val updatedForm = current.addForm?.copy(
+                accountName = resolved.accountName,
+                accountType = resolved.accountType,
+            )
+            current.copy(
+                selectedAccount = resolved,
+                addForm = updatedForm,
+            )
+        }
+    }
+
     private fun loadContacts() {
         loadJob?.cancel()
         loadJob = scope.launch {
@@ -140,15 +186,48 @@ class DefaultContactsComponent(
             contactsClient.getContacts(deviceId = requestDeviceId, adbPath = adbPath)
                 .onSuccess { contacts ->
                     if (!isRequestStillValid(requestDeviceId)) return@onSuccess
+
+                    val accounts = contactsClient.getAvailableAccounts(
+                        deviceId = requestDeviceId,
+                        adbPath = adbPath,
+                    ).getOrElse { error ->
+                        if (isRequestStillValid(requestDeviceId)) {
+                            showFeedback(
+                                ContactFeedback(
+                                    message = "Не удалось загрузить аккаунты контактов: ${error.message}",
+                                    isError = true,
+                                ),
+                            )
+                        }
+                        listOf(ContactAccount.local())
+                    }.ifEmpty { listOf(ContactAccount.local()) }
+
                     _state.update { current ->
                         val selectedStillExists =
                             current.selectedContactId != null &&
                                 contacts.any { it.id == current.selectedContactId }
+                        val selectedAccount = selectAccountForState(
+                            currentSelected = current.selectedAccount,
+                            availableAccounts = accounts,
+                        )
+                        val updatedAddForm = current.addForm?.let { form ->
+                            val formAccount = accounts.firstOrNull {
+                                it.accountName == form.accountName &&
+                                    it.accountType == form.accountType
+                            } ?: selectedAccount
+                            form.copy(
+                                accountName = formAccount.accountName,
+                                accountType = formAccount.accountType,
+                            )
+                        }
                         current.copy(
-                            listState         = ContactsListState.Success(contacts),
-                            filteredContacts  = applySearch(contacts, current.searchQuery),
+                            listState = ContactsListState.Success(contacts),
+                            filteredContacts = applySearch(contacts, current.searchQuery),
+                            availableAccounts = accounts,
+                            selectedAccount = selectedAccount,
                             selectedContactId = if (selectedStillExists) current.selectedContactId else null,
-                            detailState       = if (selectedStillExists) current.detailState else ContactDetailState.Idle,
+                            detailState = if (selectedStillExists) current.detailState else ContactDetailState.Idle,
+                            addForm = updatedAddForm,
                         )
                     }
                 }
@@ -156,21 +235,13 @@ class DefaultContactsComponent(
                     if (!isRequestStillValid(requestDeviceId)) return@onFailure
                     _state.update {
                         it.copy(
-                            listState        = ContactsListState.Error(error.message ?: "Неизвестная ошибка"),
+                            listState = ContactsListState.Error(error.message ?: "Неизвестная ошибка"),
                             filteredContacts = emptyList(),
+                            availableAccounts = listOf(ContactAccount.local()),
+                            selectedAccount = ContactAccount.local(),
                         )
                     }
                 }
-        }
-    }
-
-    override fun onSearchChanged(query: String) {
-        _state.update { current ->
-            val allContacts = (current.listState as? ContactsListState.Success)?.contacts ?: return
-            current.copy(
-                searchQuery      = query,
-                filteredContacts = applySearch(allContacts, query),
-            )
         }
     }
 
@@ -197,7 +268,7 @@ class DefaultContactsComponent(
         _state.update {
             it.copy(
                 selectedContactId = contact.id,
-                detailState       = ContactDetailState.Loading,
+                detailState = ContactDetailState.Loading,
             )
         }
 
@@ -211,7 +282,7 @@ class DefaultContactsComponent(
         _state.update {
             it.copy(
                 selectedContactId = null,
-                detailState       = ContactDetailState.Idle,
+                detailState = ContactDetailState.Idle,
             )
         }
     }
@@ -247,7 +318,15 @@ class DefaultContactsComponent(
     // ── Форма добавления ──────────────────────────────────────────────────────
 
     override fun onShowAddForm() {
-        _state.update { it.copy(addForm = AddContactFormState()) }
+        val selected = _state.value.selectedAccount
+        _state.update {
+            it.copy(
+                addForm = AddContactFormState(
+                    accountName = selected.accountName,
+                    accountType = selected.accountType,
+                ),
+            )
+        }
     }
 
     override fun onAddFormFirstNameChanged(value: String) {
@@ -256,6 +335,17 @@ class DefaultContactsComponent(
 
     override fun onAddFormLastNameChanged(value: String) {
         _state.update { it.copy(addForm = it.addForm?.copy(lastName = value)) }
+    }
+
+    override fun onAddFormAccountChanged(account: ContactAccount) {
+        _state.update {
+            it.copy(
+                addForm = it.addForm?.copy(
+                    accountName = account.accountName,
+                    accountType = account.accountType,
+                ),
+            )
+        }
     }
 
     override fun onAddFormPhone1Changed(value: String) {
@@ -294,7 +384,6 @@ class DefaultContactsComponent(
         val form = _state.value.addForm ?: return
         if (form.isSubmitting) return
 
-        // Валидация: хотя бы одно из полей имени обязательно
         if (form.firstName.isBlank() && form.lastName.isBlank()) {
             _state.update {
                 it.copy(addForm = form.copy(error = "Введите имя или фамилию"))
@@ -303,19 +392,20 @@ class DefaultContactsComponent(
         }
 
         val displayName = buildDisplayName(form.firstName.trim(), form.lastName.trim())
-
         val contact = NewContactData(
-            firstName    = form.firstName.trim(),
-            lastName     = form.lastName.trim(),
-            displayName  = displayName,
-            phone1       = form.phone1.trim(),
-            phone1Type   = form.phone1Type,
-            phone2       = form.phone2.trim(),
-            phone2Type   = form.phone2Type,
-            email        = form.email.trim(),
-            emailType    = form.emailType,
+            firstName = form.firstName.trim(),
+            lastName = form.lastName.trim(),
+            displayName = displayName,
+            phone1 = form.phone1.trim(),
+            phone1Type = form.phone1Type,
+            phone2 = form.phone2.trim(),
+            phone2Type = form.phone2Type,
+            email = form.email.trim(),
+            emailType = form.emailType,
             organization = form.organization.trim(),
-            notes        = form.notes.trim(),
+            notes = form.notes.trim(),
+            accountName = form.accountName,
+            accountType = form.accountType,
         )
 
         _state.update { it.copy(addForm = form.copy(isSubmitting = true, error = null)) }
@@ -330,13 +420,23 @@ class DefaultContactsComponent(
 
             contactsClient.addContact(deviceId, contact, adbPath)
                 .onSuccess {
-                    if (!isRequestStillValid(deviceId)) return@onSuccess
+                    if (!isRequestStillValid(deviceId)) {
+                        _state.update {
+                            it.copy(addForm = it.addForm?.copy(isSubmitting = false, error = "Устройство отключено"))
+                        }
+                        return@onSuccess
+                    }
                     _state.update { it.copy(addForm = null) }
                     showFeedback(ContactFeedback("Контакт «$displayName» добавлен", isError = false))
-                    loadContacts() // Перезагрузить список
+                    loadContacts()
                 }
                 .onFailure { error ->
-                    if (!isRequestStillValid(deviceId)) return@onFailure
+                    if (!isRequestStillValid(deviceId)) {
+                        _state.update {
+                            it.copy(addForm = it.addForm?.copy(isSubmitting = false, error = "Устройство отключено"))
+                        }
+                        return@onFailure
+                    }
                     _state.update {
                         it.copy(
                             addForm = it.addForm?.copy(
@@ -371,16 +471,15 @@ class DefaultContactsComponent(
                 contactsClient.deleteContact(deviceId, contact.id, adbPath)
                     .onSuccess {
                         if (!isRequestStillValid(deviceId)) return@onSuccess
-                        // Убрать контакт из списка без полной перезагрузки
                         _state.update { current ->
                             val allContacts = (current.listState as? ContactsListState.Success)
                                 ?.contacts?.filter { it.id != contact.id }
                                 ?: return@update current
                             current.copy(
-                                listState         = ContactsListState.Success(allContacts),
-                                filteredContacts  = applySearch(allContacts, current.searchQuery),
+                                listState = ContactsListState.Success(allContacts),
+                                filteredContacts = applySearch(allContacts, current.searchQuery),
                                 selectedContactId = if (current.selectedContactId == contact.id) null else current.selectedContactId,
-                                detailState       = if (current.selectedContactId == contact.id) ContactDetailState.Idle else current.detailState,
+                                detailState = if (current.selectedContactId == contact.id) ContactDetailState.Idle else current.detailState,
                             )
                         }
                         showFeedback(ContactFeedback("Контакт «${contact.displayName}» удалён", isError = false))
@@ -402,168 +501,212 @@ class DefaultContactsComponent(
     // ── Экспорт ───────────────────────────────────────────────────────────────
 
     override fun onExportAllToJson(path: String) {
-        scope.launch {
-            _state.update { it.copy(isActionRunning = true) }
-            try {
-                val (deviceId, adbPath) = requireDeviceAndPath() ?: return@launch
-                val contacts = (state.value.listState as? ContactsListState.Success)
-                    ?.contacts ?: return@launch
-
-                // Загружаем полные детали для всех контактов
-                val details = mutableListOf<ContactDetails>()
-                for (c in contacts) {
-                    contactsClient.getContactDetails(deviceId, c.id, adbPath)
-                        .onSuccess { details += it }
-                }
-
-                if (!isRequestStillValid(deviceId)) return@launch
-
-                val file = ContactsJsonFile(contacts = details.map { it.toJsonEntry() })
-                val jsonText = json.encodeToString(ContactsJsonFile.serializer(), file)
-                ContactIoService.writeText(path, jsonText)
-                showFeedback(ContactFeedback("Экспортировано ${details.size} контактов в JSON", isError = false))
-            } catch (e: Exception) {
-                showFeedback(ContactFeedback("Ошибка экспорта: ${e.message}", isError = true))
-            } finally {
-                _state.update { it.copy(isActionRunning = false) }
+        launchLongOperation(title = "Экспорт контактов в JSON") { deviceId, adbPath ->
+            val contacts = (state.value.listState as? ContactsListState.Success)?.contacts.orEmpty()
+            if (contacts.isEmpty()) {
+                error("Список контактов пуст. Нечего экспортировать.")
             }
+
+            appendOperationLog("Найдено контактов: ${contacts.size}")
+            val details = mutableListOf<ContactDetails>()
+            contacts.forEachIndexed { index, contact ->
+                ensureDeviceStillConnected(deviceId)
+                updateOperationProgress(
+                    status = "Чтение контактов ${index + 1}/${contacts.size}",
+                    currentStep = index + 1,
+                    totalSteps = contacts.size,
+                )
+                appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
+                val detailsResult = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
+                    .getOrElse { throwable ->
+                        error("Не удалось прочитать контакт «${contact.displayName}»: ${throwable.message}")
+                    }
+                details += detailsResult
+            }
+
+            updateOperationStatus("Запись файла JSON...", isIndeterminate = true)
+            appendOperationLog("Сохранение файла: $path")
+            val file = ContactsJsonFile(contacts = details.map { it.toJsonEntry() })
+            val jsonText = json.encodeToString(ContactsJsonFile.serializer(), file)
+            ContactIoService.writeText(path, jsonText)
+
+            appendOperationLog("Экспорт завершён: ${details.size} контактов")
+            showFeedback(ContactFeedback("Экспортировано ${details.size} контактов в JSON", isError = false))
         }
     }
 
     override fun onExportAllToVcf(path: String) {
-        scope.launch {
-            _state.update { it.copy(isActionRunning = true) }
-            try {
-                val (deviceId, adbPath) = requireDeviceAndPath() ?: return@launch
-                val contacts = (state.value.listState as? ContactsListState.Success)
-                    ?.contacts ?: return@launch
-
-                val details = mutableListOf<ContactDetails>()
-                for (c in contacts) {
-                    contactsClient.getContactDetails(deviceId, c.id, adbPath)
-                        .onSuccess { details += it }
-                }
-
-                if (!isRequestStillValid(deviceId)) return@launch
-
-                val vcfText = VcfSerializer.serializeAll(details)
-                ContactIoService.writeText(path, vcfText)
-                showFeedback(ContactFeedback("Экспортировано ${details.size} контактов в VCF", isError = false))
-            } catch (e: Exception) {
-                showFeedback(ContactFeedback("Ошибка экспорта: ${e.message}", isError = true))
-            } finally {
-                _state.update { it.copy(isActionRunning = false) }
+        launchLongOperation(title = "Экспорт контактов в VCF") { deviceId, adbPath ->
+            val contacts = (state.value.listState as? ContactsListState.Success)?.contacts.orEmpty()
+            if (contacts.isEmpty()) {
+                error("Список контактов пуст. Нечего экспортировать.")
             }
+
+            appendOperationLog("Найдено контактов: ${contacts.size}")
+            val details = mutableListOf<ContactDetails>()
+            contacts.forEachIndexed { index, contact ->
+                ensureDeviceStillConnected(deviceId)
+                updateOperationProgress(
+                    status = "Чтение контактов ${index + 1}/${contacts.size}",
+                    currentStep = index + 1,
+                    totalSteps = contacts.size,
+                )
+                appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
+                val detailsResult = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
+                    .getOrElse { throwable ->
+                        error("Не удалось прочитать контакт «${contact.displayName}»: ${throwable.message}")
+                    }
+                details += detailsResult
+            }
+
+            updateOperationStatus("Запись файла VCF...", isIndeterminate = true)
+            appendOperationLog("Сохранение файла: $path")
+            val vcfText = VcfSerializer.serializeAll(details)
+            ContactIoService.writeText(path, vcfText)
+
+            appendOperationLog("Экспорт завершён: ${details.size} контактов")
+            showFeedback(ContactFeedback("Экспортировано ${details.size} контактов в VCF", isError = false))
         }
     }
 
     override fun onExportContactToJson(contact: Contact, path: String) {
-        scope.launch {
-            _state.update { it.copy(isActionRunning = true) }
-            try {
-                val (deviceId, adbPath) = requireDeviceAndPath() ?: return@launch
+        launchLongOperation(title = "Экспорт контакта в JSON") { deviceId, adbPath ->
+            ensureDeviceStillConnected(deviceId)
+            updateOperationProgress(
+                status = "Чтение контакта",
+                currentStep = 1,
+                totalSteps = 1,
+            )
+            appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
+            val details = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
+                .getOrElse { throwable ->
+                    error("Не удалось прочитать контакт: ${throwable.message}")
+                }
 
-                contactsClient.getContactDetails(deviceId, contact.id, adbPath)
-                    .onSuccess { details ->
-                        if (!isRequestStillValid(deviceId)) return@onSuccess
-                        val file = ContactsJsonFile(contacts = listOf(details.toJsonEntry()))
-                        val jsonText = json.encodeToString(ContactsJsonFile.serializer(), file)
-                        ContactIoService.writeText(path, jsonText)
-                        showFeedback(ContactFeedback("Контакт экспортирован в JSON", isError = false))
-                    }
-                    .onFailure { e ->
-                        showFeedback(ContactFeedback("Ошибка экспорта: ${e.message}", isError = true))
-                    }
-            } catch (e: Exception) {
-                showFeedback(ContactFeedback("Ошибка экспорта: ${e.message}", isError = true))
-            } finally {
-                _state.update { it.copy(isActionRunning = false) }
-            }
+            updateOperationStatus("Запись файла JSON...", isIndeterminate = true)
+            appendOperationLog("Сохранение файла: $path")
+            val file = ContactsJsonFile(contacts = listOf(details.toJsonEntry()))
+            val jsonText = json.encodeToString(ContactsJsonFile.serializer(), file)
+            ContactIoService.writeText(path, jsonText)
+
+            appendOperationLog("Экспорт завершён")
+            showFeedback(ContactFeedback("Контакт экспортирован в JSON", isError = false))
         }
     }
 
     override fun onExportContactToVcf(contact: Contact, path: String) {
-        scope.launch {
-            _state.update { it.copy(isActionRunning = true) }
-            try {
-                val (deviceId, adbPath) = requireDeviceAndPath() ?: return@launch
+        launchLongOperation(title = "Экспорт контакта в VCF") { deviceId, adbPath ->
+            ensureDeviceStillConnected(deviceId)
+            updateOperationProgress(
+                status = "Чтение контакта",
+                currentStep = 1,
+                totalSteps = 1,
+            )
+            appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
+            val details = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
+                .getOrElse { throwable ->
+                    error("Не удалось прочитать контакт: ${throwable.message}")
+                }
 
-                contactsClient.getContactDetails(deviceId, contact.id, adbPath)
-                    .onSuccess { details ->
-                        if (!isRequestStillValid(deviceId)) return@onSuccess
-                        val vcfText = VcfSerializer.serialize(details)
-                        ContactIoService.writeText(path, vcfText)
-                        showFeedback(ContactFeedback("Контакт экспортирован в VCF", isError = false))
-                    }
-                    .onFailure { e ->
-                        showFeedback(ContactFeedback("Ошибка экспорта: ${e.message}", isError = true))
-                    }
-            } catch (e: Exception) {
-                showFeedback(ContactFeedback("Ошибка экспорта: ${e.message}", isError = true))
-            } finally {
-                _state.update { it.copy(isActionRunning = false) }
-            }
+            updateOperationStatus("Запись файла VCF...", isIndeterminate = true)
+            appendOperationLog("Сохранение файла: $path")
+            val vcfText = VcfSerializer.serialize(details)
+            ContactIoService.writeText(path, vcfText)
+
+            appendOperationLog("Экспорт завершён")
+            showFeedback(ContactFeedback("Контакт экспортирован в VCF", isError = false))
         }
     }
 
     // ── Импорт ────────────────────────────────────────────────────────────────
 
     override fun onImportFromJson(path: String) {
-        scope.launch {
-            _state.update { it.copy(isActionRunning = true) }
-            try {
-                val (deviceId, adbPath) = requireDeviceAndPath() ?: return@launch
-                val text = ContactIoService.readText(path)
-                val file = json.decodeFromString(ContactsJsonFile.serializer(), text)
-                val importData: List<ContactImportData> = file.contacts.map { it.toImportData() }
-
-                contactsClient.importContacts(deviceId, importData, adbPath)
-                    .onSuccess { result ->
-                        if (!isRequestStillValid(deviceId)) return@onSuccess
-                        val msg = "Импортировано: ${result.successCount}, ошибок: ${result.failedCount}"
-                        showFeedback(ContactFeedback(msg, isError = result.failedCount > 0))
-                        loadContacts()
-                    }
-                    .onFailure { e ->
-                        showFeedback(ContactFeedback("Ошибка импорта: ${e.message}", isError = true))
-                    }
-            } catch (e: Exception) {
-                showFeedback(ContactFeedback("Ошибка чтения файла: ${e.message}", isError = true))
-            } finally {
-                _state.update { it.copy(isActionRunning = false) }
-            }
+        launchLongOperation(title = "Импорт контактов из JSON") { deviceId, adbPath ->
+            updateOperationStatus("Чтение JSON-файла...", isIndeterminate = true)
+            appendOperationLog("Чтение файла: $path")
+            val text = ContactIoService.readText(path)
+            val file = json.decodeFromString(ContactsJsonFile.serializer(), text)
+            val importData = file.contacts.map { it.toImportData() }
+            importContactsWithProgress(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                importData = importData,
+            )
         }
     }
 
     override fun onImportFromVcf(path: String) {
-        scope.launch {
-            _state.update { it.copy(isActionRunning = true) }
-            try {
-                val (deviceId, adbPath) = requireDeviceAndPath() ?: return@launch
-                val text = ContactIoService.readText(path)
-                val importData = VcfParser.parse(text)
-
-                if (importData.isEmpty()) {
-                    showFeedback(ContactFeedback("VCF-файл не содержит распознанных контактов", isError = true))
-                    return@launch
-                }
-
-                contactsClient.importContacts(deviceId, importData, adbPath)
-                    .onSuccess { result ->
-                        if (!isRequestStillValid(deviceId)) return@onSuccess
-                        val msg = "Импортировано: ${result.successCount}, ошибок: ${result.failedCount}"
-                        showFeedback(ContactFeedback(msg, isError = result.failedCount > 0))
-                        loadContacts()
-                    }
-                    .onFailure { e ->
-                        showFeedback(ContactFeedback("Ошибка импорта: ${e.message}", isError = true))
-                    }
-            } catch (e: Exception) {
-                showFeedback(ContactFeedback("Ошибка чтения файла: ${e.message}", isError = true))
-            } finally {
-                _state.update { it.copy(isActionRunning = false) }
-            }
+        launchLongOperation(title = "Импорт контактов из VCF") { deviceId, adbPath ->
+            updateOperationStatus("Чтение VCF-файла...", isIndeterminate = true)
+            appendOperationLog("Чтение файла: $path")
+            val text = ContactIoService.readText(path)
+            val importData = VcfParser.parse(text)
+            importContactsWithProgress(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                importData = importData,
+            )
         }
+    }
+
+    override fun onCancelOperation() {
+        operationJob?.cancel(CancellationException("Операция отменена пользователем."))
+    }
+
+    private suspend fun importContactsWithProgress(
+        deviceId: String,
+        adbPath: String,
+        importData: List<ContactImportData>,
+    ) {
+        if (importData.isEmpty()) {
+            error("Файл не содержит распознанных контактов.")
+        }
+
+        val account = _state.value.selectedAccount
+        appendOperationLog("Контактов к импорту: ${importData.size}")
+        appendOperationLog("Аккаунт назначения: ${account.uiLabel()}")
+
+        var successCount = 0
+        var failedCount = 0
+        importData.forEachIndexed { index, source ->
+            ensureDeviceStillConnected(deviceId)
+            updateOperationProgress(
+                status = "Импорт контактов ${index + 1}/${importData.size}",
+                currentStep = index + 1,
+                totalSteps = importData.size,
+            )
+            val titledName = source.displayName.ifBlank {
+                buildDisplayName(source.firstName, source.lastName).ifBlank { "Без имени" }
+            }
+            appendOperationLog("Импорт: $titledName")
+
+            val prepared = source.copy(
+                accountName = account.accountName,
+                accountType = account.accountType,
+            )
+            contactsClient.addContact(deviceId, prepared.toNewContactData(), adbPath)
+                .onSuccess {
+                    successCount++
+                    appendOperationLog("Успех: $titledName")
+                }
+                .onFailure { error ->
+                    failedCount++
+                    appendOperationLog("Ошибка: $titledName — ${error.message ?: "неизвестная ошибка"}")
+                }
+        }
+
+        if (successCount == 0 && failedCount > 0) {
+            error("Не удалось импортировать ни одного контакта. Проверьте аккаунт и права Contacts Provider.")
+        }
+
+        appendOperationLog("Импорт завершён: успехов=$successCount, ошибок=$failedCount")
+        showFeedback(
+            ContactFeedback(
+                message = "Импортировано: $successCount, ошибок: $failedCount",
+                isError = failedCount > 0,
+            ),
+        )
+        loadContacts()
     }
 
     // ── Feedback ──────────────────────────────────────────────────────────────
@@ -578,10 +721,12 @@ class DefaultContactsComponent(
     private fun adbPath(): String =
         settingsRepository.getSettings().adbPath.ifBlank { "adb" }
 
-    private fun requireDeviceAndPath(): Pair<String, String>? {
+    private fun requireDeviceAndPath(showFeedbackOnError: Boolean = true): Pair<String, String>? {
         val device = deviceManager.selectedDeviceFlow.value
         if (device == null || device.state != DeviceState.DEVICE) {
-            showFeedback(ContactFeedback("Устройство не выбрано или недоступно", isError = true))
+            if (showFeedbackOnError) {
+                showFeedback(ContactFeedback("Устройство не выбрано или недоступно", isError = true))
+            }
             return null
         }
         return device.deviceId to adbPath()
@@ -604,6 +749,134 @@ class DefaultContactsComponent(
             activeDeviceId == deviceId
     }
 
+    private fun ensureDeviceStillConnected(deviceId: String) {
+        if (!isRequestStillValid(deviceId)) {
+            throw IllegalStateException("Устройство отключено или переключено во время операции.")
+        }
+    }
+
+    private fun selectAccountForState(
+        currentSelected: ContactAccount,
+        availableAccounts: List<ContactAccount>,
+    ): ContactAccount {
+        return availableAccounts.firstOrNull { it.stableKey == currentSelected.stableKey }
+            ?: availableAccounts.firstOrNull { !it.isLocal }
+            ?: availableAccounts.firstOrNull()
+            ?: ContactAccount.local()
+    }
+
+    private fun launchLongOperation(
+        title: String,
+        block: suspend (deviceId: String, adbPath: String) -> Unit,
+    ) {
+        if (operationJob?.isActive == true) {
+            showFeedback(ContactFeedback("Уже выполняется другая операция", isError = true))
+            return
+        }
+
+        operationJob = scope.launch {
+            startOperation(title = title, status = "Подготовка...")
+            appendOperationLog("Операция запущена")
+            try {
+                val (deviceId, adbPath) = requireDeviceAndPath(showFeedbackOnError = false)
+                    ?: error("Устройство не выбрано или недоступно.")
+                block(deviceId, adbPath)
+            } catch (cancelled: CancellationException) {
+                val message = cancelled.message ?: "Операция отменена"
+                appendOperationLog(message)
+                showFeedback(ContactFeedback(message, isError = true))
+            } catch (error: Throwable) {
+                val message = error.message ?: "Неизвестная ошибка"
+                appendOperationLog("Ошибка: $message")
+                showFeedback(ContactFeedback(message, isError = true))
+            } finally {
+                _state.update { it.copy(operationState = null) }
+                operationJob = null
+            }
+        }
+    }
+
+    private fun startOperation(title: String, status: String) {
+        _state.update {
+            it.copy(
+                operationState = ContactsOperationState(
+                    title = title,
+                    status = status,
+                    isIndeterminate = true,
+                ),
+            )
+        }
+    }
+
+    private fun updateOperationStatus(
+        status: String,
+        isIndeterminate: Boolean,
+    ) {
+        _state.update { current ->
+            val operation = current.operationState ?: return@update current
+            current.copy(
+                operationState = operation.copy(
+                    status = status,
+                    isIndeterminate = isIndeterminate,
+                    currentStep = if (isIndeterminate) null else operation.currentStep,
+                    totalSteps = if (isIndeterminate) null else operation.totalSteps,
+                ),
+            )
+        }
+    }
+
+    private fun updateOperationProgress(
+        status: String,
+        currentStep: Int,
+        totalSteps: Int,
+    ) {
+        _state.update { current ->
+            val operation = current.operationState ?: return@update current
+            current.copy(
+                operationState = operation.copy(
+                    status = status,
+                    currentStep = currentStep,
+                    totalSteps = totalSteps,
+                    isIndeterminate = false,
+                ),
+            )
+        }
+    }
+
+    private fun appendOperationLog(message: String) {
+        val timestamp = LocalTime.now().format(OPERATION_TIME_FORMAT)
+        _state.update { current ->
+            val operation = current.operationState ?: return@update current
+            val newLogs = (operation.logs + "[$timestamp] $message").takeLast(300)
+            current.copy(operationState = operation.copy(logs = newLogs))
+        }
+    }
+
     private fun buildDisplayName(firstName: String, lastName: String): String =
-        listOf(firstName, lastName).filter { it.isNotEmpty() }.joinToString(" ")
+        listOf(firstName, lastName).map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" ")
+
+    private fun ContactImportData.toNewContactData(): NewContactData {
+        val normalizedDisplayName = displayName.ifBlank {
+            buildDisplayName(firstName, lastName)
+        }
+        return NewContactData(
+            firstName = firstName,
+            lastName = lastName,
+            displayName = normalizedDisplayName.ifBlank { "Без имени" },
+            phone1 = phones.getOrNull(0)?.value.orEmpty(),
+            phone1Type = phones.getOrNull(0)?.type ?: PhoneType.MOBILE,
+            phone2 = phones.getOrNull(1)?.value.orEmpty(),
+            phone2Type = phones.getOrNull(1)?.type ?: PhoneType.MOBILE,
+            email = emails.getOrNull(0)?.value.orEmpty(),
+            emailType = emails.getOrNull(0)?.type ?: EmailType.HOME,
+            organization = organization,
+            notes = notes,
+            accountName = accountName,
+            accountType = accountType,
+        )
+    }
+
+    private companion object {
+        val OPERATION_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+    }
 }

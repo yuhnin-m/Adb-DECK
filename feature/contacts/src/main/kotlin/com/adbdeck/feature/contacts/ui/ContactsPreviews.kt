@@ -3,6 +3,7 @@ package com.adbdeck.feature.contacts.ui
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
 import com.adbdeck.core.adb.api.Contact
+import com.adbdeck.core.adb.api.ContactAccount
 import com.adbdeck.core.adb.api.ContactDetails
 import com.adbdeck.core.adb.api.ContactEmail
 import com.adbdeck.core.adb.api.ContactOrganization
@@ -75,12 +76,14 @@ private class PreviewContactsComponent(
 ) : ContactsComponent {
     override fun onRefresh()                             = Unit
     override fun onSearchChanged(query: String)          = Unit
+    override fun onSelectTargetAccount(account: ContactAccount) = Unit
     override fun onSelectContact(contact: Contact)       = Unit
     override fun onCloseDetail()                         = Unit
     override fun onRefreshDetail()                       = Unit
     override fun onShowAddForm()                         = Unit
     override fun onAddFormFirstNameChanged(value: String)  = Unit
     override fun onAddFormLastNameChanged(value: String)   = Unit
+    override fun onAddFormAccountChanged(account: ContactAccount) = Unit
     override fun onAddFormPhone1Changed(value: String)     = Unit
     override fun onAddFormPhone1TypeChanged(type: PhoneType) = Unit
     override fun onAddFormPhone2Changed(value: String)     = Unit
@@ -100,6 +103,7 @@ private class PreviewContactsComponent(
     override fun onExportContactToVcf(contact: Contact, path: String)  = Unit
     override fun onImportFromJson(path: String)            = Unit
     override fun onImportFromVcf(path: String)             = Unit
+    override fun onCancelOperation()                       = Unit
     override fun onDismissFeedback()                       = Unit
 }
 

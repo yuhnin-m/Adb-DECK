@@ -13,14 +13,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Refresh
@@ -34,6 +38,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -50,8 +55,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.Contact
+import com.adbdeck.core.adb.api.ContactAccount
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
@@ -59,6 +66,7 @@ import com.adbdeck.feature.contacts.ContactDetailState
 import com.adbdeck.feature.contacts.ContactFeedback
 import com.adbdeck.feature.contacts.ContactsComponent
 import com.adbdeck.feature.contacts.ContactsListState
+import com.adbdeck.feature.contacts.ContactsOperationState
 
 /**
  * Главный экран управления контактами Android-устройства.
@@ -83,6 +91,8 @@ fun ContactsScreen(component: ContactsComponent) {
             ContactsToolbar(
                 listState  = state.listState,
                 searchQuery = state.searchQuery,
+                accounts = state.availableAccounts,
+                selectedAccount = state.selectedAccount,
                 hasSelectedContact = state.selectedContactId != null,
                 selectedContact    = (state.listState as? ContactsListState.Success)
                     ?.contacts?.firstOrNull { it.id == state.selectedContactId },
@@ -156,7 +166,7 @@ fun ContactsScreen(component: ContactsComponent) {
             HorizontalDivider()
 
             // ── Строка состояния ──────────────────────────────────────────
-            ContactsStatusBar(listState = state.listState, isActionRunning = state.isActionRunning)
+            ContactsStatusBar(listState = state.listState)
         }
 
         // ── Feedback-баннер (поверх контента) ─────────────────────────────
@@ -167,11 +177,23 @@ fun ContactsScreen(component: ContactsComponent) {
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
+
+        // ── Модальное окно длительной операции ────────────────────────────
+        state.operationState?.let { operation ->
+            OperationProgressDialog(
+                operation = operation,
+                onCancel = { component.onCancelOperation() },
+            )
+        }
     }
 
     // ── Диалоги ───────────────────────────────────────────────────────────────
     state.addForm?.let { form ->
-        AddContactDialog(form = form, component = component)
+        AddContactDialog(
+            form = form,
+            availableAccounts = state.availableAccounts,
+            component = component,
+        )
     }
 
     state.pendingDeleteContact?.let { contact ->
@@ -193,6 +215,8 @@ fun ContactsScreen(component: ContactsComponent) {
 private fun ContactsToolbar(
     listState: ContactsListState,
     searchQuery: String,
+    accounts: List<ContactAccount>,
+    selectedAccount: ContactAccount,
     hasSelectedContact: Boolean,
     selectedContact: Contact?,
     component: ContactsComponent,
@@ -202,6 +226,7 @@ private fun ContactsToolbar(
     // Флаги для dropdown-меню
     var exportMenuExpanded by remember { mutableStateOf(false) }
     var importMenuExpanded by remember { mutableStateOf(false) }
+    var accountMenuExpanded by remember { mutableStateOf(false) }
 
     Row(
         modifier          = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
@@ -221,6 +246,32 @@ private fun ContactsToolbar(
         TextButton(onClick = { component.onShowAddForm() }) {
             Icon(Icons.Filled.PersonAdd, contentDescription = "Добавить контакт")
             Text(text = "Добавить", modifier = Modifier.padding(start = 6.dp))
+        }
+
+        Box {
+            TextButton(onClick = { accountMenuExpanded = true }) {
+                Icon(Icons.Filled.ManageAccounts, contentDescription = "Аккаунт")
+                Text(
+                    text = "Аккаунт: ${selectedAccount.uiLabel()}",
+                    modifier = Modifier.padding(start = 6.dp).width(220.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            DropdownMenu(
+                expanded = accountMenuExpanded,
+                onDismissRequest = { accountMenuExpanded = false },
+            ) {
+                accounts.forEach { account ->
+                    DropdownMenuItem(
+                        text = { Text(account.uiLabel()) },
+                        onClick = {
+                            accountMenuExpanded = false
+                            component.onSelectTargetAccount(account)
+                        },
+                    )
+                }
+            }
         }
 
         // Меню экспорта
@@ -411,7 +462,6 @@ private fun ContactRow(
 @Composable
 private fun ContactsStatusBar(
     listState: ContactsListState,
-    isActionRunning: Boolean,
 ) {
     Row(
         modifier          = Modifier
@@ -432,17 +482,6 @@ private fun ContactsStatusBar(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        if (isActionRunning) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 2.dp)
-                Text(
-                    text     = "Выполняется...",
-                    style    = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 4.dp),
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
     }
 }
 
@@ -536,4 +575,69 @@ private fun FeedbackBanner(
             )
         }
     }
+}
+
+@Composable
+private fun OperationProgressDialog(
+    operation: ContactsOperationState,
+    onCancel: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = { },
+        title = { Text(operation.title) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (operation.isIndeterminate) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                } else {
+                    val current = operation.currentStep ?: 0
+                    val total = operation.totalSteps ?: 1
+                    LinearProgressIndicator(
+                        progress = { (current.toFloat() / total.coerceAtLeast(1).toFloat()) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        text = "$current / $total",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                Text(
+                    text = operation.status,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+
+                Surface(
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        operation.logs.forEach { line ->
+                            Text(
+                                text = line,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = onCancel) {
+                Text("Отмена")
+            }
+        },
+    )
 }

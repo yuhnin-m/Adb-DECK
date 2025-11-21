@@ -125,6 +125,35 @@ data class RawContactInfo(
     val accountType: String,
 )
 
+/**
+ * Аккаунт контактов на устройстве (Google, Exchange, локальный и т.д.).
+ *
+ * @param accountName Имя аккаунта (например, `user@gmail.com`), пусто для локального.
+ * @param accountType Тип аккаунта (например, `com.google`), пусто для локального.
+ */
+data class ContactAccount(
+    val accountName: String,
+    val accountType: String,
+) {
+    /** Признак локального аккаунта (без синхронизации). */
+    val isLocal: Boolean get() = accountName.isBlank() && accountType.isBlank()
+
+    /** Стабильный ключ аккаунта для UI-идентификации. */
+    val stableKey: String get() = "${accountType}|${accountName}"
+
+    /** Подпись аккаунта для отображения в UI. */
+    fun uiLabel(): String = when {
+        isLocal -> "Локальный (без аккаунта)"
+        accountName.isNotBlank() -> "$accountName ($accountType)"
+        else -> accountType
+    }
+
+    companion object {
+        /** Локальный аккаунт по умолчанию. */
+        fun local(): ContactAccount = ContactAccount(accountName = "", accountType = "")
+    }
+}
+
 // ── Краткая запись для списка ─────────────────────────────────────────────────
 
 /**
@@ -199,6 +228,8 @@ data class ContactDetails(
  * @param emailType    Тип email.
  * @param organization Организация (пустая строка = не добавлять).
  * @param notes        Заметка (пустая строка = не добавлять).
+ * @param accountName  Имя аккаунта для raw_contact (пусто для локального).
+ * @param accountType  Тип аккаунта для raw_contact (пусто для локального).
  */
 data class NewContactData(
     val firstName: String,
@@ -212,6 +243,8 @@ data class NewContactData(
     val emailType: EmailType = EmailType.HOME,
     val organization: String = "",
     val notes: String = "",
+    val accountName: String = "",
+    val accountType: String = "",
 )
 
 // ── Данные для импорта ────────────────────────────────────────────────────────
@@ -226,6 +259,8 @@ data class NewContactData(
  * @param emails       Список email.
  * @param organization Название организации.
  * @param notes        Заметка.
+ * @param accountName  Имя аккаунта назначения (пусто для локального).
+ * @param accountType  Тип аккаунта назначения (пусто для локального).
  */
 data class ContactImportData(
     val displayName: String,
@@ -235,4 +270,6 @@ data class ContactImportData(
     val emails: List<ContactEmail> = emptyList(),
     val organization: String = "",
     val notes: String = "",
+    val accountName: String = "",
+    val accountType: String = "",
 )
