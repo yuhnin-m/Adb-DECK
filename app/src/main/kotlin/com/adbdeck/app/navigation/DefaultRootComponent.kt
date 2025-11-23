@@ -8,6 +8,7 @@ import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.adb.api.PackageClient
+import com.adbdeck.core.adb.api.ScreenToolsClient
 import com.adbdeck.core.adb.api.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.DefaultContactsComponent
@@ -16,6 +17,10 @@ import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.fileexplorer.DefaultFileExplorerComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
+import com.adbdeck.feature.screentools.DefaultScreenToolsComponent
+import com.adbdeck.feature.screentools.service.DefaultHostFileService
+import com.adbdeck.feature.screentools.service.DefaultScreenrecordService
+import com.adbdeck.feature.screentools.service.DefaultScreenshotService
 import com.adbdeck.feature.settings.DefaultSettingsComponent
 import com.adbdeck.feature.fileexplorer.service.DefaultDeviceFileService
 import com.adbdeck.feature.fileexplorer.service.DefaultFileTransferService
@@ -46,6 +51,7 @@ import com.arkivanov.decompose.value.Value
  * @param deviceControlClient  ADB-клиент управления устройством (перезагрузка, disconnect).
  * @param deviceFileClient     ADB-клиент файловых операций на устройстве.
  * @param contactsClient       ADB-клиент для работы с контактами.
+ * @param screenToolsClient    ADB-клиент для screenshot/screenrecord.
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -59,6 +65,7 @@ class DefaultRootComponent(
     private val deviceControlClient: DeviceControlClient,
     private val deviceFileClient: DeviceFileClient,
     private val contactsClient: ContactsClient,
+    private val screenToolsClient: ScreenToolsClient,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
@@ -196,6 +203,26 @@ class DefaultRootComponent(
                 contactsClient     = contactsClient,
                 settingsRepository = settingsRepository,
             )
+        )
+
+        is Screen.ScreenTools -> RootComponent.Child.ScreenTools(
+            run {
+                val screenshotService = DefaultScreenshotService(screenToolsClient)
+                val screenrecordService = DefaultScreenrecordService(
+                    screenToolsClient = screenToolsClient,
+                    deviceFileClient = deviceFileClient,
+                )
+                val hostFileService = DefaultHostFileService()
+
+                DefaultScreenToolsComponent(
+                    componentContext = componentContext,
+                    deviceManager = deviceManager,
+                    settingsRepository = settingsRepository,
+                    screenshotService = screenshotService,
+                    screenrecordService = screenrecordService,
+                    hostFileService = hostFileService,
+                )
+            }
         )
     }
 }

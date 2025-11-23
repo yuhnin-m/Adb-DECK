@@ -21,6 +21,7 @@ import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
 import com.adbdeck.core.adb.api.LogcatStreamer
 import com.adbdeck.core.adb.api.PackageClient
+import com.adbdeck.core.adb.api.ScreenToolsClient
 import com.adbdeck.core.adb.api.SystemMonitorClient
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.settings.AppTheme
@@ -66,6 +67,7 @@ fun main() = application {
         deviceControlClient = get(DeviceControlClient::class.java),
         deviceFileClient    = get(DeviceFileClient::class.java),
         contactsClient      = get(ContactsClient::class.java),
+        screenToolsClient   = get(ScreenToolsClient::class.java),
     )
 
     lifecycle.resume()

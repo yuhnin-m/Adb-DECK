@@ -91,6 +91,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.FileExplorer) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.CameraAlt,
+            label = "Screen Tools",
+            isActive = activeScreen is Screen.ScreenTools,
+            onClick = { onNavigate(Screen.ScreenTools) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Contacts,
             label = "Contacts",
             isActive = activeScreen is Screen.Contacts,

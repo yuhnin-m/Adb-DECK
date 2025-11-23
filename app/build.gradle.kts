@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":feature:system-monitor"))
     implementation(project(":feature:file-explorer"))
     implementation(project(":feature:contacts"))
+    implementation(project(":feature:screen-tools"))
 }
 
 compose.desktop {

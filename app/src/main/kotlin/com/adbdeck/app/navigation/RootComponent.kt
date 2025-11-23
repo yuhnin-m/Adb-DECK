@@ -6,6 +6,7 @@ import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.fileexplorer.FileExplorerComponent
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.packages.PackagesComponent
+import com.adbdeck.feature.screentools.ScreenToolsComponent
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -59,5 +60,8 @@ interface RootComponent {
 
         /** Дочерний компонент Contacts. */
         class Contacts(val component: ContactsComponent) : Child()
+
+        /** Дочерний компонент Screen Tools. */
+        class ScreenTools(val component: ScreenToolsComponent) : Child()
     }
 }

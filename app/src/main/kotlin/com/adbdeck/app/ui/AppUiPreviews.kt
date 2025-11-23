@@ -45,6 +45,13 @@ import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackageSortOrder
 import com.adbdeck.feature.packages.PackagesState
 import com.adbdeck.feature.packages.PackageTypeFilter
+import com.adbdeck.feature.screentools.ScreenToolsComponent
+import com.adbdeck.feature.screentools.ScreenToolsState
+import com.adbdeck.feature.screentools.ScreenToolsTab
+import com.adbdeck.feature.screentools.ScreenshotQualityPreset
+import com.adbdeck.feature.screentools.ScreenshotSectionState
+import com.adbdeck.feature.screentools.ScreenrecordQualityPreset
+import com.adbdeck.feature.screentools.ScreenrecordSectionState
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.settings.SettingsUiState
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
@@ -372,6 +379,39 @@ private class PreviewFileExplorerComponent : FileExplorerComponent {
     override fun onDismissFeedback() = Unit
 }
 
+private class PreviewScreenToolsComponent : ScreenToolsComponent {
+    override val state: StateFlow<ScreenToolsState> = MutableStateFlow(
+        ScreenToolsState(
+            selectedTab = ScreenToolsTab.SCREENSHOT,
+            activeDeviceId = previewDevices.first().deviceId,
+            deviceMessage = "Активное устройство: ${previewDevices.first().deviceId}",
+            screenshot = ScreenshotSectionState(
+                outputDirectory = "/Users/demo/Pictures/ADBDeck",
+                lastFilePath = "/Users/demo/Pictures/ADBDeck/screenshot_2026-03-04_10-40-00.png",
+            ),
+            screenrecord = ScreenrecordSectionState(
+                outputDirectory = "/Users/demo/Videos/ADBDeck",
+                lastFilePath = "/Users/demo/Videos/ADBDeck/screenrecord_2026-03-04_10-35-00.mp4",
+            ),
+        )
+    )
+
+    override fun onSelectTab(tab: ScreenToolsTab) = Unit
+    override fun onScreenshotOutputDirectoryChanged(path: String) = Unit
+    override fun onScreenshotQualityChanged(quality: ScreenshotQualityPreset) = Unit
+    override fun onScreenrecordOutputDirectoryChanged(path: String) = Unit
+    override fun onScreenrecordQualityChanged(quality: ScreenrecordQualityPreset) = Unit
+    override fun onTakeScreenshot() = Unit
+    override fun onCopyLastScreenshotToClipboard() = Unit
+    override fun onOpenLastScreenshotFile() = Unit
+    override fun onOpenScreenshotFolder() = Unit
+    override fun onStartRecording() = Unit
+    override fun onStopRecording() = Unit
+    override fun onOpenLastVideoFile() = Unit
+    override fun onOpenVideoFolder() = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -383,6 +423,7 @@ private class PreviewRootComponent(
     private val systemMonitor = PreviewSystemMonitorComponent()
     private val fileExplorer = PreviewFileExplorerComponent()
     private val contacts = PreviewContactsComponent()
+    private val screenTools = PreviewScreenToolsComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -404,6 +445,7 @@ private class PreviewRootComponent(
         Screen.SystemMonitor -> RootComponent.Child.SystemMonitor(systemMonitor)
         Screen.FileExplorer -> RootComponent.Child.FileExplorer(fileExplorer)
         Screen.Contacts -> RootComponent.Child.Contacts(contacts)
+        Screen.ScreenTools -> RootComponent.Child.ScreenTools(screenTools)
     }
 }
 

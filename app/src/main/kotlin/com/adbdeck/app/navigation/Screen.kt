@@ -32,4 +32,7 @@ sealed interface Screen {
 
     /** Экран управления контактами Android-устройства. */
     data object Contacts : Screen
+
+    /** Экран инструментов экрана (Screenshot / Screenrecord). */
+    data object ScreenTools : Screen
 }

@@ -19,6 +19,7 @@ import com.adbdeck.feature.devices.ui.DevicesScreen
 import com.adbdeck.feature.fileexplorer.ui.FileExplorerScreen
 import com.adbdeck.feature.logcat.ui.LogcatScreen
 import com.adbdeck.feature.packages.ui.PackagesScreen
+import com.adbdeck.feature.screentools.ui.ScreenToolsScreen
 import com.adbdeck.feature.settings.ui.SettingsScreen
 import com.adbdeck.feature.systemmonitor.ui.SystemMonitorScreen
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
@@ -94,6 +95,7 @@ fun AppContent(
         is RootComponent.Child.SystemMonitor -> Screen.SystemMonitor
         is RootComponent.Child.FileExplorer -> Screen.FileExplorer
         is RootComponent.Child.Contacts -> Screen.Contacts
+        is RootComponent.Child.ScreenTools -> Screen.ScreenTools
         else -> Screen.Dashboard
     }
 
@@ -135,6 +137,7 @@ fun AppContent(
                         is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(instance.component)
                         is RootComponent.Child.FileExplorer -> FileExplorerScreen(instance.component)
                         is RootComponent.Child.Contacts -> ContactsScreen(instance.component)
+                        is RootComponent.Child.ScreenTools -> ScreenToolsScreen(instance.component)
                     }
                 }
 
@@ -156,4 +159,5 @@ private fun Screen.title(): String = when (this) {
     is Screen.SystemMonitor -> "System Monitor"
     is Screen.FileExplorer -> "File Explorer"
     is Screen.Contacts -> "Contacts"
+    is Screen.ScreenTools -> "Screen Tools"
 }

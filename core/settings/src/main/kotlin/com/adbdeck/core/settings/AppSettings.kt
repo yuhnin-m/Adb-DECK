@@ -22,6 +22,10 @@ import kotlinx.serialization.Serializable
  * @param logcatAutoScroll       Автоматический скролл вниз при поступлении новых строк.
  * @param logcatFontFamily       Семейство шрифта (имя enum LogcatFontFamily, напр. "MONOSPACE").
  * @param logcatFontSizeSp       Размер шрифта в sp (диапазон 8–24).
+ *
+ * Screen Tools:
+ * @param screenToolsScreenshotOutputDir Папка сохранения screenshot-файлов.
+ * @param screenToolsScreenrecordOutputDir Папка сохранения screenrecord-видео.
  */
 @Serializable
 data class AppSettings(
@@ -39,4 +43,8 @@ data class AppSettings(
     val logcatAutoScroll: Boolean = true,
     val logcatFontFamily: String = "MONOSPACE",
     val logcatFontSizeSp: Int = 12,
+
+    // ── Screen Tools ─────────────────────────────────────────────
+    val screenToolsScreenshotOutputDir: String = "",
+    val screenToolsScreenrecordOutputDir: String = "",
 )
