@@ -35,4 +35,7 @@ sealed interface Screen {
 
     /** Экран инструментов экрана (Screenshot / Screenrecord). */
     data object ScreenTools : Screen
+
+    /** Экран установки APK на устройство. */
+    data object ApkInstall : Screen
 }

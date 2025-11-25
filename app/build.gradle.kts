@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":feature:file-explorer"))
     implementation(project(":feature:contacts"))
     implementation(project(":feature:screen-tools"))
+    implementation(project(":feature:apk-install"))
 }
 
 compose.desktop {

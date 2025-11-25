@@ -29,6 +29,9 @@ import com.adbdeck.feature.dashboard.DashboardState
 import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
+import com.adbdeck.feature.apkinstall.ApkInstallComponent
+import com.adbdeck.feature.apkinstall.ApkInstallState
+import com.adbdeck.feature.apkinstall.ApkInstallStatus
 import com.adbdeck.feature.fileexplorer.ExplorerFileItem
 import com.adbdeck.feature.fileexplorer.ExplorerFileType
 import com.adbdeck.feature.fileexplorer.ExplorerListState
@@ -47,6 +50,7 @@ import com.adbdeck.feature.packages.PackagesState
 import com.adbdeck.feature.packages.PackageTypeFilter
 import com.adbdeck.feature.screentools.ScreenToolsComponent
 import com.adbdeck.feature.screentools.ScreenToolsState
+import com.adbdeck.feature.screentools.ScreenToolsStatus
 import com.adbdeck.feature.screentools.ScreenToolsTab
 import com.adbdeck.feature.screentools.ScreenshotQualityPreset
 import com.adbdeck.feature.screentools.ScreenshotSectionState
@@ -412,6 +416,23 @@ private class PreviewScreenToolsComponent : ScreenToolsComponent {
     override fun onDismissFeedback() = Unit
 }
 
+private class PreviewApkInstallComponent : ApkInstallComponent {
+    override val state: StateFlow<ApkInstallState> = MutableStateFlow(
+        ApkInstallState(
+            activeDeviceId = previewDevices.first().deviceId,
+            deviceMessage = "Активное устройство: ${previewDevices.first().deviceId}",
+            apkPath = "/Users/demo/Downloads/sample-app.apk",
+            status = ApkInstallStatus("Готово к установке: sample-app.apk"),
+            logLines = listOf("Запуск установки: /Users/demo/Downloads/sample-app.apk"),
+        )
+    )
+
+    override fun onApkPathChanged(path: String) = Unit
+    override fun onInstallApk() = Unit
+    override fun onClearLog() = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -424,6 +445,7 @@ private class PreviewRootComponent(
     private val fileExplorer = PreviewFileExplorerComponent()
     private val contacts = PreviewContactsComponent()
     private val screenTools = PreviewScreenToolsComponent()
+    private val apkInstall = PreviewApkInstallComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -446,6 +468,7 @@ private class PreviewRootComponent(
         Screen.FileExplorer -> RootComponent.Child.FileExplorer(fileExplorer)
         Screen.Contacts -> RootComponent.Child.Contacts(contacts)
         Screen.ScreenTools -> RootComponent.Child.ScreenTools(screenTools)
+        Screen.ApkInstall -> RootComponent.Child.ApkInstall(apkInstall)
     }
 }
 

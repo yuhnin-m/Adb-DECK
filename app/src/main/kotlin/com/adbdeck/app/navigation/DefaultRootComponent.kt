@@ -14,6 +14,8 @@ import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.DefaultContactsComponent
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
+import com.adbdeck.feature.apkinstall.DefaultApkInstallComponent
+import com.adbdeck.feature.apkinstall.service.DefaultApkInstallService
 import com.adbdeck.feature.fileexplorer.DefaultFileExplorerComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
@@ -221,6 +223,18 @@ class DefaultRootComponent(
                     screenshotService = screenshotService,
                     screenrecordService = screenrecordService,
                     hostFileService = hostFileService,
+                )
+            }
+        )
+
+        is Screen.ApkInstall -> RootComponent.Child.ApkInstall(
+            run {
+                val apkInstallService = DefaultApkInstallService(screenToolsClient)
+                DefaultApkInstallComponent(
+                    componentContext = componentContext,
+                    deviceManager = deviceManager,
+                    settingsRepository = settingsRepository,
+                    apkInstallService = apkInstallService,
                 )
             }
         )

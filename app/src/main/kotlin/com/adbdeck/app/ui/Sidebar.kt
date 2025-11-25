@@ -97,6 +97,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.ScreenTools) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.SystemUpdateAlt,
+            label = "APK Install",
+            isActive = activeScreen is Screen.ApkInstall,
+            onClick = { onNavigate(Screen.ApkInstall) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Contacts,
             label = "Contacts",
             isActive = activeScreen is Screen.Contacts,
