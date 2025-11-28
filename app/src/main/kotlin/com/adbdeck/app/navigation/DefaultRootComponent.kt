@@ -3,6 +3,7 @@ package com.adbdeck.app.navigation
 import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.ContactsClient
 import com.adbdeck.core.adb.api.DeviceControlClient
+import com.adbdeck.core.adb.api.IntentLaunchClient
 import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
@@ -13,6 +14,7 @@ import com.adbdeck.core.adb.api.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.DefaultContactsComponent
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
+import com.adbdeck.feature.deeplinks.DefaultDeepLinksComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.apkinstall.DefaultApkInstallComponent
 import com.adbdeck.feature.apkinstall.service.DefaultApkInstallService
@@ -68,6 +70,7 @@ class DefaultRootComponent(
     private val deviceFileClient: DeviceFileClient,
     private val contactsClient: ContactsClient,
     private val screenToolsClient: ScreenToolsClient,
+    private val intentLaunchClient: IntentLaunchClient,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
@@ -237,6 +240,15 @@ class DefaultRootComponent(
                     apkInstallService = apkInstallService,
                 )
             }
+        )
+
+        is Screen.DeepLinks -> RootComponent.Child.DeepLinks(
+            DefaultDeepLinksComponent(
+                componentContext   = componentContext,
+                deviceManager      = deviceManager,
+                intentLaunchClient = intentLaunchClient,
+                settingsRepository = settingsRepository,
+            )
         )
     }
 }

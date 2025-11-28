@@ -30,6 +30,13 @@ import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
 import com.adbdeck.feature.apkinstall.ApkInstallComponent
+import com.adbdeck.feature.deeplinks.DeepLinksComponent
+import com.adbdeck.feature.deeplinks.DeepLinksState
+import com.adbdeck.feature.deeplinks.DeepLinksTab
+import com.adbdeck.feature.deeplinks.IntentTemplate
+import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
+import com.adbdeck.core.adb.api.ExtraType
+import com.adbdeck.core.adb.api.LaunchMode
 import com.adbdeck.feature.apkinstall.ApkInstallState
 import com.adbdeck.feature.apkinstall.ApkInstallStatus
 import com.adbdeck.feature.fileexplorer.ExplorerFileItem
@@ -304,6 +311,40 @@ private class PreviewContactsComponent : ContactsComponent {
     override fun onDismissFeedback() = Unit
 }
 
+private class PreviewDeepLinksComponent : DeepLinksComponent {
+    override val state: StateFlow<DeepLinksState> = MutableStateFlow(DeepLinksState())
+    override fun onModeChanged(mode: LaunchMode) = Unit
+    override fun onDlUriChanged(value: String) = Unit
+    override fun onDlActionChanged(value: String) = Unit
+    override fun onDlPackageChanged(value: String) = Unit
+    override fun onDlComponentChanged(value: String) = Unit
+    override fun onDlCategoryChanged(value: String) = Unit
+    override fun onItActionChanged(value: String) = Unit
+    override fun onItDataUriChanged(value: String) = Unit
+    override fun onItPackageChanged(value: String) = Unit
+    override fun onItComponentChanged(value: String) = Unit
+    override fun onItCategoryAdd(category: String) = Unit
+    override fun onItCategoryRemove(index: Int) = Unit
+    override fun onItFlagsChanged(value: String) = Unit
+    override fun onItExtraAdd() = Unit
+    override fun onItExtraRemove(index: Int) = Unit
+    override fun onItExtraKeyChanged(index: Int, key: String) = Unit
+    override fun onItExtraTypeChanged(index: Int, type: ExtraType) = Unit
+    override fun onItExtraValueChanged(index: Int, value: String) = Unit
+    override fun onLaunch() = Unit
+    override fun onRightTabChanged(tab: DeepLinksTab) = Unit
+    override fun onRestoreFromHistory(entry: LaunchHistoryEntry) = Unit
+    override fun onDeleteHistoryEntry(id: String) = Unit
+    override fun onClearHistory() = Unit
+    override fun onShowSaveTemplateDialog() = Unit
+    override fun onSaveTemplateNameChanged(name: String) = Unit
+    override fun onConfirmSaveTemplate() = Unit
+    override fun onDismissSaveTemplateDialog() = Unit
+    override fun onLaunchTemplate(template: IntentTemplate) = Unit
+    override fun onRestoreFromTemplate(template: IntentTemplate) = Unit
+    override fun onDeleteTemplate(id: String) = Unit
+}
+
 private class PreviewFileExplorerComponent : FileExplorerComponent {
     private val localItems = listOf(
         ExplorerFileItem(
@@ -446,6 +487,7 @@ private class PreviewRootComponent(
     private val contacts = PreviewContactsComponent()
     private val screenTools = PreviewScreenToolsComponent()
     private val apkInstall = PreviewApkInstallComponent()
+    private val deepLinks = PreviewDeepLinksComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -469,6 +511,7 @@ private class PreviewRootComponent(
         Screen.Contacts -> RootComponent.Child.Contacts(contacts)
         Screen.ScreenTools -> RootComponent.Child.ScreenTools(screenTools)
         Screen.ApkInstall -> RootComponent.Child.ApkInstall(apkInstall)
+        Screen.DeepLinks -> RootComponent.Child.DeepLinks(deepLinks)
     }
 }
 

@@ -45,6 +45,7 @@ dependencies {
     implementation(project(":feature:contacts"))
     implementation(project(":feature:screen-tools"))
     implementation(project(":feature:apk-install"))
+    implementation(project(":feature:deep-links"))
 }
 
 compose.desktop {

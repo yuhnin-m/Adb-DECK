@@ -530,7 +530,7 @@ class SystemContactsClient(
      * @param adbPath      Путь к adb.
      * @param rawContactId ID raw contact (FK).
      * @param mimetype     MIME-тип строки.
-     * @param data1..data6 Поля данных (пустые строки → не добавляются в команду).
+     * @param data1…data6 Поля данных (пустые строки → не добавляются в команду).
      */
     private suspend fun insertDataRow(
         deviceId: String,

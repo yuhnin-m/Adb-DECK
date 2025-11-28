@@ -38,4 +38,7 @@ sealed interface Screen {
 
     /** Экран установки APK на устройство. */
     data object ApkInstall : Screen
+
+    /** Экран запуска Deep Link и Intent через ADB. */
+    data object DeepLinks : Screen
 }

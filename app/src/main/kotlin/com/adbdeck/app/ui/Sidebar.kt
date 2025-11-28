@@ -103,6 +103,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.ApkInstall) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.Link,
+            label = "Deep Links",
+            isActive = activeScreen is Screen.DeepLinks,
+            onClick = { onNavigate(Screen.DeepLinks) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Contacts,
             label = "Contacts",
             isActive = activeScreen is Screen.Contacts,

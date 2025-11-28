@@ -7,6 +7,7 @@ import com.adbdeck.feature.apkinstall.ApkInstallComponent
 import com.adbdeck.feature.fileexplorer.FileExplorerComponent
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.packages.PackagesComponent
+import com.adbdeck.feature.deeplinks.DeepLinksComponent
 import com.adbdeck.feature.screentools.ScreenToolsComponent
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
@@ -67,5 +68,8 @@ interface RootComponent {
 
         /** Дочерний компонент APK Install. */
         class ApkInstall(val component: ApkInstallComponent) : Child()
+
+        /** Дочерний компонент Deep Links / Intents. */
+        class DeepLinks(val component: DeepLinksComponent) : Child()
     }
 }
