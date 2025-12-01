@@ -86,4 +86,12 @@ interface DeepLinksComponent {
 
     /** Удалить шаблон по ID. */
     fun onDeleteTemplate(id: String)
+
+    /**
+     * Предзаполнить поле URI в форме Deep Link.
+     * Используется при переходе из экрана Notifications через кнопку "Open in Deep Links".
+     *
+     * @param uri URI для подстановки в поле Deep Link URI.
+     */
+    fun prefillDeepLinkUri(uri: String)
 }

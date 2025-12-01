@@ -50,6 +50,7 @@ private class PreviewDeepLinksComponent(
     override fun onLaunchTemplate(template: IntentTemplate) = Unit
     override fun onRestoreFromTemplate(template: IntentTemplate) = Unit
     override fun onDeleteTemplate(id: String) = Unit
+    override fun prefillDeepLinkUri(uri: String) = Unit
 }
 
 // ── Previews ──────────────────────────────────────────────────────────────────

@@ -37,6 +37,7 @@ import com.adbdeck.feature.deeplinks.IntentTemplate
 import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
 import com.adbdeck.core.adb.api.ExtraType
 import com.adbdeck.core.adb.api.LaunchMode
+import com.adbdeck.feature.notifications.ui.PreviewNotificationsComponent
 import com.adbdeck.feature.apkinstall.ApkInstallState
 import com.adbdeck.feature.apkinstall.ApkInstallStatus
 import com.adbdeck.feature.fileexplorer.ExplorerFileItem
@@ -343,6 +344,7 @@ private class PreviewDeepLinksComponent : DeepLinksComponent {
     override fun onLaunchTemplate(template: IntentTemplate) = Unit
     override fun onRestoreFromTemplate(template: IntentTemplate) = Unit
     override fun onDeleteTemplate(id: String) = Unit
+    override fun prefillDeepLinkUri(uri: String) = Unit
 }
 
 private class PreviewFileExplorerComponent : FileExplorerComponent {
@@ -488,6 +490,7 @@ private class PreviewRootComponent(
     private val screenTools = PreviewScreenToolsComponent()
     private val apkInstall = PreviewApkInstallComponent()
     private val deepLinks = PreviewDeepLinksComponent()
+    private val notifications = PreviewNotificationsComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -512,6 +515,7 @@ private class PreviewRootComponent(
         Screen.ScreenTools -> RootComponent.Child.ScreenTools(screenTools)
         Screen.ApkInstall -> RootComponent.Child.ApkInstall(apkInstall)
         Screen.DeepLinks -> RootComponent.Child.DeepLinks(deepLinks)
+        Screen.Notifications -> RootComponent.Child.Notifications(notifications)
     }
 }
 

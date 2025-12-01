@@ -3,6 +3,7 @@ package com.adbdeck.app.di
 import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.ContactsClient
 import com.adbdeck.core.adb.api.IntentLaunchClient
+import com.adbdeck.core.adb.api.NotificationsClient
 import com.adbdeck.core.adb.api.DeviceControlClient
 import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
@@ -15,6 +16,7 @@ import com.adbdeck.core.adb.impl.DefaultSystemMonitorClient
 import com.adbdeck.core.adb.impl.SystemAdbClient
 import com.adbdeck.core.adb.impl.SystemContactsClient
 import com.adbdeck.core.adb.impl.SystemIntentLaunchClient
+import com.adbdeck.core.adb.impl.SystemNotificationsClient
 import com.adbdeck.core.adb.impl.SystemDeviceControlClient
 import com.adbdeck.core.adb.impl.SystemDeviceFileClient
 import com.adbdeck.core.adb.impl.SystemDeviceInfoClient
@@ -101,4 +103,7 @@ val appModule = module {
 
     // ── IntentLaunchClient ────────────────────────────────────────
     singleOf(::SystemIntentLaunchClient) bind IntentLaunchClient::class
+
+    // ── NotificationsClient ───────────────────────────────────────
+    singleOf(::SystemNotificationsClient) bind NotificationsClient::class
 }

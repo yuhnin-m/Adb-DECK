@@ -38,6 +38,8 @@ class DefaultDeepLinksComponent(
     private val deviceManager: DeviceManager,
     private val intentLaunchClient: IntentLaunchClient,
     private val settingsRepository: SettingsRepository,
+    /** URI для предзаполнения формы Deep Link при открытии из экрана Notifications. */
+    initialDeepLinkUri: String? = null,
 ) : DeepLinksComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -51,6 +53,11 @@ class DefaultDeepLinksComponent(
         scope.launch {
             val (history, templates) = storage.load()
             _state.update { it.copy(history = history, templates = templates) }
+        }
+
+        // Предзаполнить URI из внешнего источника (например, Notifications)
+        if (!initialDeepLinkUri.isNullOrBlank()) {
+            updateField { copy(mode = LaunchMode.DEEP_LINK, dlUri = initialDeepLinkUri) }
         }
 
         // Подписка на изменение активного устройства
@@ -360,6 +367,10 @@ class DefaultDeepLinksComponent(
     override fun onDeleteTemplate(id: String) {
         _state.update { it.copy(templates = it.templates.filter { t -> t.id != id }) }
         persistAsync()
+    }
+
+    override fun prefillDeepLinkUri(uri: String) {
+        updateField { copy(mode = LaunchMode.DEEP_LINK, dlUri = uri) }
     }
 
     private companion object {

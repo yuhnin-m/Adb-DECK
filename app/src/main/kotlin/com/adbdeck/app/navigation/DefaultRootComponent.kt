@@ -4,6 +4,7 @@ import com.adbdeck.core.adb.api.AdbClient
 import com.adbdeck.core.adb.api.ContactsClient
 import com.adbdeck.core.adb.api.DeviceControlClient
 import com.adbdeck.core.adb.api.IntentLaunchClient
+import com.adbdeck.core.adb.api.NotificationsClient
 import com.adbdeck.core.adb.api.DeviceFileClient
 import com.adbdeck.core.adb.api.DeviceInfoClient
 import com.adbdeck.core.adb.api.DeviceManager
@@ -15,6 +16,7 @@ import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.DefaultContactsComponent
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
 import com.adbdeck.feature.deeplinks.DefaultDeepLinksComponent
+import com.adbdeck.feature.notifications.DefaultNotificationsComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.apkinstall.DefaultApkInstallComponent
 import com.adbdeck.feature.apkinstall.service.DefaultApkInstallService
@@ -71,10 +73,12 @@ class DefaultRootComponent(
     private val contactsClient: ContactsClient,
     private val screenToolsClient: ScreenToolsClient,
     private val intentLaunchClient: IntentLaunchClient,
+    private val notificationsClient: NotificationsClient,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
     private var pendingPackageToReveal: String? = null
+    private var pendingDeepLinkUri: String? = null
 
     override val childStack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
@@ -107,6 +111,25 @@ class DefaultRootComponent(
             pendingPackageToReveal = normalized
             navigate(Screen.Packages)
         }
+    }
+
+    /**
+     * Перейти в Deep Links и предзаполнить URI из уведомления.
+     * Если компонент DeepLinks уже создан — вызывает prefillDeepLinkUri() напрямую.
+     */
+    private fun openDeepLinkFromNotifications(uri: String) {
+        val existing = childStack.value.items
+            .asSequence()
+            .map { it.instance }
+            .filterIsInstance<RootComponent.Child.DeepLinks>()
+            .map { it.component }
+            .firstOrNull()
+        if (existing != null) {
+            existing.prefillDeepLinkUri(uri)
+        } else {
+            pendingDeepLinkUri = uri
+        }
+        navigate(Screen.DeepLinks)
     }
 
     /**
@@ -248,6 +271,18 @@ class DefaultRootComponent(
                 deviceManager      = deviceManager,
                 intentLaunchClient = intentLaunchClient,
                 settingsRepository = settingsRepository,
+                initialDeepLinkUri = pendingDeepLinkUri.also { pendingDeepLinkUri = null },
+            )
+        )
+
+        is Screen.Notifications -> RootComponent.Child.Notifications(
+            DefaultNotificationsComponent(
+                componentContext    = componentContext,
+                deviceManager       = deviceManager,
+                notificationsClient = notificationsClient,
+                settingsRepository  = settingsRepository,
+                onOpenInPackages    = ::openPackageFromSystemMonitor,
+                onOpenInDeepLinks   = ::openDeepLinkFromNotifications,
             )
         )
     }

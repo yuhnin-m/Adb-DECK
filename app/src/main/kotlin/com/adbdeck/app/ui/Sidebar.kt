@@ -109,6 +109,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.DeepLinks) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.Notifications,
+            label = "Notifications",
+            isActive = activeScreen is Screen.Notifications,
+            onClick = { onNavigate(Screen.Notifications) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Contacts,
             label = "Contacts",
             isActive = activeScreen is Screen.Contacts,

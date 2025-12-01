@@ -41,4 +41,7 @@ sealed interface Screen {
 
     /** Экран запуска Deep Link и Intent через ADB. */
     data object DeepLinks : Screen
+
+    /** Экран просмотра и анализа уведомлений Android-устройства. */
+    data object Notifications : Screen
 }

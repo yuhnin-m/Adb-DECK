@@ -1,6 +1,7 @@
 package com.adbdeck.app.navigation
 
 import com.adbdeck.feature.contacts.ContactsComponent
+import com.adbdeck.feature.notifications.NotificationsComponent
 import com.adbdeck.feature.dashboard.DashboardComponent
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.apkinstall.ApkInstallComponent
@@ -71,5 +72,8 @@ interface RootComponent {
 
         /** Дочерний компонент Deep Links / Intents. */
         class DeepLinks(val component: DeepLinksComponent) : Child()
+
+        /** Дочерний компонент Notifications. */
+        class Notifications(val component: NotificationsComponent) : Child()
     }
 }
