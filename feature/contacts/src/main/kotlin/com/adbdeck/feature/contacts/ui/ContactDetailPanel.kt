@@ -40,10 +40,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.Contact
-import com.adbdeck.core.adb.api.ContactDetails
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.PhoneType
+import com.adbdeck.core.adb.api.contacts.Contact
+import com.adbdeck.core.adb.api.contacts.ContactDetails
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.contacts.PhoneType
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.feature.contacts.ContactDetailState

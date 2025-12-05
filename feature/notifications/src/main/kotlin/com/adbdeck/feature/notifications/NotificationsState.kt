@@ -1,6 +1,6 @@
 package com.adbdeck.feature.notifications
 
-import com.adbdeck.core.adb.api.NotificationRecord
+import com.adbdeck.core.adb.api.notifications.NotificationRecord
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Перечисления

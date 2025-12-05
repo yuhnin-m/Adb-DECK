@@ -18,10 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceInfo
-import com.adbdeck.core.adb.api.DeviceInfoLoadState
-import com.adbdeck.core.adb.api.DeviceState
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceInfo
+import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
+import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.ui.LoadingView
 
 /**

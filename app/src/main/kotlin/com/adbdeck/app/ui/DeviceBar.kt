@@ -51,9 +51,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceEndpoint
-import com.adbdeck.core.adb.api.DeviceState
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceEndpoint
+import com.adbdeck.core.adb.api.device.DeviceState
 import kotlinx.coroutines.delay
 
 /**

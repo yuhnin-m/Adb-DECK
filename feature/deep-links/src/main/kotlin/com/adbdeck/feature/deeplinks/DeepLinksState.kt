@@ -1,10 +1,10 @@
 package com.adbdeck.feature.deeplinks
 
-import com.adbdeck.core.adb.api.DeepLinkParams
-import com.adbdeck.core.adb.api.IntentExtra
-import com.adbdeck.core.adb.api.IntentParams
-import com.adbdeck.core.adb.api.LaunchMode
-import com.adbdeck.core.adb.api.LaunchResult
+import com.adbdeck.core.adb.api.intents.DeepLinkParams
+import com.adbdeck.core.adb.api.intents.IntentExtra
+import com.adbdeck.core.adb.api.intents.IntentParams
+import com.adbdeck.core.adb.api.intents.LaunchMode
+import com.adbdeck.core.adb.api.intents.LaunchResult
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Вспомогательные типы

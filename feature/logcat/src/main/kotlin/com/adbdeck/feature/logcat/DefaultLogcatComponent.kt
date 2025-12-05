@@ -1,11 +1,11 @@
 package com.adbdeck.feature.logcat
 
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.DeviceState
-import com.adbdeck.core.adb.api.LogcatEntry
-import com.adbdeck.core.adb.api.LogcatLevel
-import com.adbdeck.core.adb.api.LogcatParser
-import com.adbdeck.core.adb.api.LogcatStreamer
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.logcat.LogcatEntry
+import com.adbdeck.core.adb.api.logcat.LogcatLevel
+import com.adbdeck.core.adb.api.logcat.LogcatParser
+import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.arkivanov.decompose.ComponentContext

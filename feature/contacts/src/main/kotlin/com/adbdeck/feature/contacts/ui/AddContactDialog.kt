@@ -34,9 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.ContactAccount
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.PhoneType
+import com.adbdeck.core.adb.api.contacts.ContactAccount
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.contacts.PhoneType
 import com.adbdeck.feature.contacts.AddContactFormState
 import com.adbdeck.feature.contacts.ContactsComponent
 

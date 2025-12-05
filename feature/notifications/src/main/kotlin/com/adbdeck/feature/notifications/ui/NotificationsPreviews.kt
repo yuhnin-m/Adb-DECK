@@ -1,7 +1,7 @@
 package com.adbdeck.feature.notifications.ui
 
 import androidx.compose.runtime.Composable
-import com.adbdeck.core.adb.api.NotificationRecord
+import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.feature.notifications.*
 import kotlinx.coroutines.flow.MutableStateFlow

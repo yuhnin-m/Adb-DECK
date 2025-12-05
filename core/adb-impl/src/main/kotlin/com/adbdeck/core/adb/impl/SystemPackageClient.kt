@@ -1,9 +1,9 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.AppPackage
-import com.adbdeck.core.adb.api.PackageClient
-import com.adbdeck.core.adb.api.PackageDetails
-import com.adbdeck.core.adb.api.PackageType
+import com.adbdeck.core.adb.api.packages.AppPackage
+import com.adbdeck.core.adb.api.packages.PackageClient
+import com.adbdeck.core.adb.api.packages.PackageDetails
+import com.adbdeck.core.adb.api.packages.PackageType
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 

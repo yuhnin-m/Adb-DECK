@@ -1,10 +1,10 @@
 package com.adbdeck.feature.contacts
 
-import com.adbdeck.core.adb.api.Contact
-import com.adbdeck.core.adb.api.ContactAccount
-import com.adbdeck.core.adb.api.ContactDetails
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.PhoneType
+import com.adbdeck.core.adb.api.contacts.Contact
+import com.adbdeck.core.adb.api.contacts.ContactAccount
+import com.adbdeck.core.adb.api.contacts.ContactDetails
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.contacts.PhoneType
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Состояние списка контактов

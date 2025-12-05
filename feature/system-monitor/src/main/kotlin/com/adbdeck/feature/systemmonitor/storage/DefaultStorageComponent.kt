@@ -1,10 +1,10 @@
 package com.adbdeck.feature.systemmonitor.storage
 
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.DeviceState
-import com.adbdeck.core.adb.api.StorageSummary
-import com.adbdeck.core.adb.api.SystemMonitorClient
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.monitoring.StorageSummary
+import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext

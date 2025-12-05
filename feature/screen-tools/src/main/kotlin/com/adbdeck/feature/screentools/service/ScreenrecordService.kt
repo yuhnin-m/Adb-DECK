@@ -1,7 +1,7 @@
 package com.adbdeck.feature.screentools.service
 
-import com.adbdeck.core.adb.api.ScreenrecordSession
-import com.adbdeck.core.adb.api.ScreenrecordOptions
+import com.adbdeck.core.adb.api.screen.ScreenrecordSession
+import com.adbdeck.core.adb.api.screen.ScreenrecordOptions
 
 /**
  * Сервис запуска/остановки записи экрана устройства.

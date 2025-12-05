@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.adbdeck.core.adb.api.LogcatEntry
-import com.adbdeck.core.adb.api.LogcatLevel
+import com.adbdeck.core.adb.api.logcat.LogcatEntry
+import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode

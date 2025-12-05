@@ -1,8 +1,8 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.DeviceFileClient
-import com.adbdeck.core.adb.api.DeviceFileEntry
-import com.adbdeck.core.adb.api.DeviceFileType
+import com.adbdeck.core.adb.api.files.DeviceFileClient
+import com.adbdeck.core.adb.api.files.DeviceFileEntry
+import com.adbdeck.core.adb.api.files.DeviceFileType
 import com.adbdeck.core.process.ProcessResult
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation

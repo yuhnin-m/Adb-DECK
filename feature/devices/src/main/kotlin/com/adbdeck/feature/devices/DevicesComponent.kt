@@ -1,6 +1,6 @@
 package com.adbdeck.feature.devices
 
-import com.adbdeck.core.adb.api.AdbDevice
+import com.adbdeck.core.adb.api.device.AdbDevice
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
  * ## Архитектура
  *
  * Компонент координирует несколько источников данных:
- * - [com.adbdeck.core.adb.api.DeviceManager] — список устройств, выбор, подключение
- * - [com.adbdeck.core.adb.api.DeviceInfoClient] — расширенная информация (загружается лениво)
- * - [com.adbdeck.core.adb.api.DeviceControlClient] — перезагрузка
+ * - [com.adbdeck.core.adb.api.device.DeviceManager] — список устройств, выбор, подключение
+ * - [com.adbdeck.core.adb.api.device.DeviceInfoClient] — расширенная информация (загружается лениво)
+ * - [com.adbdeck.core.adb.api.device.DeviceControlClient] — перезагрузка
  *
  * Все навигационные действия (перейти в Logcat / Packages / System Monitor)
  * выполняются через callbacks, переданные из [com.adbdeck.app.navigation.DefaultRootComponent].

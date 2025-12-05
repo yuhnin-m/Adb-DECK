@@ -1,7 +1,7 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.NotificationRecord
-import com.adbdeck.core.adb.api.NotificationsClient
+import com.adbdeck.core.adb.api.notifications.NotificationRecord
+import com.adbdeck.core.adb.api.notifications.NotificationsClient
 import com.adbdeck.core.process.ProcessRunner
 
 /**

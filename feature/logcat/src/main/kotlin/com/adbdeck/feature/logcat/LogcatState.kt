@@ -1,7 +1,7 @@
 package com.adbdeck.feature.logcat
 
-import com.adbdeck.core.adb.api.LogcatEntry
-import com.adbdeck.core.adb.api.LogcatLevel
+import com.adbdeck.core.adb.api.logcat.LogcatEntry
+import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.feature.logcat.LogcatFontFamily
 
 /**

@@ -1,15 +1,15 @@
 package com.adbdeck.feature.contacts
 
-import com.adbdeck.core.adb.api.Contact
-import com.adbdeck.core.adb.api.ContactAccount
-import com.adbdeck.core.adb.api.ContactDetails
-import com.adbdeck.core.adb.api.ContactImportData
-import com.adbdeck.core.adb.api.ContactsClient
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.DeviceState
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.NewContactData
-import com.adbdeck.core.adb.api.PhoneType
+import com.adbdeck.core.adb.api.contacts.Contact
+import com.adbdeck.core.adb.api.contacts.ContactAccount
+import com.adbdeck.core.adb.api.contacts.ContactDetails
+import com.adbdeck.core.adb.api.contacts.ContactImportData
+import com.adbdeck.core.adb.api.contacts.ContactsClient
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.contacts.NewContactData
+import com.adbdeck.core.adb.api.contacts.PhoneType
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.io.ContactIoService
 import com.adbdeck.feature.contacts.io.ContactsJsonFile

@@ -1,7 +1,7 @@
 package com.adbdeck.feature.fileexplorer.service
 
-import com.adbdeck.core.adb.api.DeviceFileClient
-import com.adbdeck.core.adb.api.DeviceFileType
+import com.adbdeck.core.adb.api.files.DeviceFileClient
+import com.adbdeck.core.adb.api.files.DeviceFileType
 import com.adbdeck.feature.fileexplorer.ExplorerFileItem
 import com.adbdeck.feature.fileexplorer.ExplorerFileType
 

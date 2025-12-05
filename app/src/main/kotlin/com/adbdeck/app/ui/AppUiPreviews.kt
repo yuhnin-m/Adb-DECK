@@ -11,16 +11,16 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
-import com.adbdeck.core.adb.api.AppPackage
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.Contact
-import com.adbdeck.core.adb.api.ContactAccount
-import com.adbdeck.core.adb.api.DeviceEndpoint
-import com.adbdeck.core.adb.api.DeviceState
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.LogcatEntry
-import com.adbdeck.core.adb.api.LogcatLevel
-import com.adbdeck.core.adb.api.PhoneType
+import com.adbdeck.core.adb.api.packages.AppPackage
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.contacts.Contact
+import com.adbdeck.core.adb.api.contacts.ContactAccount
+import com.adbdeck.core.adb.api.device.DeviceEndpoint
+import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.logcat.LogcatEntry
+import com.adbdeck.core.adb.api.logcat.LogcatLevel
+import com.adbdeck.core.adb.api.contacts.PhoneType
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.settings.AppTheme
@@ -35,8 +35,8 @@ import com.adbdeck.feature.deeplinks.DeepLinksState
 import com.adbdeck.feature.deeplinks.DeepLinksTab
 import com.adbdeck.feature.deeplinks.IntentTemplate
 import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
-import com.adbdeck.core.adb.api.ExtraType
-import com.adbdeck.core.adb.api.LaunchMode
+import com.adbdeck.core.adb.api.intents.ExtraType
+import com.adbdeck.core.adb.api.intents.LaunchMode
 import com.adbdeck.feature.notifications.ui.PreviewNotificationsComponent
 import com.adbdeck.feature.apkinstall.ApkInstallState
 import com.adbdeck.feature.apkinstall.ApkInstallStatus
@@ -263,11 +263,11 @@ private class PreviewSystemMonitorComponent : SystemMonitorComponent {
         override fun onRefresh() = Unit
         override fun onSearchChanged(query: String) = Unit
         override fun onSortFieldChanged(field: ProcessSortField) = Unit
-        override fun onSelectProcess(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
+        override fun onSelectProcess(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
         override fun onClearSelection() = Unit
-        override fun onKillProcess(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
-        override fun onForceStopApp(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
-        override fun onOpenPackageDetails(process: com.adbdeck.core.adb.api.ProcessInfo) = Unit
+        override fun onKillProcess(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
+        override fun onForceStopApp(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
+        override fun onOpenPackageDetails(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
         override fun onDismissFeedback() = Unit
     }
     override val storageComponent: StorageComponent = object : StorageComponent {

@@ -1,7 +1,7 @@
 package com.adbdeck.feature.deeplinks
 
-import com.adbdeck.core.adb.api.ExtraType
-import com.adbdeck.core.adb.api.LaunchMode
+import com.adbdeck.core.adb.api.intents.ExtraType
+import com.adbdeck.core.adb.api.intents.LaunchMode
 import kotlinx.coroutines.flow.StateFlow
 
 /**

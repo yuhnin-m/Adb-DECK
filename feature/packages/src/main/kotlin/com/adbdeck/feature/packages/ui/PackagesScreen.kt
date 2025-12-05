@@ -49,8 +49,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.AppPackage
-import com.adbdeck.core.adb.api.PackageType
+import com.adbdeck.core.adb.api.packages.AppPackage
+import com.adbdeck.core.adb.api.packages.PackageType
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView

@@ -1,10 +1,10 @@
 package com.adbdeck.feature.contacts.io
 
-import com.adbdeck.core.adb.api.ContactEmail
-import com.adbdeck.core.adb.api.ContactImportData
-import com.adbdeck.core.adb.api.ContactPhone
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.PhoneType
+import com.adbdeck.core.adb.api.contacts.ContactEmail
+import com.adbdeck.core.adb.api.contacts.ContactImportData
+import com.adbdeck.core.adb.api.contacts.ContactPhone
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.contacts.PhoneType
 
 /**
  * Best-effort парсер файлов vCard 3.0 и 4.0.

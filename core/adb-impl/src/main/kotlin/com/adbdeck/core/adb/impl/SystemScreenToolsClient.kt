@@ -1,12 +1,12 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.ApkInstallOptions
-import com.adbdeck.core.adb.api.ApkInstallProgress
-import com.adbdeck.core.adb.api.ScreenToolsClient
-import com.adbdeck.core.adb.api.ScreenrecordOptions
-import com.adbdeck.core.adb.api.ScreenrecordSession
-import com.adbdeck.core.adb.api.ScreenshotFormat
-import com.adbdeck.core.adb.api.ScreenshotOptions
+import com.adbdeck.core.adb.api.screen.ApkInstallOptions
+import com.adbdeck.core.adb.api.screen.ApkInstallProgress
+import com.adbdeck.core.adb.api.screen.ScreenToolsClient
+import com.adbdeck.core.adb.api.screen.ScreenrecordOptions
+import com.adbdeck.core.adb.api.screen.ScreenrecordSession
+import com.adbdeck.core.adb.api.screen.ScreenshotFormat
+import com.adbdeck.core.adb.api.screen.ScreenshotOptions
 import com.adbdeck.core.process.ProcessResult
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation

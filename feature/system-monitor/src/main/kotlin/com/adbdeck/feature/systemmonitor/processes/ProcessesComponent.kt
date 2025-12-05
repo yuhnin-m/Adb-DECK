@@ -1,6 +1,6 @@
 package com.adbdeck.feature.systemmonitor.processes
 
-import com.adbdeck.core.adb.api.ProcessInfo
+import com.adbdeck.core.adb.api.monitoring.ProcessInfo
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -27,7 +27,7 @@ interface ProcessesComponent {
     /**
      * Запустить периодический мониторинг процессов.
      *
-     * Запускает фоновый цикл опроса с интервалом [com.adbdeck.core.adb.api.SystemSnapshot.POLL_INTERVAL_MS].
+     * Запускает фоновый цикл опроса с интервалом [com.adbdeck.core.adb.api.monitoring.SystemSnapshot.POLL_INTERVAL_MS].
      * При отсутствии активного устройства — показывает ошибку.
      * Если мониторинг уже запущен — вызов игнорируется.
      */

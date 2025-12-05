@@ -49,8 +49,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adbdeck.feature.logcat.LogcatFontFamily
-import com.adbdeck.core.adb.api.LogcatEntry
-import com.adbdeck.core.adb.api.LogcatLevel
+import com.adbdeck.core.adb.api.logcat.LogcatEntry
+import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode

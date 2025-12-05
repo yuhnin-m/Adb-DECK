@@ -1,6 +1,6 @@
 package com.adbdeck.feature.screentools
 
-import com.adbdeck.core.adb.api.ScreenshotFormat
+import com.adbdeck.core.adb.api.screen.ScreenshotFormat
 
 /**
  * Вкладка экрана Screen Tools.

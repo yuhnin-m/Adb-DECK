@@ -1,7 +1,7 @@
 package com.adbdeck.feature.devices
 
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceInfoLoadState
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
 
 // ── Состояние списка устройств ────────────────────────────────────────────────
 

@@ -1,8 +1,8 @@
 package com.adbdeck.feature.contacts.io
 
-import com.adbdeck.core.adb.api.ContactDetails
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.PhoneType
+import com.adbdeck.core.adb.api.contacts.ContactDetails
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.contacts.PhoneType
 
 /**
  * Генератор vCard 3.0 из [ContactDetails].

@@ -57,8 +57,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.Contact
-import com.adbdeck.core.adb.api.ContactAccount
+import com.adbdeck.core.adb.api.contacts.Contact
+import com.adbdeck.core.adb.api.contacts.ContactAccount
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView

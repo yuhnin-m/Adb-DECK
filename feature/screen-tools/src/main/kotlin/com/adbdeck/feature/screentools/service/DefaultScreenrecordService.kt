@@ -1,9 +1,9 @@
 package com.adbdeck.feature.screentools.service
 
-import com.adbdeck.core.adb.api.DeviceFileClient
-import com.adbdeck.core.adb.api.ScreenrecordOptions
-import com.adbdeck.core.adb.api.ScreenToolsClient
-import com.adbdeck.core.adb.api.ScreenrecordSession
+import com.adbdeck.core.adb.api.files.DeviceFileClient
+import com.adbdeck.core.adb.api.screen.ScreenrecordOptions
+import com.adbdeck.core.adb.api.screen.ScreenToolsClient
+import com.adbdeck.core.adb.api.screen.ScreenrecordSession
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**

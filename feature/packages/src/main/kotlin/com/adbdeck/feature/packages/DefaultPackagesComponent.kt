@@ -1,9 +1,9 @@
 package com.adbdeck.feature.packages
 
-import com.adbdeck.core.adb.api.AppPackage
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.DeviceState
-import com.adbdeck.core.adb.api.PackageClient
+import com.adbdeck.core.adb.api.packages.AppPackage
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
@@ -258,8 +258,8 @@ class DefaultPackagesComponent(
         // Фильтр по типу
         result = when (state.typeFilter) {
             PackageTypeFilter.ALL -> result
-            PackageTypeFilter.USER -> result.filter { it.type == com.adbdeck.core.adb.api.PackageType.USER }
-            PackageTypeFilter.SYSTEM -> result.filter { it.type == com.adbdeck.core.adb.api.PackageType.SYSTEM }
+            PackageTypeFilter.USER -> result.filter { it.type == com.adbdeck.core.adb.api.packages.PackageType.USER }
+            PackageTypeFilter.SYSTEM -> result.filter { it.type == com.adbdeck.core.adb.api.packages.PackageType.SYSTEM }
         }
 
         // Текстовый поиск

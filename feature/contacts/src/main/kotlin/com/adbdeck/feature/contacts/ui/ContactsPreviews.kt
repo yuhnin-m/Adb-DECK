@@ -2,15 +2,15 @@ package com.adbdeck.feature.contacts.ui
 
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
-import com.adbdeck.core.adb.api.Contact
-import com.adbdeck.core.adb.api.ContactAccount
-import com.adbdeck.core.adb.api.ContactDetails
-import com.adbdeck.core.adb.api.ContactEmail
-import com.adbdeck.core.adb.api.ContactOrganization
-import com.adbdeck.core.adb.api.ContactPhone
-import com.adbdeck.core.adb.api.EmailType
-import com.adbdeck.core.adb.api.PhoneType
-import com.adbdeck.core.adb.api.RawContactInfo
+import com.adbdeck.core.adb.api.contacts.Contact
+import com.adbdeck.core.adb.api.contacts.ContactAccount
+import com.adbdeck.core.adb.api.contacts.ContactDetails
+import com.adbdeck.core.adb.api.contacts.ContactEmail
+import com.adbdeck.core.adb.api.contacts.ContactOrganization
+import com.adbdeck.core.adb.api.contacts.ContactPhone
+import com.adbdeck.core.adb.api.contacts.EmailType
+import com.adbdeck.core.adb.api.contacts.PhoneType
+import com.adbdeck.core.adb.api.contacts.RawContactInfo
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.feature.contacts.AddContactFormState
 import com.adbdeck.feature.contacts.ContactDetailState

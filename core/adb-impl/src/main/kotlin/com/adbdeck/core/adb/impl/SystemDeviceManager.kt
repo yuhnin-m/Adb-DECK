@@ -1,9 +1,9 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.AdbClient
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceEndpoint
-import com.adbdeck.core.adb.api.DeviceManager
+import com.adbdeck.core.adb.api.adb.AdbClient
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceEndpoint
+import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.SettingsRepository
 import kotlinx.coroutines.CancellationException

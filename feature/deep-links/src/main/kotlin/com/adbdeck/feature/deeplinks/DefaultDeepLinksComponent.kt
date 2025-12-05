@@ -1,13 +1,13 @@
 package com.adbdeck.feature.deeplinks
 
-import com.adbdeck.core.adb.api.DeepLinkParams
-import com.adbdeck.core.adb.api.ExtraType
-import com.adbdeck.core.adb.api.IntentExtra
-import com.adbdeck.core.adb.api.IntentLaunchClient
-import com.adbdeck.core.adb.api.IntentParams
-import com.adbdeck.core.adb.api.LaunchMode
-import com.adbdeck.core.adb.api.LaunchResult
-import com.adbdeck.core.adb.api.DeviceManager
+import com.adbdeck.core.adb.api.intents.DeepLinkParams
+import com.adbdeck.core.adb.api.intents.ExtraType
+import com.adbdeck.core.adb.api.intents.IntentExtra
+import com.adbdeck.core.adb.api.intents.IntentLaunchClient
+import com.adbdeck.core.adb.api.intents.IntentParams
+import com.adbdeck.core.adb.api.intents.LaunchMode
+import com.adbdeck.core.adb.api.intents.LaunchResult
+import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.deeplinks.storage.DeepLinksStorage
 import com.arkivanov.decompose.ComponentContext

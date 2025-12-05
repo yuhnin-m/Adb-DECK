@@ -60,9 +60,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.ExtraType
-import com.adbdeck.core.adb.api.IntentExtra
-import com.adbdeck.core.adb.api.LaunchMode
+import com.adbdeck.core.adb.api.intents.ExtraType
+import com.adbdeck.core.adb.api.intents.IntentExtra
+import com.adbdeck.core.adb.api.intents.LaunchMode
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.feature.deeplinks.DeepLinksComponent
 import com.adbdeck.feature.deeplinks.DeepLinksState

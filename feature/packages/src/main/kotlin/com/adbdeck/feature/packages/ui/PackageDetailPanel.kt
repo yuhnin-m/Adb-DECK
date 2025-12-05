@@ -43,8 +43,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.AppPackage
-import com.adbdeck.core.adb.api.PackageDetails
+import com.adbdeck.core.adb.api.packages.AppPackage
+import com.adbdeck.core.adb.api.packages.PackageDetails
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.feature.packages.PackageDetailState
 import com.adbdeck.feature.packages.PackagesComponent

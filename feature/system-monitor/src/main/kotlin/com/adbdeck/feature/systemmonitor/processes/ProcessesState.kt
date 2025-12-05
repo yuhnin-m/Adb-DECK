@@ -1,8 +1,8 @@
 package com.adbdeck.feature.systemmonitor.processes
 
-import com.adbdeck.core.adb.api.ProcessInfo
-import com.adbdeck.core.adb.api.ProcessDetails
-import com.adbdeck.core.adb.api.SystemSnapshot
+import com.adbdeck.core.adb.api.monitoring.ProcessInfo
+import com.adbdeck.core.adb.api.monitoring.ProcessDetails
+import com.adbdeck.core.adb.api.monitoring.SystemSnapshot
 
 // ── Состояние списка процессов ────────────────────────────────────────────────
 

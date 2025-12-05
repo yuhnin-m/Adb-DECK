@@ -1,7 +1,7 @@
 package com.adbdeck.app.devicemanager
 
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceEndpoint
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import kotlinx.coroutines.flow.StateFlow
 
 /**

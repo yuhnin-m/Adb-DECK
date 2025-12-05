@@ -1,7 +1,7 @@
 package com.adbdeck.feature.settings
 
-import com.adbdeck.core.adb.api.AdbCheckResult
-import com.adbdeck.core.adb.api.AdbClient
+import com.adbdeck.core.adb.api.adb.AdbCheckResult
+import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext

@@ -1,6 +1,6 @@
 package com.adbdeck.feature.screentools.service
 
-import com.adbdeck.core.adb.api.ScreenshotOptions
+import com.adbdeck.core.adb.api.screen.ScreenshotOptions
 
 /**
  * Сервис создания скриншотов Android-устройства.

@@ -1,7 +1,7 @@
 package com.adbdeck.feature.systemmonitor.storage
 
-import com.adbdeck.core.adb.api.StoragePartition
-import com.adbdeck.core.adb.api.StorageSummary
+import com.adbdeck.core.adb.api.monitoring.StoragePartition
+import com.adbdeck.core.adb.api.monitoring.StorageSummary
 
 // ── Состояние экрана хранилища ────────────────────────────────────────────────
 

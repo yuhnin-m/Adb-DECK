@@ -1,8 +1,8 @@
 package com.adbdeck.feature.apkinstall
 
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.DeviceState
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.apkinstall.service.ApkInstallService
 import com.arkivanov.decompose.ComponentContext

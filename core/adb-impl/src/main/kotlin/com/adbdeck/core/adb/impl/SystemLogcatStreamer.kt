@@ -1,6 +1,6 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.LogcatStreamer
+import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

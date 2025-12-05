@@ -1,6 +1,6 @@
 package com.adbdeck.feature.packages
 
-import com.adbdeck.core.adb.api.AppPackage
+import com.adbdeck.core.adb.api.packages.AppPackage
 import kotlinx.coroutines.flow.StateFlow
 
 /**

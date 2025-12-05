@@ -1,10 +1,10 @@
 package com.adbdeck.feature.deeplinks.storage
 
-import com.adbdeck.core.adb.api.DeepLinkParams
-import com.adbdeck.core.adb.api.ExtraType
-import com.adbdeck.core.adb.api.IntentExtra
-import com.adbdeck.core.adb.api.IntentParams
-import com.adbdeck.core.adb.api.LaunchMode
+import com.adbdeck.core.adb.api.intents.DeepLinkParams
+import com.adbdeck.core.adb.api.intents.ExtraType
+import com.adbdeck.core.adb.api.intents.IntentExtra
+import com.adbdeck.core.adb.api.intents.IntentParams
+import com.adbdeck.core.adb.api.intents.LaunchMode
 import com.adbdeck.feature.deeplinks.IntentTemplate
 import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
 import kotlinx.coroutines.Dispatchers

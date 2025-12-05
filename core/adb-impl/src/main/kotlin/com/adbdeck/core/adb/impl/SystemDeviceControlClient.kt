@@ -1,7 +1,7 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.DeviceControlClient
-import com.adbdeck.core.adb.api.RebootMode
+import com.adbdeck.core.adb.api.device.DeviceControlClient
+import com.adbdeck.core.adb.api.device.RebootMode
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 

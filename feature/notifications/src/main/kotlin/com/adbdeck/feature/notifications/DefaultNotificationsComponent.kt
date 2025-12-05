@@ -1,8 +1,8 @@
 package com.adbdeck.feature.notifications
 
-import com.adbdeck.core.adb.api.NotificationRecord
-import com.adbdeck.core.adb.api.NotificationsClient
-import com.adbdeck.core.adb.api.DeviceManager
+import com.adbdeck.core.adb.api.notifications.NotificationRecord
+import com.adbdeck.core.adb.api.notifications.NotificationsClient
+import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.notifications.storage.NotificationsStorage
 import com.arkivanov.decompose.ComponentContext

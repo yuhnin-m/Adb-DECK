@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.NotificationRecord
+import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView

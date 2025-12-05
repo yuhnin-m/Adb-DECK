@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.adbdeck.core.adb.api.AppPackage
-import com.adbdeck.core.adb.api.PackageDetails
-import com.adbdeck.core.adb.api.PackageType
+import com.adbdeck.core.adb.api.packages.AppPackage
+import com.adbdeck.core.adb.api.packages.PackageDetails
+import com.adbdeck.core.adb.api.packages.PackageType
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.feature.packages.ActionFeedback
 import com.adbdeck.feature.packages.PackageDetailState

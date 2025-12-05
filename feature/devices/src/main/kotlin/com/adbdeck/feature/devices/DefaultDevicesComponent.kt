@@ -1,12 +1,12 @@
 package com.adbdeck.feature.devices
 
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceControlClient
-import com.adbdeck.core.adb.api.DeviceInfoClient
-import com.adbdeck.core.adb.api.DeviceInfoLoadState
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.DeviceTransportType
-import com.adbdeck.core.adb.api.RebootMode
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceControlClient
+import com.adbdeck.core.adb.api.device.DeviceInfoClient
+import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceTransportType
+import com.adbdeck.core.adb.api.device.RebootMode
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext

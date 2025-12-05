@@ -1,8 +1,8 @@
 package com.adbdeck.feature.systemmonitor
 
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.PackageClient
-import com.adbdeck.core.adb.api.SystemMonitorClient
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.packages.PackageClient
+import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.systemmonitor.processes.DefaultProcessesComponent
 import com.adbdeck.feature.systemmonitor.processes.ProcessesComponent

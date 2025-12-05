@@ -1,9 +1,9 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.DeepLinkParams
-import com.adbdeck.core.adb.api.IntentLaunchClient
-import com.adbdeck.core.adb.api.IntentParams
-import com.adbdeck.core.adb.api.LaunchResult
+import com.adbdeck.core.adb.api.intents.DeepLinkParams
+import com.adbdeck.core.adb.api.intents.IntentLaunchClient
+import com.adbdeck.core.adb.api.intents.IntentParams
+import com.adbdeck.core.adb.api.intents.LaunchResult
 import com.adbdeck.core.process.ProcessRunner
 
 /**

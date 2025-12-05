@@ -1,11 +1,11 @@
 package com.adbdeck.core.adb.impl
 
-import com.adbdeck.core.adb.api.ProcessDetails
-import com.adbdeck.core.adb.api.ProcessInfo
-import com.adbdeck.core.adb.api.ProcessSnapshot
-import com.adbdeck.core.adb.api.ProcessState
-import com.adbdeck.core.adb.api.StoragePartition
-import com.adbdeck.core.adb.api.SystemMonitorClient
+import com.adbdeck.core.adb.api.monitoring.ProcessDetails
+import com.adbdeck.core.adb.api.monitoring.ProcessInfo
+import com.adbdeck.core.adb.api.monitoring.ProcessSnapshot
+import com.adbdeck.core.adb.api.monitoring.ProcessState
+import com.adbdeck.core.adb.api.monitoring.StoragePartition
+import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 

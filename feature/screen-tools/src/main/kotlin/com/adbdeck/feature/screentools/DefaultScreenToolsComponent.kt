@@ -1,11 +1,11 @@
 package com.adbdeck.feature.screentools
 
-import com.adbdeck.core.adb.api.AdbDevice
-import com.adbdeck.core.adb.api.DeviceManager
-import com.adbdeck.core.adb.api.DeviceState
-import com.adbdeck.core.adb.api.ScreenrecordOptions
-import com.adbdeck.core.adb.api.ScreenrecordSession
-import com.adbdeck.core.adb.api.ScreenshotOptions
+import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.screen.ScreenrecordOptions
+import com.adbdeck.core.adb.api.screen.ScreenrecordSession
+import com.adbdeck.core.adb.api.screen.ScreenshotOptions
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.screentools.service.HostFileService
 import com.adbdeck.feature.screentools.service.ScreenrecordService

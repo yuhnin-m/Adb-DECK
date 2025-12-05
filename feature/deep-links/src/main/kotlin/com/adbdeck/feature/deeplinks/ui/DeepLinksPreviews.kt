@@ -1,9 +1,9 @@
 package com.adbdeck.feature.deeplinks.ui
 
 import androidx.compose.runtime.Composable
-import com.adbdeck.core.adb.api.ExtraType
-import com.adbdeck.core.adb.api.LaunchMode
-import com.adbdeck.core.adb.api.LaunchResult
+import com.adbdeck.core.adb.api.intents.ExtraType
+import com.adbdeck.core.adb.api.intents.LaunchMode
+import com.adbdeck.core.adb.api.intents.LaunchResult
 import com.adbdeck.feature.deeplinks.DeepLinksComponent
 import com.adbdeck.feature.deeplinks.DeepLinksState
 import com.adbdeck.feature.deeplinks.DeepLinksTab

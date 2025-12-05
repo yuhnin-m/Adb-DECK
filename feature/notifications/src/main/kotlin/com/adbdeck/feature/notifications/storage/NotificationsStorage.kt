@@ -1,6 +1,6 @@
 package com.adbdeck.feature.notifications.storage
 
-import com.adbdeck.core.adb.api.NotificationRecord
+import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import com.adbdeck.feature.notifications.SavedNotification
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

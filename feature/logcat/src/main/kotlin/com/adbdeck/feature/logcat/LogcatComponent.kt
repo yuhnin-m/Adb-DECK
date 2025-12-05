@@ -1,6 +1,6 @@
 package com.adbdeck.feature.logcat
 
-import com.adbdeck.core.adb.api.LogcatLevel
+import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import kotlinx.coroutines.flow.StateFlow
 
 /**

@@ -16,7 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.adb.api.AdbDevice
+import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
