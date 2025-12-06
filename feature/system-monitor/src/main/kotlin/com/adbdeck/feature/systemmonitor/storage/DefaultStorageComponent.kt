@@ -3,7 +3,7 @@ package com.adbdeck.feature.systemmonitor.storage
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
-import com.adbdeck.core.adb.api.monitoring.StorageSummary
+import com.adbdeck.core.adb.api.monitoring.storage.StorageSummary
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.core.utils.runCatchingPreserveCancellation

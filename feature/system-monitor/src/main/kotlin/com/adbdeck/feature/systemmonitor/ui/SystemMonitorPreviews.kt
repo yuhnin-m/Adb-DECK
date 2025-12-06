@@ -2,7 +2,9 @@ package com.adbdeck.feature.systemmonitor.ui
 
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
-import com.adbdeck.core.adb.api.monitoring.*
+import com.adbdeck.core.adb.api.monitoring.SystemSnapshot
+import com.adbdeck.core.adb.api.monitoring.process.*
+import com.adbdeck.core.adb.api.monitoring.storage.*
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
 import com.adbdeck.feature.systemmonitor.SystemMonitorTab

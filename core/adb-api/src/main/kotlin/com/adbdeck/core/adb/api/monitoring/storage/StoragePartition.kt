@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.api.monitoring
+package com.adbdeck.core.adb.api.monitoring.storage
 
 /**
  * Информация об одном разделе / точке монтирования файловой системы.
@@ -56,42 +56,4 @@ data class StoragePartition(
             filesystem == "cgroup" ||
             filesystem == "pstore" ||
             filesystem == "selinuxfs"
-}
-
-/**
- * Категория раздела файловой системы для цветовой маркировки в UI.
- */
-enum class StorageCategory {
-    /** Системный раздел (/, /system, /vendor). */
-    SYSTEM,
-
-    /** Пользовательские данные (/data). */
-    DATA,
-
-    /** Внешнее хранилище, SD-карта (/sdcard, /storage/emulated/0). */
-    EXTERNAL,
-
-    /** Прочие разделы (tmpfs, /apex и т. д.). */
-    OTHER,
-}
-
-/**
- * Агрегированная сводка по всему пользовательскому хранилищу устройства.
- *
- * Вычисляется из [StoragePartition.isRelevant] разделов в [DefaultSystemMonitorClient].
- *
- * @param totalKb  Суммарный размер всех релевантных разделов в KB.
- * @param usedKb   Суммарно использовано в KB.
- * @param freeKb   Суммарно свободно в KB.
- */
-data class StorageSummary(
-    val totalKb: Long,
-    val usedKb: Long,
-    val freeKb: Long,
-) {
-    /** Процент использования (0–100). Безопасен при totalKb == 0. */
-    val usedPercent: Int
-        get() = if (totalKb > 0L)
-            ((usedKb.toFloat() / totalKb) * 100).toInt().coerceIn(0, 100)
-        else 0
 }

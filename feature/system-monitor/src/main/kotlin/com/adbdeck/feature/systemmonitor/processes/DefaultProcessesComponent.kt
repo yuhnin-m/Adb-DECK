@@ -4,7 +4,7 @@ import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.adb.api.packages.PackageClient
-import com.adbdeck.core.adb.api.monitoring.ProcessInfo
+import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.adb.api.monitoring.SystemSnapshot
 import com.adbdeck.core.settings.SettingsRepository
@@ -236,7 +236,7 @@ class DefaultProcessesComponent(
         )
     }
 
-    private fun applySnapshot(snapshot: com.adbdeck.core.adb.api.monitoring.ProcessSnapshot) {
+    private fun applySnapshot(snapshot: com.adbdeck.core.adb.api.monitoring.process.ProcessSnapshot) {
         val historyPoint = SystemSnapshot(
             cpuPercent = snapshot.systemCpuPercent,
             usedRamKb = snapshot.usedRamKb,

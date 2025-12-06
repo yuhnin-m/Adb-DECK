@@ -1,6 +1,6 @@
 package com.adbdeck.feature.systemmonitor.processes
 
-import com.adbdeck.core.adb.api.monitoring.ProcessInfo
+import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import kotlinx.coroutines.flow.StateFlow
 
 /**

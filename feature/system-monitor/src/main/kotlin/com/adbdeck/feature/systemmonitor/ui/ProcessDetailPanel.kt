@@ -15,8 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.adbdeck.core.adb.api.monitoring.ProcessDetails
-import com.adbdeck.core.adb.api.monitoring.ProcessInfo
+import com.adbdeck.core.adb.api.monitoring.process.ProcessDetails
+import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.core.utils.formatKb
 import com.adbdeck.feature.systemmonitor.processes.ProcessDetailState

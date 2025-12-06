@@ -28,8 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.adbdeck.core.adb.api.monitoring.ProcessInfo
-import com.adbdeck.core.adb.api.monitoring.ProcessState
+import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
+import com.adbdeck.core.adb.api.monitoring.process.ProcessState
 import com.adbdeck.core.adb.api.monitoring.SystemSnapshot
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView

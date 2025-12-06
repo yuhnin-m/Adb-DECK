@@ -17,9 +17,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.adbdeck.core.adb.api.monitoring.StorageCategory
-import com.adbdeck.core.adb.api.monitoring.StoragePartition
-import com.adbdeck.core.adb.api.monitoring.StorageSummary
+import com.adbdeck.core.adb.api.monitoring.storage.StorageCategory
+import com.adbdeck.core.adb.api.monitoring.storage.StoragePartition
+import com.adbdeck.core.adb.api.monitoring.storage.StorageSummary
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView

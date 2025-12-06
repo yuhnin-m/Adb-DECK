@@ -1,28 +1,6 @@
 package com.adbdeck.core.adb.api.device
 
 /**
- * Тип транспортного соединения ADB-устройства.
- *
- * Определяется эвристически по формату [AdbDevice.deviceId]:
- * - `emulator-XXXX` → [EMULATOR]
- * - `IP:PORT` (содержит двоеточие) → [WIFI]
- * - Всё остальное → [USB]
- */
-enum class DeviceTransportType {
-    /** USB-кабель. */
-    USB,
-
-    /** Беспроводное подключение по Wi-Fi (adb over TCP/IP). */
-    WIFI,
-
-    /** Android-эмулятор (emulator-5554 и т.д.). */
-    EMULATOR,
-
-    /** Не удалось определить тип. */
-    UNKNOWN,
-}
-
-/**
  * Расширенная информация об Android-устройстве, полученная через ADB shell.
  *
  * Основной источник — `adb -s <id> shell getprop` (батарея — `dumpsys battery`,
@@ -80,23 +58,4 @@ data class DeviceInfo(
     /** `true` если устройство является эмулятором. */
     val isEmulator: Boolean
         get() = transportType == DeviceTransportType.EMULATOR
-}
-
-// ── Состояние загрузки DeviceInfo ─────────────────────────────────────────────
-
-/**
- * Состояние загрузки [DeviceInfo] для одного устройства.
- *
- * Используется в [com.adbdeck.feature.devices.DevicesState.deviceInfos]
- * как значения Map<deviceId, DeviceInfoLoadState>.
- */
-sealed class DeviceInfoLoadState {
-    /** Информация загружается. */
-    data object Loading : DeviceInfoLoadState()
-
-    /** Информация успешно загружена. */
-    data class Loaded(val info: DeviceInfo) : DeviceInfoLoadState()
-
-    /** Не удалось загрузить информацию. */
-    data class Failed(val message: String) : DeviceInfoLoadState()
 }

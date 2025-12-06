@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.api.monitoring
+package com.adbdeck.core.adb.api.monitoring.process
 
 /**
  * Расширенная информация о конкретном процессе Android-устройства.

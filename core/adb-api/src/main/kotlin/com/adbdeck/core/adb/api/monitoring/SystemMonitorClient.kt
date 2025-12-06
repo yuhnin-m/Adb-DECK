@@ -1,5 +1,10 @@
 package com.adbdeck.core.adb.api.monitoring
 
+import com.adbdeck.core.adb.api.monitoring.process.ProcessDetails
+import com.adbdeck.core.adb.api.monitoring.process.ProcessSnapshot
+import com.adbdeck.core.adb.api.monitoring.storage.StoragePartition
+import com.adbdeck.core.adb.api.packages.PackageClient
+
 /**
  * Контракт клиента для мониторинга состояния Android-устройства.
  *

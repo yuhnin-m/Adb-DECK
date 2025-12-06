@@ -263,11 +263,11 @@ private class PreviewSystemMonitorComponent : SystemMonitorComponent {
         override fun onRefresh() = Unit
         override fun onSearchChanged(query: String) = Unit
         override fun onSortFieldChanged(field: ProcessSortField) = Unit
-        override fun onSelectProcess(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
+        override fun onSelectProcess(process: com.adbdeck.core.adb.api.monitoring.process.ProcessInfo) = Unit
         override fun onClearSelection() = Unit
-        override fun onKillProcess(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
-        override fun onForceStopApp(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
-        override fun onOpenPackageDetails(process: com.adbdeck.core.adb.api.monitoring.ProcessInfo) = Unit
+        override fun onKillProcess(process: com.adbdeck.core.adb.api.monitoring.process.ProcessInfo) = Unit
+        override fun onForceStopApp(process: com.adbdeck.core.adb.api.monitoring.process.ProcessInfo) = Unit
+        override fun onOpenPackageDetails(process: com.adbdeck.core.adb.api.monitoring.process.ProcessInfo) = Unit
         override fun onDismissFeedback() = Unit
     }
     override val storageComponent: StorageComponent = object : StorageComponent {
