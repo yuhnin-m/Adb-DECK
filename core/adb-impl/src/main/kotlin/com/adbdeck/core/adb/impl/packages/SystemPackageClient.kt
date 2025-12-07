@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.packages
 
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.packages.PackageClient
@@ -8,9 +8,9 @@ import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
- * Реализация [PackageClient] поверх системного `adb`.
+ * Реализация [com.adbdeck.core.adb.api.packages.PackageClient] поверх системного `adb`.
  *
- * Все операции делегируются [ProcessRunner], который запускает процессы и
+ * Все операции делегируются [com.adbdeck.core.process.ProcessRunner], который запускает процессы и
  * возвращает stdout/stderr. I/O выполняется в потоке Dispatchers.IO (внутри ProcessRunner).
  *
  * @param processRunner Абстракция запуска процессов.

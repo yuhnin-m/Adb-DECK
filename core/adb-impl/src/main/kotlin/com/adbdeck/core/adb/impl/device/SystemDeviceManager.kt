@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.device
 
 import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.device.AdbDevice
@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Реализация [DeviceManager] через системный adb-процесс.
+ * Реализация [com.adbdeck.core.adb.api.device.DeviceManager] через системный adb-процесс.
  *
- * Использует [AdbClient] для получения списка устройств (`adb devices`) и
- * [ProcessRunner] для операций подключения/отключения/tcpip.
+ * Использует [com.adbdeck.core.adb.api.adb.AdbClient] для получения списка устройств (`adb devices`) и
+ * [com.adbdeck.core.process.ProcessRunner] для операций подключения/отключения/tcpip.
  *
  * Singleton — живет все время работы приложения.
  *
@@ -51,7 +51,7 @@ class SystemDeviceManager(
     /** Загружает сохраненные endpoints из настроек. */
     private fun loadEndpointsFromSettings(): List<DeviceEndpoint> =
         settingsRepository.getSettings().knownEndpoints
-            .mapNotNull { DeviceEndpoint.fromAddress(it) }
+            .mapNotNull { DeviceEndpoint.Companion.fromAddress(it) }
 
     // ── refresh ────────────────────────────────────────────────────────────
 

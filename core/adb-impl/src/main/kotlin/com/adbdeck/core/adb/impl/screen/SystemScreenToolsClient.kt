@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.screen
 
 import com.adbdeck.core.adb.api.screen.ApkInstallOptions
 import com.adbdeck.core.adb.api.screen.ApkInstallProgress
@@ -27,7 +27,7 @@ import javax.imageio.ImageIO
 import javax.imageio.ImageWriteParam
 
 /**
- * Реализация [ScreenToolsClient] через системный `adb`.
+ * Реализация [com.adbdeck.core.adb.api.screen.ScreenToolsClient] через системный `adb`.
  *
  * Ключевые моменты:
  * - screenshot снимается через `adb exec-out screencap -p`
@@ -298,7 +298,7 @@ class SystemScreenToolsClient(
                     val exitCode = process.exitValue()
                     val outputText = output.toString().trim()
                     val success = exitCode == 0 &&
-                        outputText.lineSequence().any { it.contains("Success", ignoreCase = true) }
+                            outputText.lineSequence().any { it.contains("Success", ignoreCase = true) }
 
                     if (!success) {
                         error(
@@ -364,7 +364,7 @@ class SystemScreenToolsClient(
                     targetPng.delete()
                     error(
                         "ADB screenshot завершился с ошибкой (exitCode=$exitCode). " +
-                            "Причина: ${stderrText.ifBlank { "детали не получены" }}"
+                                "Причина: ${stderrText.ifBlank { "детали не получены" }}"
                     )
                 }
             } catch (t: Throwable) {

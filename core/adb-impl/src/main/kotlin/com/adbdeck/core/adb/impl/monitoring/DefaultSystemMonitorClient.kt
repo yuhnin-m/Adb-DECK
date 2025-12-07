@@ -1,16 +1,16 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.monitoring
 
+import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.adb.api.monitoring.process.ProcessDetails
 import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import com.adbdeck.core.adb.api.monitoring.process.ProcessSnapshot
 import com.adbdeck.core.adb.api.monitoring.process.ProcessState
 import com.adbdeck.core.adb.api.monitoring.storage.StoragePartition
-import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
- * Реализация [SystemMonitorClient] поверх системного `adb`.
+ * Реализация [com.adbdeck.core.adb.api.monitoring.SystemMonitorClient] поверх системного `adb`.
  *
  * ## Стратегия получения данных о процессах:
  *
@@ -26,7 +26,7 @@ import com.adbdeck.core.utils.runCatchingPreserveCancellation
  *
  * ## Потокобезопасность:
  * Класс не содержит изменяемого состояния — все методы чисто функциональные.
- * I/O делегируется [ProcessRunner] (Dispatchers.IO).
+ * I/O делегируется [com.adbdeck.core.process.ProcessRunner] (Dispatchers.IO).
  *
  * @param processRunner Абстракция запуска внешних процессов.
  */
@@ -174,7 +174,7 @@ class DefaultSystemMonitorClient(
         val virt = parseMemValue(parts[4])
         val res = parseMemValue(parts[5])
         // S — состояние (индекс 7)
-        val state = ProcessState.fromString(parts[7])
+        val state = ProcessState.Companion.fromString(parts[7])
         // %CPU (индекс 8), %MEM (индекс 9)
         val cpu = parts.getOrNull(8)?.trimStart('[')?.trimEnd(']')?.toFloatOrNull() ?: 0f
         val mem = parts.getOrNull(9)?.toFloatOrNull() ?: 0f
@@ -197,7 +197,7 @@ class DefaultSystemMonitorClient(
         val pid = parts[0].toIntOrNull() ?: return null
         val user = "?"
         val cpu = parts.getOrNull(2)?.trimEnd('%')?.toFloatOrNull() ?: 0f
-        val state = ProcessState.fromString(parts.getOrNull(3) ?: "?")
+        val state = ProcessState.Companion.fromString(parts.getOrNull(3) ?: "?")
         val vss = parseMemValue(parts.getOrNull(5) ?: "0")
         val rss = parseMemValue(parts.getOrNull(6) ?: "0")
         val name = parts.lastOrNull() ?: return null
@@ -220,7 +220,7 @@ class DefaultSystemMonitorClient(
             val user = parts[1]
             val ppid = parts[2].toIntOrNull() ?: 0
             val name = parts[3]
-            val state = ProcessState.fromString(parts[4])
+            val state = ProcessState.Companion.fromString(parts[4])
             val rss = parts.getOrNull(5)?.toLongOrNull() ?: 0L
             val vsz = parts.getOrNull(6)?.toLongOrNull() ?: 0L
 
@@ -365,7 +365,7 @@ class DefaultSystemMonitorClient(
             name = name,
             packageName = packageFromName,
             user = status["Uid"]?.split("\t")?.firstOrNull() ?: "",
-            state = ProcessState.fromString(status["State"] ?: "?"),
+            state = ProcessState.Companion.fromString(status["State"] ?: "?"),
             ppid = status["PPid"]?.toIntOrNull() ?: 0,
             threads = status["Threads"]?.toIntOrNull() ?: 0,
             cmdline = cmdline,

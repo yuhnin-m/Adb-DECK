@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.device
 
 import com.adbdeck.core.adb.api.device.DeviceControlClient
 import com.adbdeck.core.adb.api.device.RebootMode
@@ -6,12 +6,12 @@ import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
- * Реализация [DeviceControlClient] через системный adb-процесс.
+ * Реализация [com.adbdeck.core.adb.api.device.DeviceControlClient] через системный adb-процесс.
  *
  * ## Выполняемые команды:
- * - [RebootMode.NORMAL]     → `adb -s <id> reboot`
- * - [RebootMode.RECOVERY]   → `adb -s <id> reboot recovery`
- * - [RebootMode.BOOTLOADER] → `adb -s <id> reboot bootloader`
+ * - [com.adbdeck.core.adb.api.device.RebootMode.NORMAL]     → `adb -s <id> reboot`
+ * - [com.adbdeck.core.adb.api.device.RebootMode.RECOVERY]   → `adb -s <id> reboot recovery`
+ * - [com.adbdeck.core.adb.api.device.RebootMode.BOOTLOADER] → `adb -s <id> reboot bootloader`
  *
  * ## Важно о поведении adb reboot:
  * Команда не возвращает вывода — устройство немедленно начинает перезагрузку,
@@ -35,8 +35,8 @@ class SystemDeviceControlClient(
             addAll(listOf("-s", deviceId))
             add("reboot")
             when (mode) {
-                RebootMode.NORMAL     -> Unit               // без аргумента
-                RebootMode.RECOVERY   -> add("recovery")
+                RebootMode.NORMAL -> Unit               // без аргумента
+                RebootMode.RECOVERY -> add("recovery")
                 RebootMode.BOOTLOADER -> add("bootloader")
             }
         }

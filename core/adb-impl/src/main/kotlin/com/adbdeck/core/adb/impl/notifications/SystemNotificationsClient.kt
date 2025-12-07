@@ -1,17 +1,18 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.notifications
 
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import com.adbdeck.core.adb.api.notifications.NotificationsClient
 import com.adbdeck.core.process.ProcessRunner
+import kotlin.collections.iterator
 
 /**
- * Реализация [NotificationsClient] через `adb shell dumpsys notification`.
+ * Реализация [com.adbdeck.core.adb.api.notifications.NotificationsClient] через `adb shell dumpsys notification`.
  *
  * Парсинг выполняется по принципу best-effort:
  * - Формат вывода `dumpsys notification` варьируется между версиями Android и вендорами.
  * - Если поле не удалось извлечь, используется null или значение по умолчанию.
  * - [parseBlock] возвращает null только если packageName отсутствует в блоке.
- * - Исходный блок дампа всегда сохраняется в [NotificationRecord.rawBlock].
+ * - Исходный блок дампа всегда сохраняется в [com.adbdeck.core.adb.api.notifications.NotificationRecord.rawBlock].
  *
  * @param processRunner Исполнитель внешних процессов.
  */
@@ -127,28 +128,28 @@ class SystemNotificationsClient(
         val imageParameters = parseImageParameters(block, keyValueMap)
 
         return NotificationRecord(
-            key             = key,
-            packageName     = packageName,
-            notificationId  = notificationId,
-            tag             = tag,
-            importance      = importance,
-            channelId       = channelId,
-            title           = title,
-            text            = text,
-            subText         = subText,
-            bigText         = bigText,
-            summaryText     = summaryText,
-            category        = category,
-            flags           = flags,
-            isOngoing       = isOngoing,
-            isClearable     = isClearable,
-            postedAt        = postedAt,
-            group           = group,
-            sortKey         = sortKey,
-            actionsCount    = actionsCount,
-            actionTitles    = actionTitles,
+            key = key,
+            packageName = packageName,
+            notificationId = notificationId,
+            tag = tag,
+            importance = importance,
+            channelId = channelId,
+            title = title,
+            text = text,
+            subText = subText,
+            bigText = bigText,
+            summaryText = summaryText,
+            category = category,
+            flags = flags,
+            isOngoing = isOngoing,
+            isClearable = isClearable,
+            postedAt = postedAt,
+            group = group,
+            sortKey = sortKey,
+            actionsCount = actionsCount,
+            actionTitles = actionTitles,
             imageParameters = imageParameters,
-            rawBlock        = block,
+            rawBlock = block,
         )
     }
 

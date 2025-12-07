@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.logcat
 
 import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import kotlinx.coroutines.Dispatchers
@@ -10,10 +10,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * Реализация [LogcatStreamer] через системный `adb logcat`.
+ * Реализация [com.adbdeck.core.adb.api.logcat.LogcatStreamer] через системный `adb logcat`.
  *
  * Запускает `adb -s <deviceId> logcat -v threadtime` как отдельный OS-процесс.
- * Строки читаются на [Dispatchers.IO] и передаются в поток через Channel.
+ * Строки читаются на [kotlinx.coroutines.Dispatchers.IO] и передаются в поток через Channel.
  *
  * Безопасность ресурсов:
  * - `awaitClose` гарантирует уничтожение процесса при отмене коллектора.

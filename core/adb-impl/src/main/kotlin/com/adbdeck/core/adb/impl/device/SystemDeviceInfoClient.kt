@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.device
 
 import com.adbdeck.core.adb.api.device.DeviceInfo
 import com.adbdeck.core.adb.api.device.DeviceInfoClient
@@ -7,7 +7,7 @@ import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
- * Реализация [DeviceInfoClient] через ADB shell.
+ * Реализация [com.adbdeck.core.adb.api.device.DeviceInfoClient] через ADB shell.
  *
  * ## Стратегия получения данных
  *
@@ -30,28 +30,28 @@ class SystemDeviceInfoClient(
         deviceId: String,
         adbPath: String,
     ): Result<DeviceInfo> = runCatchingPreserveCancellation {
-        val props       = fetchProps(deviceId, adbPath)
-        val resolution  = fetchScreenResolution(deviceId, adbPath)
-        val battery     = fetchBattery(deviceId, adbPath)
-        val transport   = detectTransportType(deviceId)
+        val props = fetchProps(deviceId, adbPath)
+        val resolution = fetchScreenResolution(deviceId, adbPath)
+        val battery = fetchBattery(deviceId, adbPath)
+        val transport = detectTransportType(deviceId)
 
         DeviceInfo(
-            deviceId       = deviceId,
-            model          = props["ro.product.model"] ?: "",
-            manufacturer   = props["ro.product.manufacturer"] ?: "",
-            brand          = props["ro.product.brand"] ?: "",
-            productName    = props["ro.product.name"] ?: "",
+            deviceId = deviceId,
+            model = props["ro.product.model"] ?: "",
+            manufacturer = props["ro.product.manufacturer"] ?: "",
+            brand = props["ro.product.brand"] ?: "",
+            productName = props["ro.product.name"] ?: "",
             androidVersion = props["ro.build.version.release"] ?: "",
-            sdkVersion     = props["ro.build.version.sdk"]?.toIntOrNull() ?: 0,
+            sdkVersion = props["ro.build.version.sdk"]?.toIntOrNull() ?: 0,
             buildFingerprint = props["ro.build.fingerprint"] ?: "",
-            securityPatch  = props["ro.build.version.security_patch"] ?: "",
-            cpuAbiList     = props["ro.product.cpu.abilist"]
+            securityPatch = props["ro.build.version.security_patch"] ?: "",
+            cpuAbiList = props["ro.product.cpu.abilist"]
                 ?: props["ro.product.cpu.abi"] ?: "",
             screenResolution = resolution,
-            screenDensity  = props["ro.sf.lcd_density"]?.toIntOrNull() ?: 0,
-            batteryLevel   = battery.first,
+            screenDensity = props["ro.sf.lcd_density"]?.toIntOrNull() ?: 0,
+            batteryLevel = battery.first,
             batteryCharging = battery.second,
-            transportType  = transport,
+            transportType = transport,
         )
     }
 
@@ -129,9 +129,9 @@ class SystemDeviceInfoClient(
 
     /**
      * Определяет тип транспорта по формату deviceId:
-     * - `emulator-XXXX` → [DeviceTransportType.EMULATOR]
-     * - `IP:PORT` (содержит двоеточие) → [DeviceTransportType.WIFI]
-     * - Всё остальное (серийный номер) → [DeviceTransportType.USB]
+     * - `emulator-XXXX` → [com.adbdeck.core.adb.api.device.DeviceTransportType.EMULATOR]
+     * - `IP:PORT` (содержит двоеточие) → [com.adbdeck.core.adb.api.device.DeviceTransportType.WIFI]
+     * - Всё остальное (серийный номер) → [com.adbdeck.core.adb.api.device.DeviceTransportType.USB]
      */
     private fun detectTransportType(deviceId: String): DeviceTransportType = when {
         deviceId.startsWith("emulator-") -> DeviceTransportType.EMULATOR

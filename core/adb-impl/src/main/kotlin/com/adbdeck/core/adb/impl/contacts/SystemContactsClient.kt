@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.contacts
 
 import com.adbdeck.core.adb.api.contacts.Contact
 import com.adbdeck.core.adb.api.contacts.ContactAccount
@@ -19,9 +19,10 @@ import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.collections.plusAssign
 
 /**
- * Реализация [ContactsClient] через `adb shell content query/insert/delete`.
+ * Реализация [com.adbdeck.core.adb.api.contacts.ContactsClient] через `adb shell content query/insert/delete`.
  *
  * ## Модель данных Android Contacts Provider
  *
@@ -94,7 +95,7 @@ class SystemContactsClient(
                 .toMutableList()
 
             if (accounts.none { it.isLocal }) {
-                accounts.add(0, ContactAccount.local())
+                accounts.add(0, ContactAccount.Companion.local())
             }
             accounts
         }
@@ -108,14 +109,14 @@ class SystemContactsClient(
             // 1. Список агрегированных контактов
             val contactRows = queryRows(
                 deviceId, adbPath,
-                uri        = "content://com.android.contacts/contacts",
+                uri = "content://com.android.contacts/contacts",
                 projection = "_id:display_name:has_phone_number",
             )
 
             // 2. Все телефоны → map[contactId → List<ContactPhone>]
             val phoneRows = queryRows(
                 deviceId, adbPath,
-                uri       = "content://com.android.contacts/data/phones",
+                uri = "content://com.android.contacts/data/phones",
                 projection = "contact_id:data1:data2:data3",
             )
             val phonesMap = buildPhonesMap(phoneRows)
@@ -123,7 +124,7 @@ class SystemContactsClient(
             // 3. Все email → map[contactId → primaryEmail]
             val emailRows = queryRows(
                 deviceId, adbPath,
-                uri       = "content://com.android.contacts/data/emails",
+                uri = "content://com.android.contacts/data/emails",
                 projection = "contact_id:data1:data2",
             )
             val emailsMap = buildEmailsMap(emailRows)
@@ -131,7 +132,7 @@ class SystemContactsClient(
             // 4. Raw contacts для account info → map[contactId → (accountName, accountType)]
             val rawRows = queryRows(
                 deviceId, adbPath,
-                uri       = "content://com.android.contacts/raw_contacts",
+                uri = "content://com.android.contacts/raw_contacts",
                 projection = "_id:contact_id:account_name:account_type",
             )
             val accountMap = buildAccountMap(rawRows)
@@ -142,12 +143,12 @@ class SystemContactsClient(
                 val displayName = row["display_name"].orEmpty()
                 val (accountName, accountType) = accountMap[id] ?: ("" to "")
                 Contact(
-                    id           = id,
-                    displayName  = displayName,
-                    phones       = phonesMap[id] ?: emptyList(),
+                    id = id,
+                    displayName = displayName,
+                    phones = phonesMap[id] ?: emptyList(),
                     primaryEmail = emailsMap[id] ?: "",
-                    accountName  = accountName,
-                    accountType  = accountType,
+                    accountName = accountName,
+                    accountType = accountType,
                 )
             }.sortedBy { it.displayName.lowercase() }
         }
@@ -162,7 +163,7 @@ class SystemContactsClient(
             // Все data-строки для конкретного контакта
             val dataRows = queryRows(
                 deviceId, adbPath,
-                uri       = "content://com.android.contacts/data",
+                uri = "content://com.android.contacts/data",
                 whereClause = "contact_id=$contactId",
                 projection = "_id:raw_contact_id:mimetype:data1:data2:data3:data4:data5:data6",
             )
@@ -170,21 +171,21 @@ class SystemContactsClient(
             // Raw contacts (для информации об аккаунтах)
             val rawRows = queryRows(
                 deviceId, adbPath,
-                uri       = "content://com.android.contacts/raw_contacts",
+                uri = "content://com.android.contacts/raw_contacts",
                 whereClause = "contact_id=$contactId",
                 projection = "_id:account_name:account_type",
             )
 
             // Разбор data-строк по mimetype
             var displayName = ""
-            var firstName   = ""
-            var lastName    = ""
-            var middleName  = ""
-            val phones    = mutableListOf<ContactPhone>()
-            val emails    = mutableListOf<ContactEmail>()
+            var firstName = ""
+            var lastName = ""
+            var middleName = ""
+            val phones = mutableListOf<ContactPhone>()
+            val emails = mutableListOf<ContactEmail>()
             val addresses = mutableListOf<ContactAddress>()
             var organization: ContactOrganization? = null
-            val notes     = StringBuilder()
+            val notes = StringBuilder()
 
             for (row in dataRows) {
                 val mimetype = row["mimetype"] ?: continue
@@ -196,16 +197,16 @@ class SystemContactsClient(
                 when (mimetype) {
                     "vnd.android.cursor.item/name" -> {
                         displayName = d1
-                        firstName   = d2
-                        lastName    = d3
-                        middleName  = d4
+                        firstName = d2
+                        lastName = d3
+                        middleName = d4
                     }
 
                     "vnd.android.cursor.item/phone_v2" -> {
                         if (d1.isNotBlank()) {
                             phones += ContactPhone(
                                 value = d1,
-                                type  = PhoneType.fromAdbInt(d2.toIntOrNull() ?: 0),
+                                type = PhoneType.Companion.fromAdbInt(d2.toIntOrNull() ?: 0),
                                 label = row["data4"].orEmpty(),
                             )
                         }
@@ -215,7 +216,7 @@ class SystemContactsClient(
                         if (d1.isNotBlank()) {
                             emails += ContactEmail(
                                 value = d1,
-                                type  = EmailType.fromAdbInt(d2.toIntOrNull() ?: 0),
+                                type = EmailType.Companion.fromAdbInt(d2.toIntOrNull() ?: 0),
                                 label = d3,
                             )
                         }
@@ -246,7 +247,7 @@ class SystemContactsClient(
             if (displayName.isBlank()) {
                 val contactRows = queryRows(
                     deviceId, adbPath,
-                    uri       = "content://com.android.contacts/contacts",
+                    uri = "content://com.android.contacts/contacts",
                     whereClause = "_id=$contactId",
                     projection = "_id:display_name",
                 )
@@ -257,23 +258,23 @@ class SystemContactsClient(
                 val rawId = row["_id"]?.toLongOrNull() ?: return@mapNotNull null
                 RawContactInfo(
                     rawContactId = rawId,
-                    accountName  = row["account_name"].orEmpty(),
-                    accountType  = row["account_type"].orEmpty(),
+                    accountName = row["account_name"].orEmpty(),
+                    accountType = row["account_type"].orEmpty(),
                 )
             }
 
             ContactDetails(
-                id           = contactId,
-                displayName  = displayName,
-                firstName    = firstName,
-                lastName     = lastName,
-                middleName   = middleName,
-                phones       = phones,
-                emails       = emails,
+                id = contactId,
+                displayName = displayName,
+                firstName = firstName,
+                lastName = lastName,
+                middleName = middleName,
+                phones = phones,
+                emails = emails,
                 organization = organization,
-                addresses    = addresses,
-                notes        = notes.toString(),
-                rawContacts  = rawContacts,
+                addresses = addresses,
+                notes = notes.toString(),
+                rawContacts = rawContacts,
             )
         }
     }
@@ -301,17 +302,17 @@ class SystemContactsClient(
                 ?.toLongOrNull()
                 ?: error(
                     "Не удалось создать контакт: устройство отклонило вставку raw_contact. " +
-                    "Возможно, устройство запрещает создание локальных контактов — " +
-                    "добавьте контакт вручную на устройстве. Вывод: ${rawResult.stdout.take(300)}"
+                            "Возможно, устройство запрещает создание локальных контактов — " +
+                            "добавьте контакт вручную на устройстве. Вывод: ${rawResult.stdout.take(300)}"
                 )
 
             // Шаг 2: вставить строку с именем
             insertDataRow(
                 deviceId, adbPath, rawContactId,
                 mimetype = "vnd.android.cursor.item/name",
-                data1    = contact.displayName,
-                data2    = contact.firstName,
-                data3    = contact.lastName,
+                data1 = contact.displayName,
+                data2 = contact.firstName,
+                data3 = contact.lastName,
             )
 
             // Шаг 3: вставить телефоны
@@ -319,16 +320,16 @@ class SystemContactsClient(
                 insertDataRow(
                     deviceId, adbPath, rawContactId,
                     mimetype = "vnd.android.cursor.item/phone_v2",
-                    data1    = contact.phone1,
-                    data2    = contact.phone1Type.adbInt.toString(),
+                    data1 = contact.phone1,
+                    data2 = contact.phone1Type.adbInt.toString(),
                 )
             }
             if (contact.phone2.isNotBlank()) {
                 insertDataRow(
                     deviceId, adbPath, rawContactId,
                     mimetype = "vnd.android.cursor.item/phone_v2",
-                    data1    = contact.phone2,
-                    data2    = contact.phone2Type.adbInt.toString(),
+                    data1 = contact.phone2,
+                    data2 = contact.phone2Type.adbInt.toString(),
                 )
             }
 
@@ -337,8 +338,8 @@ class SystemContactsClient(
                 insertDataRow(
                     deviceId, adbPath, rawContactId,
                     mimetype = "vnd.android.cursor.item/email_v2",
-                    data1    = contact.email,
-                    data2    = contact.emailType.adbInt.toString(),
+                    data1 = contact.email,
+                    data2 = contact.emailType.adbInt.toString(),
                 )
             }
 
@@ -347,7 +348,7 @@ class SystemContactsClient(
                 insertDataRow(
                     deviceId, adbPath, rawContactId,
                     mimetype = "vnd.android.cursor.item/organization",
-                    data1    = contact.organization,
+                    data1 = contact.organization,
                 )
             }
 
@@ -356,7 +357,7 @@ class SystemContactsClient(
                 insertDataRow(
                     deviceId, adbPath, rawContactId,
                     mimetype = "vnd.android.cursor.item/note",
-                    data1    = contact.notes,
+                    data1 = contact.notes,
                 )
             }
         }
@@ -386,26 +387,26 @@ class SystemContactsClient(
         adbPath: String,
     ): Result<ImportResult> = runCatchingPreserveCancellation {
         var successCount = 0
-        var failedCount  = 0
-        val errors       = mutableListOf<String>()
+        var failedCount = 0
+        val errors = mutableListOf<String>()
 
         for (contact in contacts) {
             val newData = NewContactData(
-                firstName    = contact.firstName,
-                lastName     = contact.lastName,
-                displayName  = contact.displayName.ifBlank {
+                firstName = contact.firstName,
+                lastName = contact.lastName,
+                displayName = contact.displayName.ifBlank {
                     listOf(contact.firstName, contact.lastName).filter { it.isNotBlank() }.joinToString(" ")
                 },
-                phone1       = contact.phones.getOrNull(0)?.value ?: "",
-                phone1Type   = contact.phones.getOrNull(0)?.type  ?: PhoneType.MOBILE,
-                phone2       = contact.phones.getOrNull(1)?.value ?: "",
-                phone2Type   = contact.phones.getOrNull(1)?.type  ?: PhoneType.MOBILE,
-                email        = contact.emails.getOrNull(0)?.value ?: "",
-                emailType    = contact.emails.getOrNull(0)?.type  ?: EmailType.HOME,
+                phone1 = contact.phones.getOrNull(0)?.value ?: "",
+                phone1Type = contact.phones.getOrNull(0)?.type ?: PhoneType.MOBILE,
+                phone2 = contact.phones.getOrNull(1)?.value ?: "",
+                phone2Type = contact.phones.getOrNull(1)?.type ?: PhoneType.MOBILE,
+                email = contact.emails.getOrNull(0)?.value ?: "",
+                emailType = contact.emails.getOrNull(0)?.type ?: EmailType.HOME,
                 organization = contact.organization,
-                notes        = contact.notes,
-                accountName  = contact.accountName,
-                accountType  = contact.accountType,
+                notes = contact.notes,
+                accountName = contact.accountName,
+                accountType = contact.accountType,
             )
 
             addContact(deviceId, newData, adbPath)
@@ -418,8 +419,8 @@ class SystemContactsClient(
 
         ImportResult(
             successCount = successCount,
-            failedCount  = failedCount,
-            errors       = errors,
+            failedCount = failedCount,
+            errors = errors,
         )
     }
 
@@ -584,9 +585,11 @@ class SystemContactsClient(
             val number    = row["data1"].orEmpty()
             if (number.isBlank()) continue
             val typeInt = row["data2"]?.toIntOrNull() ?: 0
-            result.getOrPut(contactId) { mutableListOf() } += ContactPhone(
+            result.getOrPut(contactId) { mutableListOf() }.add(
+                ContactPhone(
                 value = number,
-                type  = PhoneType.fromAdbInt(typeInt),
+                type = PhoneType.Companion.fromAdbInt(typeInt),
+                ),
             )
         }
         return result

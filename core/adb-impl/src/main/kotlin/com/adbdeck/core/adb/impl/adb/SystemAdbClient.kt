@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.adb
 
 import com.adbdeck.core.adb.api.adb.AdbCheckResult
 import com.adbdeck.core.adb.api.adb.AdbClient
@@ -9,9 +9,9 @@ import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
- * Реализация [AdbClient] через вызов системного исполняемого файла adb
+ * Реализация [com.adbdeck.core.adb.api.adb.AdbClient] через вызов системного исполняемого файла adb
  *
- * Путь к adb берется из [SettingsRepository]. Если пользователь указал
+ * Путь к adb берется из [com.adbdeck.core.settings.SettingsRepository]. Если пользователь указал
  * абсолютный путь — используется он; иначе adb ищется в системном PATH
  *
  * @param processRunner Исполнитель внешних процессов
@@ -75,7 +75,7 @@ class SystemAdbClient(
                 if (parts.size >= 2) {
                     AdbDevice(
                         deviceId = parts[0].trim(),
-                        state = DeviceState.fromRawValue(parts[1].trim()),
+                        state = DeviceState.Companion.fromRawValue(parts[1].trim()),
                         info = parts.getOrNull(2)?.trim() ?: "",
                     )
                 } else null

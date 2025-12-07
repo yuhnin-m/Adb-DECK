@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.intents
 
 import com.adbdeck.core.adb.api.intents.DeepLinkParams
 import com.adbdeck.core.adb.api.intents.IntentLaunchClient
@@ -7,9 +7,9 @@ import com.adbdeck.core.adb.api.intents.LaunchResult
 import com.adbdeck.core.process.ProcessRunner
 
 /**
- * Реализация [IntentLaunchClient] на основе `adb shell am start`.
+ * Реализация [com.adbdeck.core.adb.api.intents.IntentLaunchClient] на основе `adb shell am start`.
  *
- * Строит список аргументов и вызывает [ProcessRunner.run].
+ * Строит список аргументов и вызывает [com.adbdeck.core.process.ProcessRunner.run].
  * Команда-превью строится отдельно (через [buildList] + [joinToString])
  * для удобного отображения в UI, а выполнение — через корректный список
  * аргументов без shell-интерпретации.
@@ -63,8 +63,8 @@ class SystemIntentLaunchClient(
         val result = processRunner.run(buildDeepLinkArgs(adbPath, deviceId, params))
         LaunchResult(
             exitCode = result.exitCode,
-            stdout   = result.stdout.trim(),
-            stderr   = result.stderr.trim(),
+            stdout = result.stdout.trim(),
+            stderr = result.stderr.trim(),
             commandPreview = command,
         )
     }
@@ -78,8 +78,8 @@ class SystemIntentLaunchClient(
         val result = processRunner.run(buildIntentArgs(adbPath, deviceId, params))
         LaunchResult(
             exitCode = result.exitCode,
-            stdout   = result.stdout.trim(),
-            stderr   = result.stderr.trim(),
+            stdout = result.stdout.trim(),
+            stderr = result.stderr.trim(),
             commandPreview = command,
         )
     }

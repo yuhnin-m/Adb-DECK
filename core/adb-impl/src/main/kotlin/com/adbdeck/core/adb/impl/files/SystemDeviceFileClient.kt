@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.impl
+package com.adbdeck.core.adb.impl.files
 
 import com.adbdeck.core.adb.api.files.DeviceFileClient
 import com.adbdeck.core.adb.api.files.DeviceFileEntry
@@ -8,7 +8,7 @@ import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
- * Реализация [DeviceFileClient] поверх системного `adb`.
+ * Реализация [com.adbdeck.core.adb.api.files.DeviceFileClient] поверх системного `adb`.
  *
  * Поддерживает базовые файловые операции на устройстве:
  * - чтение содержимого директории
@@ -158,7 +158,7 @@ class SystemDeviceFileClient(
 
     /** Включает подробные логи формирования adb shell-команд для диагностики. */
     private val debugEnabled: Boolean =
-        java.lang.System.getenv(DEBUG_ENV) == "1" ||
+        System.getenv(DEBUG_ENV) == "1" ||
             java.lang.Boolean.getBoolean(DEBUG_PROP)
 
     override suspend fun listDirectory(
