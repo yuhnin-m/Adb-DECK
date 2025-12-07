@@ -38,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -52,10 +51,11 @@ import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.packages.PackageType
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
-import com.adbdeck.feature.packages.ActionFeedback
 import com.adbdeck.feature.packages.PackageTypeFilter
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackagesListState
@@ -79,7 +79,7 @@ import com.adbdeck.feature.packages.PendingPackageAction
  *   PackagesStatusBar
  * }
  * + ConfirmationDialog (при pendingAction)
- * + FeedbackBanner    (при actionFeedback)
+ * + AdbBanner (при actionFeedback)
  * ```
  *
  * @param component Компонент пакетов.
@@ -123,8 +123,9 @@ fun PackagesScreen(component: PackagesComponent) {
 
         // ── Feedback-баннер (поверх контента, снизу) ─────────────
         state.actionFeedback?.let { feedback ->
-            FeedbackBanner(
-                feedback = feedback,
+            AdbBanner(
+                message = feedback.message,
+                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(Dimensions.paddingDefault),
             )
@@ -540,51 +541,4 @@ private fun ConfirmationDialog(
             }
         },
     )
-}
-
-// ── Feedback-баннер ───────────────────────────────────────────────────────────
-
-/**
- * Всплывающий баннер с результатом последнего действия.
- *
- * Автоматически исчезает через 3 секунды (управляется компонентом).
- * Зелёный при успехе, красный при ошибке.
- */
-@Composable
-private fun FeedbackBanner(
-    feedback: ActionFeedback,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    // Убедимся, что баннер показывается только пока feedback != null
-    LaunchedEffect(feedback) { /* feedback auto-dismissed by component */ }
-
-    Surface(
-        modifier = modifier,
-        color = if (feedback.isError) MaterialTheme.colorScheme.errorContainer
-        else Color(0xFF1B5E20).copy(alpha = 0.9f),
-        shape = MaterialTheme.shapes.medium,
-        shadowElevation = 4.dp,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Dimensions.paddingDefault, vertical = Dimensions.paddingSmall),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-        ) {
-            Text(
-                text = feedback.message,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (feedback.isError) MaterialTheme.colorScheme.onErrorContainer else Color.White,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    Icons.Outlined.Close,
-                    contentDescription = "Закрыть",
-                    modifier = Modifier.size(14.dp),
-                    tint = if (feedback.isError) MaterialTheme.colorScheme.onErrorContainer else Color.White,
-                )
-            }
-        }
-    }
 }

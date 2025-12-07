@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Error
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,10 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
-import com.adbdeck.feature.devices.DeviceActionFeedback
 import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
@@ -44,7 +42,7 @@ import com.adbdeck.feature.devices.DevicesState
  *   }
  * }
  * AlertDialog (pendingAction)   // Подтверждение опасного действия
- * FeedbackBar (actionFeedback)  // Краткосрочное уведомление
+ * AdbBanner                     // Краткосрочное уведомление
  * ```
  *
  * @param component Компонент, управляющий состоянием экрана.
@@ -171,10 +169,14 @@ fun DevicesScreen(component: DevicesComponent) {
         // ── Баннер обратной связи ──────────────────────────────────────────────
         val feedback = state.actionFeedback
         if (feedback != null) {
-            FeedbackBar(
-                feedback  = feedback,
+            AdbBanner(
+                message = feedback.message,
+                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
-                modifier  = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(16.dp),
             )
         }
     }
@@ -238,80 +240,6 @@ private fun DevicesList(
                 isDetailsOpen             = device.deviceId == state.detailsDeviceId,
                 onOpenDetails             = { component.onOpenDetails(device) },
             )
-        }
-    }
-}
-
-// ── Баннер обратной связи ─────────────────────────────────────────────────────
-
-/**
- * Всплывающий баннер с результатом последнего действия.
- *
- * Отображается в нижней части экрана; цвет зависит от типа сообщения.
- *
- * @param feedback  Данные уведомления.
- * @param onDismiss Callback закрытия.
- * @param modifier  Modifier для внешнего контейнера.
- */
-@Composable
-private fun FeedbackBar(
-    feedback: DeviceActionFeedback,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val containerColor = if (feedback.isError) {
-        MaterialTheme.colorScheme.errorContainer
-    } else {
-        MaterialTheme.colorScheme.tertiaryContainer
-    }
-    val contentColor = if (feedback.isError) {
-        MaterialTheme.colorScheme.onErrorContainer
-    } else {
-        MaterialTheme.colorScheme.onTertiaryContainer
-    }
-    val iconColor = if (feedback.isError) {
-        MaterialTheme.colorScheme.error
-    } else {
-        MaterialTheme.colorScheme.tertiary
-    }
-    val icon = if (feedback.isError) Icons.Outlined.Error else Icons.Outlined.CheckCircle
-
-    Surface(
-        modifier      = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        color         = containerColor,
-        shape         = MaterialTheme.shapes.medium,
-        tonalElevation = 4.dp,
-    ) {
-        Row(
-            modifier            = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment   = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector        = icon,
-                contentDescription = null,
-                modifier           = Modifier.size(18.dp),
-                tint               = iconColor,
-            )
-            Spacer(Modifier.width(10.dp))
-            Text(
-                text     = feedback.message,
-                modifier = Modifier.weight(1f),
-                style    = MaterialTheme.typography.bodyMedium,
-                color    = contentColor,
-            )
-            IconButton(
-                onClick  = onDismiss,
-                modifier = Modifier.size(28.dp),
-            ) {
-                Icon(
-                    imageVector        = Icons.Outlined.Close,
-                    contentDescription = "Закрыть",
-                    modifier           = Modifier.size(16.dp),
-                    tint               = contentColor,
-                )
-            }
         }
     }
 }

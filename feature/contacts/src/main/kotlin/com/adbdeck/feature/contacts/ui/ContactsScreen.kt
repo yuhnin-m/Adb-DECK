@@ -22,8 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
@@ -59,11 +57,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.contacts.Contact
 import com.adbdeck.core.adb.api.contacts.ContactAccount
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.feature.contacts.ContactDetailState
-import com.adbdeck.feature.contacts.ContactFeedback
 import com.adbdeck.feature.contacts.ContactsComponent
 import com.adbdeck.feature.contacts.ContactsListState
 import com.adbdeck.feature.contacts.ContactsOperationState
@@ -171,10 +170,13 @@ fun ContactsScreen(component: ContactsComponent) {
 
         // ── Feedback-баннер (поверх контента) ─────────────────────────────
         state.actionFeedback?.let { feedback ->
-            FeedbackBanner(
-                feedback = feedback,
+            AdbBanner(
+                message = feedback.message,
+                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
                 onDismiss = { component.onDismissFeedback() },
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
             )
         }
 
@@ -529,52 +531,6 @@ private fun ConfirmDeleteDialog(
             }
         },
     )
-}
-
-// ── Feedback-баннер ───────────────────────────────────────────────────────────
-
-@Composable
-private fun FeedbackBanner(
-    feedback: ContactFeedback,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val bgColor = if (feedback.isError)
-        MaterialTheme.colorScheme.errorContainer
-    else
-        MaterialTheme.colorScheme.primaryContainer
-
-    val contentColor = if (feedback.isError)
-        MaterialTheme.colorScheme.onErrorContainer
-    else
-        MaterialTheme.colorScheme.onPrimaryContainer
-
-    Surface(
-        modifier      = modifier
-            .padding(16.dp)
-            .clickable { onDismiss() },
-        shape         = MaterialTheme.shapes.medium,
-        color         = bgColor,
-        shadowElevation = 4.dp,
-    ) {
-        Row(
-            modifier          = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector        = if (feedback.isError) Icons.Filled.Error else Icons.Filled.CheckCircle,
-                contentDescription = null,
-                tint               = contentColor,
-                modifier           = Modifier.size(18.dp),
-            )
-            Text(
-                text     = feedback.message,
-                style    = MaterialTheme.typography.bodyMedium,
-                color    = contentColor,
-                modifier = Modifier.padding(start = 10.dp),
-            )
-        }
-    }
 }
 
 @Composable

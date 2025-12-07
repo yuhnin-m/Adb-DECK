@@ -18,7 +18,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,9 +29,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerDismissStyle
+import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.feature.apkinstall.ApkInstallComponent
-import com.adbdeck.feature.apkinstall.ApkInstallFeedback
 import com.adbdeck.feature.apkinstall.ApkInstallState
 import com.adbdeck.feature.apkinstall.ApkInstallStatus
 import java.awt.BorderLayout
@@ -61,9 +62,12 @@ fun ApkInstallScreen(component: ApkInstallComponent) {
     val state by component.state.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        DeviceStateBanner(
-            isReady = state.isDeviceReady,
+        AdbBanner(
             message = state.deviceMessage,
+            type = if (state.isDeviceReady) AdbBannerType.SUCCESS else AdbBannerType.WARNING,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
         )
 
         HorizontalDivider()
@@ -77,9 +81,14 @@ fun ApkInstallScreen(component: ApkInstallComponent) {
 
         state.feedback?.let {
             HorizontalDivider()
-            FeedbackBar(
-                feedback = it,
+            AdbBanner(
+                message = it.message,
+                type = if (it.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
+                dismissStyle = AdbBannerDismissStyle.TEXT,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
             )
         }
     }
@@ -239,33 +248,6 @@ private fun ApkInstallBody(
 }
 
 @Composable
-private fun DeviceStateBanner(
-    isReady: Boolean,
-    message: String,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-        color = if (isReady) {
-            MaterialTheme.colorScheme.tertiaryContainer
-        } else {
-            MaterialTheme.colorScheme.errorContainer
-        },
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodySmall,
-            color = if (isReady) {
-                MaterialTheme.colorScheme.onTertiaryContainer
-            } else {
-                MaterialTheme.colorScheme.onErrorContainer
-            },
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
-    }
-}
-
-@Composable
 private fun OperationStatusCard(
     title: String,
     status: ApkInstallStatus,
@@ -315,41 +297,6 @@ private fun OperationStatusCard(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FeedbackBar(
-    feedback: ApkInstallFeedback,
-    onDismiss: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
-        color = if (feedback.isError) {
-            MaterialTheme.colorScheme.errorContainer
-        } else {
-            MaterialTheme.colorScheme.tertiaryContainer
-        },
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = feedback.message,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.weight(1f),
-                color = if (feedback.isError) {
-                    MaterialTheme.colorScheme.onErrorContainer
-                } else {
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                },
-            )
-            TextButton(onClick = onDismiss) {
-                Text("ОК")
             }
         }
     }

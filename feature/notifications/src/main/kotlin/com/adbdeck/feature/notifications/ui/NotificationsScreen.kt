@@ -25,6 +25,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
@@ -123,10 +125,11 @@ fun NotificationsScreen(component: NotificationsComponent) {
 
         // ── Feedback-баннер ──────────────────────────────────────────────────
         state.feedback?.let { feedback ->
-            NotificationFeedbackBanner(
-                feedback  = feedback,
+            AdbBanner(
+                message = feedback.message,
+                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
-                modifier  = Modifier
+                modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(Dimensions.paddingDefault)
                     .padding(bottom = Dimensions.statusBarHeight),
@@ -761,56 +764,6 @@ private fun NotificationsStatusBar(state: NotificationsState) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontFamily = FontFamily.Monospace,
             )
-        }
-    }
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Feedback-баннер
-// ──────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun NotificationFeedbackBanner(
-    feedback: NotificationFeedback,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val containerColor = if (feedback.isError) {
-        MaterialTheme.colorScheme.errorContainer
-    } else {
-        MaterialTheme.colorScheme.tertiaryContainer
-    }
-    val contentColor = if (feedback.isError) {
-        MaterialTheme.colorScheme.onErrorContainer
-    } else {
-        MaterialTheme.colorScheme.onTertiaryContainer
-    }
-
-    Surface(
-        modifier       = modifier,
-        color          = containerColor,
-        shape          = MaterialTheme.shapes.medium,
-        shadowElevation = 4.dp,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = Dimensions.paddingDefault, vertical = Dimensions.paddingSmall),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-        ) {
-            Text(
-                text     = feedback.message,
-                style    = MaterialTheme.typography.bodySmall,
-                color    = contentColor,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    imageVector        = Icons.Outlined.Close,
-                    contentDescription = "Закрыть",
-                    tint               = contentColor,
-                    modifier           = Modifier.size(16.dp),
-                )
-            }
         }
     }
 }

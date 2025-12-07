@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.sp
 import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import com.adbdeck.core.adb.api.monitoring.process.ProcessState
 import com.adbdeck.core.adb.api.monitoring.SystemSnapshot
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
@@ -58,7 +60,7 @@ import com.adbdeck.feature.systemmonitor.processes.ProcessesComponent
  *       ProcessDetailPanel(...) // Детали выбранного процесса
  *     }
  *   }
- *   FeedbackBar(...)            // Снэкбар обратной связи (если есть)
+ *   AdbBanner(...)              // Снэкбар обратной связи (если есть)
  * }
  * ```
  *
@@ -142,10 +144,11 @@ fun ProcessesScreen(component: ProcessesComponent) {
 
         // ── Feedback снэкбар ──────────────────────────────────────────
         state.actionFeedback?.let { feedback ->
-            FeedbackBar(
+            AdbBanner(
                 message   = feedback.message,
-                isError   = feedback.isError,
+                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -576,47 +579,5 @@ private fun ProcessStateChip(state: ProcessState, color: Color) {
             ),
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
         )
-    }
-}
-
-// ── Feedback bar ──────────────────────────────────────────────────────────────
-
-@Composable
-private fun FeedbackBar(
-    message: String,
-    isError: Boolean,
-    onDismiss: () -> Unit,
-) {
-    val bgColor = if (isError)
-        MaterialTheme.colorScheme.errorContainer
-    else
-        MaterialTheme.colorScheme.secondaryContainer
-    val textColor = if (isError)
-        MaterialTheme.colorScheme.onErrorContainer
-    else
-        MaterialTheme.colorScheme.onSecondaryContainer
-
-    Surface(color = bgColor) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text     = message,
-                style    = MaterialTheme.typography.bodySmall,
-                color    = textColor,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
-                Icon(
-                    Icons.Outlined.Close,
-                    contentDescription = "Закрыть",
-                    tint = textColor,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
-        }
     }
 }
