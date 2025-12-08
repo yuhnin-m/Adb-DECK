@@ -52,6 +52,8 @@ import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.AdbSegmentedOption
+import com.adbdeck.core.ui.AdbSingleSegmentedButtons
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
 import com.adbdeck.feature.logcat.LogcatState
@@ -191,15 +193,19 @@ private fun LogcatToolbar(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            FilterChip(
-                selected = state.displayMode == LogcatDisplayMode.COMPACT,
-                onClick = { component.onDisplayModeChanged(LogcatDisplayMode.COMPACT) },
-                label = { Text("Compact", style = MaterialTheme.typography.labelSmall) },
-            )
-            FilterChip(
-                selected = state.displayMode == LogcatDisplayMode.FULL,
-                onClick = { component.onDisplayModeChanged(LogcatDisplayMode.FULL) },
-                label = { Text("Full", style = MaterialTheme.typography.labelSmall) },
+            AdbSingleSegmentedButtons(
+                options = listOf(
+                    AdbSegmentedOption(
+                        value = LogcatDisplayMode.COMPACT,
+                        label = "Compact",
+                    ),
+                    AdbSegmentedOption(
+                        value = LogcatDisplayMode.FULL,
+                        label = "Full",
+                    ),
+                ),
+                selectedValue = state.displayMode,
+                onValueSelected = component::onDisplayModeChanged,
             )
 
             Spacer(Modifier.width(Dimensions.paddingSmall))
@@ -281,34 +287,53 @@ private fun FilterBar(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            // "All" chip — deselects the level filter
-            LevelChip(
-                label = "All",
-                selected = state.levelFilter == null,
-                levelColor = MaterialTheme.colorScheme.onSurface,
-                onClick = { component.onLevelFilterChanged(null) },
+            val levelOptions = listOf<AdbSegmentedOption<LogcatLevel?>>(
+                AdbSegmentedOption<LogcatLevel?>(
+                    value = null,
+                    label = "All",
+                    indicatorColor = null,
+                ),
+                AdbSegmentedOption<LogcatLevel?>(
+                    value = LogcatLevel.VERBOSE,
+                    label = LogcatLevel.VERBOSE.code.toString(),
+                    indicatorColor = levelColor(LogcatLevel.VERBOSE),
+                ),
+                AdbSegmentedOption<LogcatLevel?>(
+                    value = LogcatLevel.DEBUG,
+                    label = LogcatLevel.DEBUG.code.toString(),
+                    indicatorColor = levelColor(LogcatLevel.DEBUG),
+                ),
+                AdbSegmentedOption<LogcatLevel?>(
+                    value = LogcatLevel.INFO,
+                    label = LogcatLevel.INFO.code.toString(),
+                    indicatorColor = levelColor(LogcatLevel.INFO),
+                ),
+                AdbSegmentedOption<LogcatLevel?>(
+                    value = LogcatLevel.WARNING,
+                    label = LogcatLevel.WARNING.code.toString(),
+                    indicatorColor = levelColor(LogcatLevel.WARNING),
+                ),
+                AdbSegmentedOption<LogcatLevel?>(
+                    value = LogcatLevel.ERROR,
+                    label = LogcatLevel.ERROR.code.toString(),
+                    indicatorColor = levelColor(LogcatLevel.ERROR),
+                ),
+                AdbSegmentedOption<LogcatLevel?>(
+                    value = LogcatLevel.FATAL,
+                    label = LogcatLevel.FATAL.code.toString(),
+                    indicatorColor = levelColor(LogcatLevel.FATAL),
+                ),
             )
 
-            val levels = listOf(
-                LogcatLevel.VERBOSE,
-                LogcatLevel.DEBUG,
-                LogcatLevel.INFO,
-                LogcatLevel.WARNING,
-                LogcatLevel.ERROR,
-                LogcatLevel.FATAL,
+            AdbSingleSegmentedButtons(
+                options = levelOptions,
+                selectedValue = state.levelFilter,
+                onValueSelected = { selected ->
+                    component.onLevelFilterChanged(
+                        if (selected != null && state.levelFilter == selected) null else selected
+                    )
+                },
             )
-            levels.forEach { level ->
-                LevelChip(
-                    label = level.code.toString(),
-                    selected = state.levelFilter == level,
-                    levelColor = levelColor(level),
-                    onClick = {
-                        component.onLevelFilterChanged(
-                            if (state.levelFilter == level) null else level
-                        )
-                    },
-                )
-            }
         }
     }
 }
@@ -350,43 +375,6 @@ private fun CompactTextField(
         } else null,
         singleLine = true,
         textStyle = MaterialTheme.typography.bodySmall,
-    )
-}
-
-/**
- * Чип выбора уровня лога.
- *
- * @param label      Метка чипа (буква уровня или «All»).
- * @param selected   Выбран ли этот уровень.
- * @param levelColor Цвет уровня для подсветки метки.
- * @param onClick    Обработчик нажатия.
- */
-@Composable
-private fun LevelChip(
-    label: String,
-    selected: Boolean,
-    levelColor: Color,
-    onClick: () -> Unit,
-) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = levelColor,
-            )
-        },
-        leadingIcon = if (label != "All") {
-            {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .background(levelColor, CircleShape),
-                )
-            }
-        } else null,
     )
 }
 
