@@ -54,6 +54,9 @@ import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.AdbSegmentedOption
 import com.adbdeck.core.ui.AdbSingleSegmentedButtons
+import com.adbdeck.core.ui.splitbuttons.AdbSplitButton
+import com.adbdeck.core.ui.splitbuttons.AdbSplitMenuItem
+import com.adbdeck.core.ui.splitbuttons.AdbSplitButtonSize
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
 import com.adbdeck.feature.logcat.LogcatState
@@ -287,52 +290,50 @@ private fun FilterBar(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            val levelOptions = listOf<AdbSegmentedOption<LogcatLevel?>>(
-                AdbSegmentedOption<LogcatLevel?>(
+            val levelOptions = listOf<AdbSplitMenuItem<LogcatLevel?>>(
+                AdbSplitMenuItem<LogcatLevel?>(
                     value = null,
                     label = "All",
-                    indicatorColor = null,
                 ),
-                AdbSegmentedOption<LogcatLevel?>(
+                AdbSplitMenuItem<LogcatLevel?>(
                     value = LogcatLevel.VERBOSE,
-                    label = LogcatLevel.VERBOSE.code.toString(),
-                    indicatorColor = levelColor(LogcatLevel.VERBOSE),
+                    label = "Verbose (V)",
                 ),
-                AdbSegmentedOption<LogcatLevel?>(
+                AdbSplitMenuItem<LogcatLevel?>(
                     value = LogcatLevel.DEBUG,
-                    label = LogcatLevel.DEBUG.code.toString(),
-                    indicatorColor = levelColor(LogcatLevel.DEBUG),
+                    label = "Debug (D)",
                 ),
-                AdbSegmentedOption<LogcatLevel?>(
+                AdbSplitMenuItem<LogcatLevel?>(
                     value = LogcatLevel.INFO,
-                    label = LogcatLevel.INFO.code.toString(),
-                    indicatorColor = levelColor(LogcatLevel.INFO),
+                    label = "Info (I)",
                 ),
-                AdbSegmentedOption<LogcatLevel?>(
+                AdbSplitMenuItem<LogcatLevel?>(
                     value = LogcatLevel.WARNING,
-                    label = LogcatLevel.WARNING.code.toString(),
-                    indicatorColor = levelColor(LogcatLevel.WARNING),
+                    label = "Warning (W)",
                 ),
-                AdbSegmentedOption<LogcatLevel?>(
+                AdbSplitMenuItem<LogcatLevel?>(
                     value = LogcatLevel.ERROR,
-                    label = LogcatLevel.ERROR.code.toString(),
-                    indicatorColor = levelColor(LogcatLevel.ERROR),
+                    label = "Error (E)",
                 ),
-                AdbSegmentedOption<LogcatLevel?>(
+                AdbSplitMenuItem<LogcatLevel?>(
                     value = LogcatLevel.FATAL,
-                    label = LogcatLevel.FATAL.code.toString(),
-                    indicatorColor = levelColor(LogcatLevel.FATAL),
+                    label = "Fatal (F)",
                 ),
             )
 
-            AdbSingleSegmentedButtons(
-                options = levelOptions,
-                selectedValue = state.levelFilter,
-                onValueSelected = { selected ->
+            val levelButtonText = "Level: ${state.levelFilter?.code ?: "All"}"
+
+            AdbSplitButton(
+                text = levelButtonText,
+                onPrimaryClick = { component.onLevelFilterChanged(null) },
+                menuItems = levelOptions,
+                selectedMenuValue = state.levelFilter,
+                onMenuItemClick = { selected ->
                     component.onLevelFilterChanged(
                         if (selected != null && state.levelFilter == selected) null else selected
                     )
                 },
+                size = AdbSplitButtonSize.MEDIUM,
             )
         }
     }
