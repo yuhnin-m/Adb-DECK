@@ -52,8 +52,9 @@ import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.Dimensions
-import com.adbdeck.core.ui.AdbSegmentedOption
-import com.adbdeck.core.ui.AdbSingleSegmentedButtons
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
+import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
 import com.adbdeck.core.ui.splitbuttons.AdbSplitButton
 import com.adbdeck.core.ui.splitbuttons.AdbSplitMenuItem
 import com.adbdeck.core.ui.splitbuttons.AdbSplitButtonSize
@@ -209,6 +210,7 @@ private fun LogcatToolbar(
                 ),
                 selectedValue = state.displayMode,
                 onValueSelected = component::onDisplayModeChanged,
+                size = AdbSegmentedButtonSize.MEDIUM,
             )
 
             Spacer(Modifier.width(Dimensions.paddingSmall))
