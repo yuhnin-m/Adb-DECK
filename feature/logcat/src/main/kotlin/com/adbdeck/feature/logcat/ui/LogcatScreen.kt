@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,13 +18,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Remove
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Stop
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,9 +37,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,9 +53,6 @@ import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.Dimensions
-import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
-import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
-import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
 import com.adbdeck.core.ui.splitbuttons.AdbSplitButton
 import com.adbdeck.core.ui.splitbuttons.AdbSplitMenuItem
 import com.adbdeck.core.ui.splitbuttons.AdbSplitButtonSize
@@ -64,30 +62,60 @@ import com.adbdeck.feature.logcat.LogcatState
 import kotlinx.coroutines.launch
 
 /**
- * Экран Logcat — потоковый просмотр `adb logcat` с фильтрами и настройками.
+ * Экран Logcat — потоковый просмотр `adb logcat` с фильтрами и панелью настроек.
  *
  * Компоновка:
- * - [LogcatToolbar]   — управление потоком + переключение режимов отображения
- * - [FilterBar]       — текстовые фильтры + выбор минимального уровня лога
- * - [LogList]         — LazyColumn записей с автоскроллом и FAB «вниз»
- * - [LogcatStatusBar] — индикатор потока, активное устройство, счетчик строк
+ * - [LogcatToolbar]       — управление потоком, выбор уровня логирования, кнопка настроек;
+ * - [LogcatSettingsPanel] — дочерняя панель с параметрами отображения;
+ * - [FilterBar]           — текстовые фильтры;
+ * - [LogList]             — LazyColumn записей с автоскроллом и FAB «вниз»;
+ * - [LogcatStatusBar]     — индикатор потока, активное устройство, счетчик строк.
  *
  * @param component Компонент Logcat.
  */
 @Composable
 fun LogcatScreen(component: LogcatComponent) {
     val state by component.state.collectAsState()
+    var isSettingsOpen by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        LogcatToolbar(state = state, component = component)
-        HorizontalDivider()
-        FilterBar(state = state, component = component)
-        HorizontalDivider()
-        LogList(
+        LogcatToolbar(
             state = state,
             component = component,
-            modifier = Modifier.weight(1f),
+            isSettingsOpen = isSettingsOpen,
+            onToggleSettings = { isSettingsOpen = !isSettingsOpen },
         )
+        HorizontalDivider()
+
+        Row(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
+                FilterBar(state = state, component = component)
+                HorizontalDivider()
+                LogList(
+                    state = state,
+                    component = component,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            if (isSettingsOpen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(1.dp)
+                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
+                )
+
+                LogcatSettingsPanel(
+                    state = state,
+                    component = component,
+                    modifier = Modifier
+                        .width(340.dp)
+                        .fillMaxHeight(),
+                )
+            }
+        }
+
         HorizontalDivider()
         LogcatStatusBar(state = state)
     }
@@ -96,13 +124,24 @@ fun LogcatScreen(component: LogcatComponent) {
 // ── Toolbar ──────────────────────────────────────────────────────────────────
 
 /**
- * Панель управления: Start/Stop/Clear + переключатели режима отображения.
+ * Основная панель управления logcat.
+ *
+ * Содержит:
+ * - запуск/остановку потока;
+ * - очистку буфера;
+ * - split-button выбора минимального уровня;
+ * - кнопку открытия панели настроек.
  */
 @Composable
 private fun LogcatToolbar(
     state: LogcatState,
     component: LogcatComponent,
+    isSettingsOpen: Boolean,
+    onToggleSettings: () -> Unit,
 ) {
+    val levelMenuItems = rememberLogcatLevelMenuItems()
+    val levelButtonText = "Level: ${state.levelFilter?.code ?: "All"}"
+
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
@@ -149,101 +188,78 @@ private fun LogcatToolbar(
 
             Spacer(Modifier.weight(1f))
 
-            // ── Font size ──────────────────────────────────────────
-            Text(
-                text = "A",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            AdbSplitButton(
+                text = levelButtonText,
+                onPrimaryClick = { component.onLevelFilterChanged(null) },
+                menuItems = levelMenuItems,
+                selectedMenuValue = state.levelFilter,
+                onMenuItemClick = { selected ->
+                    component.onLevelFilterChanged(
+                        if (selected != null && state.levelFilter == selected) null else selected
+                    )
+                },
+                size = AdbSplitButtonSize.MEDIUM,
             )
-            IconButton(
-                onClick = { component.onFontSizeChanged(state.fontSizeSp - 1) },
-                modifier = Modifier.size(24.dp),
-                enabled = state.fontSizeSp > 8,
-            ) {
+
+            OutlinedButton(onClick = onToggleSettings) {
                 Icon(
-                    imageVector = Icons.Outlined.Remove,
-                    contentDescription = "Уменьшить шрифт",
-                    modifier = Modifier.size(14.dp),
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(Dimensions.paddingXSmall))
+                Text(
+                    text = if (isSettingsOpen) "Закрыть настройки" else "Настройки",
+                    style = MaterialTheme.typography.labelMedium,
                 )
             }
-            Text(
-                text = "${state.fontSizeSp}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.width(20.dp),
-            )
-            IconButton(
-                onClick = { component.onFontSizeChanged(state.fontSizeSp + 1) },
-                modifier = Modifier.size(24.dp),
-                enabled = state.fontSizeSp < 24,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Add,
-                    contentDescription = "Увеличить шрифт",
-                    modifier = Modifier.size(14.dp),
-                )
-            }
-            Text(
-                text = "A",
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 14.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(Modifier.width(Dimensions.paddingSmall))
-
-            // ── Mode ───────────────────────────────────────────────
-            Text(
-                text = "Mode:",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            AdbSingleSegmentedButtons(
-                options = listOf(
-                    AdbSegmentedOption(
-                        value = LogcatDisplayMode.COMPACT,
-                        label = "Compact",
-                    ),
-                    AdbSegmentedOption(
-                        value = LogcatDisplayMode.FULL,
-                        label = "Full",
-                    ),
-                ),
-                selectedValue = state.displayMode,
-                onValueSelected = component::onDisplayModeChanged,
-                size = AdbSegmentedButtonSize.MEDIUM,
-            )
-
-            Spacer(Modifier.width(Dimensions.paddingSmall))
-
-            // ── Display toggles ────────────────────────────────────
-            FilterChip(
-                selected = state.showDate,
-                onClick = component::onToggleShowDate,
-                label = { Text("Date", style = MaterialTheme.typography.labelSmall) },
-            )
-            FilterChip(
-                selected = state.showTime,
-                onClick = component::onToggleShowTime,
-                label = { Text("Time", style = MaterialTheme.typography.labelSmall) },
-            )
-            FilterChip(
-                selected = state.showMillis,
-                onClick = component::onToggleShowMillis,
-                label = { Text("ms", style = MaterialTheme.typography.labelSmall) },
-            )
-            FilterChip(
-                selected = state.coloredLevels,
-                onClick = component::onToggleColoredLevels,
-                label = { Text("Colors", style = MaterialTheme.typography.labelSmall) },
-            )
         }
+    }
+}
+
+/**
+ * Пункты меню выбора минимального уровня логирования.
+ */
+@Composable
+private fun rememberLogcatLevelMenuItems(): List<AdbSplitMenuItem<LogcatLevel?>> {
+    return remember {
+        listOf(
+            AdbSplitMenuItem(
+                value = null,
+                label = "All",
+            ),
+            AdbSplitMenuItem(
+                value = LogcatLevel.VERBOSE,
+                label = "Verbose (V)",
+            ),
+            AdbSplitMenuItem(
+                value = LogcatLevel.DEBUG,
+                label = "Debug (D)",
+            ),
+            AdbSplitMenuItem(
+                value = LogcatLevel.INFO,
+                label = "Info (I)",
+            ),
+            AdbSplitMenuItem(
+                value = LogcatLevel.WARNING,
+                label = "Warning (W)",
+            ),
+            AdbSplitMenuItem(
+                value = LogcatLevel.ERROR,
+                label = "Error (E)",
+            ),
+            AdbSplitMenuItem(
+                value = LogcatLevel.FATAL,
+                label = "Fatal (F)",
+            ),
+        )
     }
 }
 
 // ── Filter bar ───────────────────────────────────────────────────────────────
 
 /**
- * Панель фильтрации: текстовые поля + выбор минимального уровня лога.
+ * Панель фильтрации: только текстовые фильтры.
  */
 @Composable
 private fun FilterBar(
@@ -256,7 +272,6 @@ private fun FilterBar(
             .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingXSmall),
         verticalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
     ) {
-        // ── Text filters ───────────────────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
@@ -278,64 +293,6 @@ private fun FilterBar(
                 onValueChange = component::onPackageFilterChanged,
                 placeholder = "Package filter",
                 modifier = Modifier.weight(1f),
-            )
-        }
-
-        // ── Level filter ───────────────────────────────────────────
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
-        ) {
-            Text(
-                text = "Level:",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            val levelOptions = listOf<AdbSplitMenuItem<LogcatLevel?>>(
-                AdbSplitMenuItem<LogcatLevel?>(
-                    value = null,
-                    label = "All",
-                ),
-                AdbSplitMenuItem<LogcatLevel?>(
-                    value = LogcatLevel.VERBOSE,
-                    label = "Verbose (V)",
-                ),
-                AdbSplitMenuItem<LogcatLevel?>(
-                    value = LogcatLevel.DEBUG,
-                    label = "Debug (D)",
-                ),
-                AdbSplitMenuItem<LogcatLevel?>(
-                    value = LogcatLevel.INFO,
-                    label = "Info (I)",
-                ),
-                AdbSplitMenuItem<LogcatLevel?>(
-                    value = LogcatLevel.WARNING,
-                    label = "Warning (W)",
-                ),
-                AdbSplitMenuItem<LogcatLevel?>(
-                    value = LogcatLevel.ERROR,
-                    label = "Error (E)",
-                ),
-                AdbSplitMenuItem<LogcatLevel?>(
-                    value = LogcatLevel.FATAL,
-                    label = "Fatal (F)",
-                ),
-            )
-
-            val levelButtonText = "Level: ${state.levelFilter?.code ?: "All"}"
-
-            AdbSplitButton(
-                text = levelButtonText,
-                onPrimaryClick = { component.onLevelFilterChanged(null) },
-                menuItems = levelOptions,
-                selectedMenuValue = state.levelFilter,
-                onMenuItemClick = { selected ->
-                    component.onLevelFilterChanged(
-                        if (selected != null && state.levelFilter == selected) null else selected
-                    )
-                },
-                size = AdbSplitButtonSize.MEDIUM,
             )
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -155,25 +156,32 @@ private fun SegmentedItem(
             .clickable(enabled = enabled, onClick = onClick)
             .semantics { this.contentDescription = contentDescription },
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = size.horizontalPadding),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = size.horizontalPadding),
+            contentAlignment = Alignment.Center,
         ) {
-            indicatorColor?.let { color ->
-                Box(
-                    modifier = Modifier
-                        .size(size.indicatorSize)
-                        .background(color = color, shape = CircleShape),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                indicatorColor?.let { color ->
+                    Box(
+                        modifier = Modifier
+                            .size(size.indicatorSize)
+                            .background(color = color, shape = CircleShape),
+                    )
+                }
+
+                Text(
+                    text = label,
+                    style = segmentedTextStyle(size = size),
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-
-            Text(
-                text = label,
-                style = segmentedTextStyle(size = size),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }
