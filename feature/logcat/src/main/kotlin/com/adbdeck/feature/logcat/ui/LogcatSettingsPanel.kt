@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,9 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -29,7 +26,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
 import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
@@ -244,18 +245,16 @@ private fun FontSizeSelector(
         )
         Spacer(modifier = Modifier.weight(1f))
 
-        OutlinedButton(
+        AdbOutlinedButton(
             onClick = onDecrease,
+            type = AdbButtonType.NEUTRAL,
+            size = AdbButtonSize.LARGE,
+            cornerRadius = AdbCornerRadius.MEDIUM,
             enabled = fontSizeSp > 8,
+            leadingIcon = Icons.Outlined.Remove,
+            contentDescription = "Уменьшить шрифт",
             modifier = Modifier.size(40.dp),
-            contentPadding = PaddingValues(0.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Remove,
-                contentDescription = "Уменьшить шрифт",
-                modifier = Modifier.size(18.dp),
-            )
-        }
+        )
 
         Surface(
             shape = MaterialTheme.shapes.small,
@@ -275,17 +274,15 @@ private fun FontSizeSelector(
             }
         }
 
-        OutlinedButton(
+        AdbOutlinedButton(
             onClick = onIncrease,
+            type = AdbButtonType.NEUTRAL,
+            size = AdbButtonSize.LARGE,
+            cornerRadius = AdbCornerRadius.MEDIUM,
             enabled = fontSizeSp < 24,
+            leadingIcon = Icons.Outlined.Add,
+            contentDescription = "Увеличить шрифт",
             modifier = Modifier.size(40.dp),
-            contentPadding = PaddingValues(0.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Add,
-                contentDescription = "Увеличить шрифт",
-                modifier = Modifier.size(18.dp),
-            )
-        }
+        )
     }
 }

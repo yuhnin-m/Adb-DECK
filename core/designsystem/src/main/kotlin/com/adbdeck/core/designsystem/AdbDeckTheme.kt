@@ -1,13 +1,23 @@
 package com.adbdeck.core.designsystem
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
+
+private val AdbDeckShapes = Shapes(
+    extraSmall = RoundedCornerShape(AdbCornerRadius.SMALL.value),
+    small = RoundedCornerShape(AdbCornerRadius.MEDIUM.value),
+    medium = RoundedCornerShape(AdbCornerRadius.LARGE.value),
+    large = RoundedCornerShape(AdbCornerRadius.XLARGE.value),
+    extraLarge = RoundedCornerShape(AdbCornerRadius.XLARGE.value),
+)
 
 /**
  * Корневая тема приложения ADB Deck.
  *
- * Оборачивает [MaterialTheme] с кастомными цветами и типографикой.
+ * Оборачивает [MaterialTheme] с кастомными цветами, типографикой и скруглениями.
  * Поддерживает светлую и темную темы; переключение происходит через
  * параметр [isDarkTheme], который управляется из [AppSettings].
  *
@@ -23,6 +33,7 @@ fun AdbDeckTheme(
     MaterialTheme(
         colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme,
         typography = AdbDeckTypography,
+        shapes = AdbDeckShapes,
         content = content,
     )
 }

@@ -43,10 +43,10 @@ object Dimensions {
     val navItemHeight = 44.dp
 
     /** Радиус скругления карточек. */
-    val cardCornerRadius = 8.dp
+    val cardCornerRadius = AdbCornerRadius.LARGE.value
 
     /** Радиус скругления кнопок и чипов. */
-    val buttonCornerRadius = 6.dp
+    val buttonCornerRadius = AdbCornerRadius.MEDIUM.value
 
     // ── Иконки ────────────────────────────────────────────────
     /** Стандартный размер иконок в навигации. */

@@ -25,10 +25,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,7 +49,15 @@ import androidx.compose.ui.unit.sp
 import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
+import com.adbdeck.core.ui.textfields.AdbTextFieldSize
+import com.adbdeck.core.ui.textfields.AdbTextFieldType
 import com.adbdeck.core.ui.splitbuttons.AdbSplitButton
 import com.adbdeck.core.ui.splitbuttons.AdbSplitMenuItem
 import com.adbdeck.core.ui.splitbuttons.AdbSplitButtonSize
@@ -65,11 +70,11 @@ import kotlinx.coroutines.launch
  * Экран Logcat — потоковый просмотр `adb logcat` с фильтрами и панелью настроек.
  *
  * Компоновка:
- * - [LogcatToolbar]       — управление потоком, выбор уровня логирования, кнопка настроек;
- * - [LogcatSettingsPanel] — дочерняя панель с параметрами отображения;
- * - [FilterBar]           — текстовые фильтры;
- * - [LogList]             — LazyColumn записей с автоскроллом и FAB «вниз»;
- * - [LogcatStatusBar]     — индикатор потока, активное устройство, счетчик строк.
+ * - [LogcatToolbar] управление потоком, выбор уровня логирования, кнопка настроек;
+ * - [LogcatSettingsPanel] дочерняя панель с параметрами отображения;
+ * - [FilterBar] текстовые фильтры;
+ * - [LogList] LazyColumn записей с автоскроллом и FAB «вниз»;
+ * - [LogcatStatusBar] индикатор потока, активное устройство, счетчик строк.
  *
  * @param component Компонент Logcat.
  */
@@ -149,42 +154,39 @@ private fun LogcatToolbar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingXSmall),
+                .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingDefault),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
         ) {
             // ── Start / Stop ───────────────────────────────────────
             if (!state.isRunning) {
-                OutlinedButton(onClick = component::onStart) {
-                    Icon(
-                        imageVector = Icons.Outlined.PlayArrow,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Spacer(Modifier.width(Dimensions.paddingXSmall))
-                    Text("Start", style = MaterialTheme.typography.labelMedium)
-                }
+                AdbFilledButton(
+                    onClick = component::onStart,
+                    text = "Start",
+                    type = AdbButtonType.NEUTRAL,
+                    size = AdbButtonSize.MEDIUM,
+                    cornerRadius = AdbCornerRadius.LARGE,
+                    leadingIcon = Icons.Outlined.PlayArrow,
+                )
             } else {
-                OutlinedButton(onClick = component::onStop) {
-                    Icon(
-                        imageVector = Icons.Outlined.Stop,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                    Spacer(Modifier.width(Dimensions.paddingXSmall))
-                    Text(
-                        text = "Stop",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+                AdbFilledButton(
+                    onClick = component::onStop,
+                    text = "Stop",
+                    type = AdbButtonType.DANGER,
+                    size = AdbButtonSize.MEDIUM,
+                    cornerRadius = AdbCornerRadius.LARGE,
+                    leadingIcon = Icons.Outlined.Stop,
+                )
             }
 
             // ── Clear ──────────────────────────────────────────────
-            OutlinedButton(onClick = component::onClear) {
-                Text("Clear", style = MaterialTheme.typography.labelMedium)
-            }
+            AdbOutlinedButton(
+                onClick = component::onClear,
+                text = "Clear",
+                type = AdbButtonType.NEUTRAL,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.LARGE,
+            )
 
             Spacer(Modifier.weight(1f))
 
@@ -199,20 +201,17 @@ private fun LogcatToolbar(
                     )
                 },
                 size = AdbSplitButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.XLARGE
             )
 
-            OutlinedButton(onClick = onToggleSettings) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(Dimensions.paddingXSmall))
-                Text(
-                    text = if (isSettingsOpen) "Закрыть настройки" else "Настройки",
-                    style = MaterialTheme.typography.labelMedium,
-                )
-            }
+            AdbOutlinedButton(
+                onClick = onToggleSettings,
+                text = if (isSettingsOpen) "Закрыть настройки" else "Настройки",
+                type = AdbButtonType.NEUTRAL,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.LARGE,
+                leadingIcon = Icons.Outlined.Settings,
+            )
         }
     }
 }
@@ -308,33 +307,22 @@ private fun CompactTextField(
     placeholder: String,
     modifier: Modifier = Modifier,
 ) {
-    OutlinedTextField(
+    AdbOutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
-        placeholder = {
-            Text(
-                text = placeholder,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline,
-            )
+        placeholder = placeholder,
+        type = AdbTextFieldType.NEUTRAL,
+        size = AdbTextFieldSize.MEDIUM,
+        cornerRadius = AdbCornerRadius.LARGE,
+        leadingIcon = null,
+        trailingIcon = if (value.isNotEmpty()) Icons.Outlined.Close else null,
+        onTrailingIconClick = if (value.isNotEmpty()) {
+            { onValueChange("") }
+        } else {
+            null
         },
-        trailingIcon = if (value.isNotEmpty()) {
-            {
-                IconButton(
-                    onClick = { onValueChange("") },
-                    modifier = Modifier.size(20.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Close,
-                        contentDescription = "Clear",
-                        modifier = Modifier.size(14.dp),
-                    )
-                }
-            }
-        } else null,
         singleLine = true,
-        textStyle = MaterialTheme.typography.bodySmall,
     )
 }
 

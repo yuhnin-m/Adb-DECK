@@ -28,8 +28,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.designsystem.Dimensions
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -45,6 +47,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * @param onValueSelected Callback выбора опции.
  * @param modifier Modifier контейнера.
  * @param size Размер сегментов.
+ * @param cornerRadius Радиус скругления внешних углов компонента.
  * @param colors Цветовая схема компонента.
  */
 @Composable
@@ -54,6 +57,7 @@ fun <T> AdbSingleSegmentedButtons(
     onValueSelected: (T) -> Unit,
     modifier: Modifier = Modifier,
     size: AdbSegmentedButtonSize = AdbSegmentedButtonSize.MEDIUM,
+    cornerRadius: AdbCornerRadius = AdbCornerRadius.MEDIUM,
     colors: AdbSegmentedButtonColors = AdbSegmentedButtonDefaults.colors(),
 ) {
     if (options.isEmpty()) return
@@ -71,7 +75,11 @@ fun <T> AdbSingleSegmentedButtons(
                 indicatorColor = option.indicatorColor,
                 contentDescription = option.contentDescription ?: option.label,
                 onClick = { onValueSelected(option.value) },
-                shape = segmentShape(index = index, count = options.size),
+                shape = segmentShape(
+                    index = index,
+                    count = options.size,
+                    radius = cornerRadius.value,
+                ),
                 size = size,
                 colors = colors,
             )
@@ -90,6 +98,7 @@ fun <T> AdbSingleSegmentedButtons(
  * @param onValueToggle Callback изменения состояния сегмента.
  * @param modifier Modifier контейнера.
  * @param size Размер сегментов.
+ * @param cornerRadius Радиус скругления внешних углов компонента.
  * @param colors Цветовая схема компонента.
  */
 @Composable
@@ -99,6 +108,7 @@ fun <T> AdbMultiSegmentedButtons(
     onValueToggle: (value: T, checked: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     size: AdbSegmentedButtonSize = AdbSegmentedButtonSize.MEDIUM,
+    cornerRadius: AdbCornerRadius = AdbCornerRadius.MEDIUM,
     colors: AdbSegmentedButtonColors = AdbSegmentedButtonDefaults.colors(),
 ) {
     if (options.isEmpty()) return
@@ -117,7 +127,11 @@ fun <T> AdbMultiSegmentedButtons(
                 indicatorColor = option.indicatorColor,
                 contentDescription = option.contentDescription ?: option.label,
                 onClick = { onValueToggle(option.value, !selected) },
-                shape = segmentShape(index = index, count = options.size),
+                shape = segmentShape(
+                    index = index,
+                    count = options.size,
+                    radius = cornerRadius.value,
+                ),
                 size = size,
                 colors = colors,
             )
@@ -157,9 +171,7 @@ private fun SegmentedItem(
             .semantics { this.contentDescription = contentDescription },
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = size.horizontalPadding),
+            modifier = Modifier.padding(horizontal = size.horizontalPadding),
             contentAlignment = Alignment.Center,
         ) {
             Row(
@@ -196,8 +208,7 @@ private fun segmentedTextStyle(size: AdbSegmentedButtonSize): TextStyle {
     }
 }
 
-private fun segmentShape(index: Int, count: Int): Shape {
-    val radius = 8.dp
+private fun segmentShape(index: Int, count: Int, radius: Dp): Shape {
     if (count <= 1) return RoundedCornerShape(radius)
     return when (index) {
         0 -> RoundedCornerShape(topStart = radius, bottomStart = radius)
@@ -224,6 +235,7 @@ private fun SegmentedPreviewContent(isDarkTheme: Boolean) {
                     selectedValue = "compact",
                     onValueSelected = {},
                     size = AdbSegmentedButtonSize.LARGE,
+                    cornerRadius = AdbCornerRadius.LARGE,
                 )
 
                 AdbSingleSegmentedButtons(
@@ -237,6 +249,7 @@ private fun SegmentedPreviewContent(isDarkTheme: Boolean) {
                     selectedValue = "w",
                     onValueSelected = {},
                     size = AdbSegmentedButtonSize.XSMALL,
+                    cornerRadius = AdbCornerRadius.SMALL,
                 )
 
                 AdbMultiSegmentedButtons(
@@ -249,6 +262,7 @@ private fun SegmentedPreviewContent(isDarkTheme: Boolean) {
                     selectedValues = setOf("date", "colors"),
                     onValueToggle = { _, _ -> },
                     size = AdbSegmentedButtonSize.MEDIUM,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
                 )
 
                 AdbSingleSegmentedButtons(
@@ -261,6 +275,7 @@ private fun SegmentedPreviewContent(isDarkTheme: Boolean) {
                     selectedValue = "s",
                     onValueSelected = {},
                     size = AdbSegmentedButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.NONE,
                 )
             }
         }

@@ -31,6 +31,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.designsystem.Dimensions
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -47,6 +48,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * @param onMenuItemClick Callback выбора пункта меню.
  * @param modifier Modifier внешнего контейнера.
  * @param size Размер split-button.
+ * @param cornerRadius Радиус скругления внешних углов split-button.
  * @param enabled Общая доступность split-button.
  * @param menuEnabled Доступность кнопки открытия меню.
  * @param selectedMenuValue Текущее выбранное значение (для отметки в меню).
@@ -61,6 +63,7 @@ fun <T> AdbSplitButton(
     onMenuItemClick: (T) -> Unit,
     modifier: Modifier = Modifier,
     size: AdbSplitButtonSize = AdbSplitButtonSize.MEDIUM,
+    cornerRadius: AdbCornerRadius = AdbCornerRadius.MEDIUM,
     enabled: Boolean = true,
     menuEnabled: Boolean = true,
     selectedMenuValue: T? = null,
@@ -79,7 +82,10 @@ fun <T> AdbSplitButton(
                 enabled = enabled,
                 size = size,
                 colors = colors,
-                shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp),
+                shape = RoundedCornerShape(
+                    topStart = cornerRadius.value,
+                    bottomStart = cornerRadius.value,
+                ),
                 onClick = onPrimaryClick,
             )
 
@@ -87,7 +93,10 @@ fun <T> AdbSplitButton(
                 enabled = enabled && menuEnabled && menuItems.isNotEmpty(),
                 size = size,
                 colors = colors,
-                shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp),
+                shape = RoundedCornerShape(
+                    topEnd = cornerRadius.value,
+                    bottomEnd = cornerRadius.value,
+                ),
                 onClick = { menuExpanded = true },
             )
         }
@@ -223,6 +232,7 @@ private fun SplitButtonsPreviewContent(isDarkTheme: Boolean) {
                     selectedMenuValue = "all",
                     onMenuItemClick = {},
                     size = AdbSplitButtonSize.LARGE,
+                    cornerRadius = AdbCornerRadius.LARGE,
                 )
 
                 AdbSplitButton(
@@ -235,6 +245,7 @@ private fun SplitButtonsPreviewContent(isDarkTheme: Boolean) {
                     selectedMenuValue = "compact",
                     onMenuItemClick = {},
                     size = AdbSplitButtonSize.MEDIUM,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
                 )
 
                 AdbSplitButton(
@@ -248,6 +259,7 @@ private fun SplitButtonsPreviewContent(isDarkTheme: Boolean) {
                     selectedMenuValue = "w",
                     onMenuItemClick = {},
                     size = AdbSplitButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.SMALL,
                 )
 
                 AdbSplitButton(
@@ -260,6 +272,7 @@ private fun SplitButtonsPreviewContent(isDarkTheme: Boolean) {
                     selectedMenuValue = "e",
                     onMenuItemClick = {},
                     size = AdbSplitButtonSize.XSMALL,
+                    cornerRadius = AdbCornerRadius.NONE,
                 )
             }
         }
