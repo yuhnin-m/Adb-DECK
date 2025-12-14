@@ -18,6 +18,8 @@ import com.adbdeck.feature.logcat.LogcatFontFamily
  * @param searchQuery      Текстовый поиск в tag + message.
  * @param tagFilter        Фильтр по тегу (case-insensitive substring).
  * @param packageFilter    Фильтр по имени пакета / класса (применяется к tag).
+ * @param packageSuggestions Подсказки имён пакетов для autocomplete в фильтре.
+ * @param isPackageSuggestionsLoading Идёт ли загрузка подсказок пакетов.
  * @param levelFilter      Минимальный уровень логирования (`null` = все).
  *
  * @param displayMode      Компактный или полный режим отображения.
@@ -42,6 +44,8 @@ data class LogcatState(
     val searchQuery: String = "",
     val tagFilter: String = "",
     val packageFilter: String = "",
+    val packageSuggestions: List<String> = emptyList(),
+    val isPackageSuggestionsLoading: Boolean = false,
     val levelFilter: LogcatLevel? = null,
 
     val displayMode: LogcatDisplayMode = LogcatDisplayMode.COMPACT,

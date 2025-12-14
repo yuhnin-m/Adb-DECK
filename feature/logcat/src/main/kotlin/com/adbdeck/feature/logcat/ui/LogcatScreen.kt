@@ -1,6 +1,10 @@
 package com.adbdeck.feature.logcat.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +27,8 @@ import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,9 +45,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +78,7 @@ import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.textfields.AdbOutlinedAutocompleteTextField
 import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
 import com.adbdeck.core.ui.textfields.AdbTextFieldSize
 import com.adbdeck.core.ui.textfields.AdbTextFieldType
@@ -82,11 +106,91 @@ import kotlinx.coroutines.launch
 fun LogcatScreen(component: LogcatComponent) {
     val state by component.state.collectAsState()
     var isSettingsOpen by remember { mutableStateOf(false) }
+    var selectedEntryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var selectionAnchorId by remember { mutableStateOf<Long?>(null) }
+    val clipboard = LocalClipboardManager.current
+
+    LaunchedEffect(state.filteredEntries) {
+        val visibleIds = state.filteredEntries.asSequence().map { it.id }.toHashSet()
+        selectedEntryIds = selectedEntryIds.filterTo(mutableSetOf()) { it in visibleIds }
+        if (selectionAnchorId != null && selectionAnchorId !in visibleIds) {
+            selectionAnchorId = null
+        }
+    }
+
+    fun clearSelection() {
+        selectedEntryIds = emptySet()
+        selectionAnchorId = null
+    }
+
+    fun copySelectedEntries() {
+        if (selectedEntryIds.isEmpty()) return
+        val text = state.filteredEntries
+            .asSequence()
+            .filter { it.id in selectedEntryIds }
+            .map { it.raw }
+            .joinToString(separator = "\n")
+        if (text.isNotBlank()) {
+            clipboard.setText(AnnotatedString(text))
+        }
+    }
+
+    fun copySingleEntry(raw: String) {
+        if (raw.isBlank()) return
+        clipboard.setText(AnnotatedString(raw))
+    }
+
+    fun selectAllFilteredEntries() {
+        if (state.filteredEntries.isEmpty()) return
+        selectedEntryIds = state.filteredEntries.map { it.id }.toSet()
+        selectionAnchorId = state.filteredEntries.first().id
+    }
+
+    fun onEntrySelectionRequested(
+        entryId: Long,
+        addToSelection: Boolean,
+        selectRange: Boolean,
+    ) {
+        val visibleIds = state.filteredEntries.map { it.id }
+        if (visibleIds.isEmpty()) return
+
+        if (selectRange && selectionAnchorId != null) {
+            val anchorIndex = visibleIds.indexOf(selectionAnchorId)
+            val targetIndex = visibleIds.indexOf(entryId)
+            if (anchorIndex != -1 && targetIndex != -1) {
+                val rangeIds = if (anchorIndex <= targetIndex) {
+                    visibleIds.subList(anchorIndex, targetIndex + 1)
+                } else {
+                    visibleIds.subList(targetIndex, anchorIndex + 1)
+                }
+                selectedEntryIds = if (addToSelection) {
+                    selectedEntryIds + rangeIds
+                } else {
+                    rangeIds.toSet()
+                }
+                return
+            }
+        }
+
+        selectedEntryIds = when {
+            addToSelection && entryId in selectedEntryIds -> selectedEntryIds - entryId
+            addToSelection -> selectedEntryIds + entryId
+            else -> setOf(entryId)
+        }
+        selectionAnchorId = entryId
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         LogcatToolbar(
             state = state,
             component = component,
+            selectedCount = selectedEntryIds.size,
+            onCopySelected = ::copySelectedEntries,
+            onResetSelection = ::clearSelection,
+            onClearAndResetSelection = {
+                clearSelection()
+                component.onClear()
+            },
             isSettingsOpen = isSettingsOpen,
             onToggleSettings = { isSettingsOpen = !isSettingsOpen },
         )
@@ -99,6 +203,12 @@ fun LogcatScreen(component: LogcatComponent) {
                 LogList(
                     state = state,
                     component = component,
+                    selectedEntryIds = selectedEntryIds,
+                    onEntrySelectionRequested = ::onEntrySelectionRequested,
+                    onCopySelected = ::copySelectedEntries,
+                    onCopyLine = ::copySingleEntry,
+                    onSelectAll = ::selectAllFilteredEntries,
+                    onClearSelection = ::clearSelection,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -141,6 +251,10 @@ fun LogcatScreen(component: LogcatComponent) {
 private fun LogcatToolbar(
     state: LogcatState,
     component: LogcatComponent,
+    selectedCount: Int,
+    onCopySelected: () -> Unit,
+    onResetSelection: () -> Unit,
+    onClearAndResetSelection: () -> Unit,
     isSettingsOpen: Boolean,
     onToggleSettings: () -> Unit,
 ) {
@@ -181,12 +295,31 @@ private fun LogcatToolbar(
 
             // ── Clear ──────────────────────────────────────────────
             AdbOutlinedButton(
-                onClick = component::onClear,
+                onClick = onClearAndResetSelection,
                 text = "Clear",
                 type = AdbButtonType.NEUTRAL,
                 size = AdbButtonSize.MEDIUM,
                 cornerRadius = AdbCornerRadius.LARGE,
             )
+
+            if (selectedCount > 0) {
+                AdbOutlinedButton(
+                    onClick = onCopySelected,
+                    text = "Copy selected ($selectedCount)",
+                    type = AdbButtonType.SUCCESS,
+                    size = AdbButtonSize.MEDIUM,
+                    cornerRadius = AdbCornerRadius.LARGE,
+                )
+
+                AdbOutlinedButton(
+                    onClick = onResetSelection,
+                    text = "Clear selection",
+                    type = AdbButtonType.NEUTRAL,
+                    size = AdbButtonSize.MEDIUM,
+                    cornerRadius = AdbCornerRadius.LARGE,
+                    leadingIcon = Icons.Outlined.Close,
+                )
+            }
 
             Spacer(Modifier.weight(1f))
 
@@ -290,7 +423,12 @@ private fun FilterBar(
             CompactTextField(
                 value = state.packageFilter,
                 onValueChange = component::onPackageFilterChanged,
-                placeholder = "Package filter",
+                placeholder = if (state.isPackageSuggestionsLoading) {
+                    "Package filter (loading...)"
+                } else {
+                    "Package filter"
+                },
+                suggestions = state.packageSuggestions,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -305,25 +443,47 @@ private fun CompactTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
+    suggestions: List<String> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
-    AdbOutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        placeholder = placeholder,
-        type = AdbTextFieldType.NEUTRAL,
-        size = AdbTextFieldSize.MEDIUM,
-        cornerRadius = AdbCornerRadius.LARGE,
-        leadingIcon = null,
-        trailingIcon = if (value.isNotEmpty()) Icons.Outlined.Close else null,
-        onTrailingIconClick = if (value.isNotEmpty()) {
-            { onValueChange("") }
-        } else {
-            null
-        },
-        singleLine = true,
-    )
+    if (suggestions.isEmpty()) {
+        AdbOutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier,
+            placeholder = placeholder,
+            type = AdbTextFieldType.NEUTRAL,
+            size = AdbTextFieldSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.LARGE,
+            leadingIcon = null,
+            trailingIcon = if (value.isNotEmpty()) Icons.Outlined.Close else null,
+            onTrailingIconClick = if (value.isNotEmpty()) {
+                { onValueChange("") }
+            } else {
+                null
+            },
+            singleLine = true,
+        )
+    } else {
+        AdbOutlinedAutocompleteTextField(
+            value = value,
+            onValueChange = onValueChange,
+            suggestions = suggestions,
+            onSuggestionSelected = onValueChange,
+            modifier = modifier,
+            placeholder = placeholder,
+            type = AdbTextFieldType.NEUTRAL,
+            size = AdbTextFieldSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.LARGE,
+            trailingIcon = if (value.isNotEmpty()) Icons.Outlined.Close else null,
+            onTrailingIconClick = if (value.isNotEmpty()) {
+                { onValueChange("") }
+            } else {
+                null
+            },
+            maxVisibleSuggestions = 40,
+        )
+    }
 }
 
 // ── Log list ─────────────────────────────────────────────────────────────────
@@ -341,10 +501,18 @@ private fun CompactTextField(
 private fun LogList(
     state: LogcatState,
     component: LogcatComponent,
+    selectedEntryIds: Set<Long>,
+    onEntrySelectionRequested: (entryId: Long, addToSelection: Boolean, selectRange: Boolean) -> Unit,
+    onCopySelected: () -> Unit,
+    onCopyLine: (String) -> Unit,
+    onSelectAll: () -> Unit,
+    onClearSelection: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val listFocusRequester = remember { FocusRequester() }
+    var selectionModifiers by remember { mutableStateOf(LogSelectionModifiers()) }
 
     val currentAutoScroll by rememberUpdatedState(state.autoScroll)
     val currentEntries by rememberUpdatedState(state.filteredEntries)
@@ -380,20 +548,79 @@ private fun LogList(
         }
     }
 
-    Box(modifier = modifier) {
+    Box(
+        modifier = modifier
+            .focusRequester(listFocusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                selectionModifiers = selectionModifiers.copy(
+                    shiftPressed = event.isShiftPressed,
+                    additivePressed = event.isCtrlPressed || event.isMetaPressed,
+                )
+
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+
+                val isPrimaryModifier = event.isCtrlPressed || event.isMetaPressed
+                when {
+                    isPrimaryModifier && event.key == Key.C -> {
+                        onCopySelected()
+                        true
+                    }
+
+                    isPrimaryModifier && event.key == Key.A -> {
+                        onSelectAll()
+                        true
+                    }
+
+                    event.key == Key.Escape -> {
+                        onClearSelection()
+                        true
+                    }
+
+                    else -> false
+                }
+            },
+    ) {
         if (state.filteredEntries.isEmpty()) {
             EmptyLogState(state = state)
         } else {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                items(
-                    items = state.filteredEntries,
-                    key = { entry -> entry.id },
-                ) { entry ->
-                    LogEntryRow(entry = entry, state = state)
+            Box(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(end = 10.dp),
+                ) {
+                    items(
+                        items = state.filteredEntries,
+                        key = { entry -> entry.id },
+                    ) { entry ->
+                        LogEntryRow(
+                            entry = entry,
+                            state = state,
+                            selected = entry.id in selectedEntryIds,
+                            hasAnySelection = selectedEntryIds.isNotEmpty(),
+                            onClick = {
+                                listFocusRequester.requestFocus()
+                                onEntrySelectionRequested(
+                                    entry.id,
+                                    selectionModifiers.additivePressed,
+                                    selectionModifiers.shiftPressed,
+                                )
+                            },
+                            onCopyLine = { onCopyLine(entry.raw) },
+                            onCopySelected = onCopySelected,
+                            onSelectAll = onSelectAll,
+                        )
+                    }
                 }
+
+                VerticalScrollbar(
+                    adapter = rememberScrollbarAdapter(listState),
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight(),
+                )
             }
         }
 
@@ -482,11 +709,85 @@ private fun EmptyLogState(state: LogcatState) {
 
 // ── Log entry rows ───────────────────────────────────────────────────────────
 
+/**
+ * Строка лога с поддержкой выделения и контекстного меню действий.
+ *
+ * Контекстное меню открывается по правому клику (desktop) или long-press
+ * и позволяет скопировать строку, скопировать текущее выделение
+ * или выделить все отфильтрованные записи.
+ */
 @Composable
-private fun LogEntryRow(entry: LogcatEntry, state: LogcatState) {
-    when (state.displayMode) {
-        LogcatDisplayMode.COMPACT -> CompactRow(entry = entry, state = state)
-        LogcatDisplayMode.FULL -> FullRow(entry = entry, state = state)
+@OptIn(ExperimentalComposeUiApi::class)
+private fun LogEntryRow(
+    entry: LogcatEntry,
+    state: LogcatState,
+    selected: Boolean,
+    onClick: () -> Unit,
+    hasAnySelection: Boolean,
+    onCopyLine: () -> Unit,
+    onCopySelected: () -> Unit,
+    onSelectAll: () -> Unit,
+) {
+    var isContextMenuExpanded by remember(entry.id) { mutableStateOf(false) }
+    val selectionColor = if (selected) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+    } else {
+        Color.Transparent
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(selectionColor)
+            .onPointerEvent(PointerEventType.Press) { event ->
+                if (event.buttons.isSecondaryPressed) {
+                    onClick()
+                    isContextMenuExpanded = true
+                }
+            }
+            .pointerInput(entry.id) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onLongPress = {
+                        onClick()
+                        isContextMenuExpanded = true
+                    },
+                )
+            },
+    ) {
+        when (state.displayMode) {
+            LogcatDisplayMode.COMPACT -> CompactRow(entry = entry, state = state)
+            LogcatDisplayMode.FULL -> FullRow(entry = entry, state = state)
+        }
+
+        DropdownMenu(
+            expanded = isContextMenuExpanded,
+            onDismissRequest = { isContextMenuExpanded = false },
+        ) {
+            DropdownMenuItem(
+                text = { Text("Copy line") },
+                onClick = {
+                    isContextMenuExpanded = false
+                    onCopyLine()
+                },
+            )
+            if (hasAnySelection) {
+                DropdownMenuItem(
+                    text = { Text("Copy selected") },
+                    onClick = {
+                        isContextMenuExpanded = false
+                        onCopySelected()
+                    },
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("Select all filtered") },
+                onClick = {
+                    isContextMenuExpanded = false
+                    onSelectAll()
+                },
+            )
+        }
     }
 }
 
@@ -702,6 +1003,11 @@ private fun LogcatStatusBar(state: LogcatState) {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+private data class LogSelectionModifiers(
+    val shiftPressed: Boolean = false,
+    val additivePressed: Boolean = false,
+)
 
 /**
  * Строит строку метки времени из полей записи в соответствии с флагами отображения.

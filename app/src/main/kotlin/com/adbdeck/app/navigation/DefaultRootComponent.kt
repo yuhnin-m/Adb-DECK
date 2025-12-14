@@ -170,6 +170,7 @@ class DefaultRootComponent(
                 componentContext = componentContext,
                 deviceManager = deviceManager,
                 logcatStreamer = logcatStreamer,
+                packageClient = packageClient,
                 settingsRepository = settingsRepository,
             )
         )

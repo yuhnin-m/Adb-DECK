@@ -6,6 +6,7 @@ import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.adb.api.logcat.LogcatParser
 import com.adbdeck.core.adb.api.logcat.LogcatStreamer
+import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.arkivanov.decompose.ComponentContext
@@ -50,6 +51,7 @@ class DefaultLogcatComponent(
     componentContext: ComponentContext,
     private val deviceManager: DeviceManager,
     private val logcatStreamer: LogcatStreamer,
+    private val packageClient: PackageClient,
     private val settingsRepository: SettingsRepository,
 ) : LogcatComponent, ComponentContext by componentContext {
 
@@ -81,6 +83,8 @@ class DefaultLogcatComponent(
     private val entriesBuffer = ArrayDeque<LogcatEntry>()
 
     private var streamJob: Job? = null
+    private var packageSuggestionsJob: Job? = null
+    private var packageSuggestionsDeviceId: String? = null
 
     init {
         // Батчер: каждые 200 мс сливает канал в единый state.update
@@ -97,6 +101,17 @@ class DefaultLogcatComponent(
                 val streamingFor = _state.value.activeDeviceId
                 if (_state.value.isRunning && device?.deviceId != streamingFor) {
                     stopStream(reason = null)
+                }
+
+                val nextDeviceId = when {
+                    device == null -> null
+                    device.state != DeviceState.DEVICE -> null
+                    else -> device.deviceId
+                }
+
+                if (packageSuggestionsDeviceId != nextDeviceId) {
+                    packageSuggestionsDeviceId = nextDeviceId
+                    loadPackageSuggestions(deviceId = nextDeviceId)
                 }
             }
         }
@@ -176,6 +191,72 @@ class DefaultLogcatComponent(
         streamJob?.cancel()
         streamJob = null
         _state.update { it.copy(isRunning = false, error = reason) }
+    }
+
+    /**
+     * Загружает список пакетов активного устройства для autocomplete-фильтра.
+     */
+    private fun loadPackageSuggestions(deviceId: String?) {
+        packageSuggestionsJob?.cancel()
+
+        if (deviceId == null) {
+            _state.update {
+                it.copy(
+                    packageSuggestions = emptyList(),
+                    isPackageSuggestionsLoading = false,
+                )
+            }
+            return
+        }
+
+        _state.update {
+            it.copy(
+                packageSuggestions = emptyList(),
+                isPackageSuggestionsLoading = true,
+            )
+        }
+
+        packageSuggestionsJob = scope.launch {
+            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+
+            packageClient.getPackages(deviceId = deviceId, adbPath = adbPath)
+                .onSuccess { packages ->
+                    val packageNames = packages.asSequence()
+                        .map { it.packageName }
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                        .toList()
+
+                    _state.update { current ->
+                        val selectedDeviceId = deviceManager.selectedDeviceFlow.value
+                            ?.takeIf { it.state == DeviceState.DEVICE }
+                            ?.deviceId
+                        if (selectedDeviceId != deviceId) {
+                            current
+                        } else {
+                            current.copy(
+                                packageSuggestions = packageNames,
+                                isPackageSuggestionsLoading = false,
+                            )
+                        }
+                    }
+                }
+                .onFailure {
+                    _state.update { current ->
+                        val selectedDeviceId = deviceManager.selectedDeviceFlow.value
+                            ?.takeIf { it.state == DeviceState.DEVICE }
+                            ?.deviceId
+                        if (selectedDeviceId != deviceId) {
+                            current
+                        } else {
+                            current.copy(
+                                packageSuggestions = emptyList(),
+                                isPackageSuggestionsLoading = false,
+                            )
+                        }
+                    }
+                }
+        }
     }
 
     private fun trimBufferTo(maxLines: Int) {
