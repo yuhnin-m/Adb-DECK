@@ -2,14 +2,13 @@ package com.adbdeck.feature.logcat
 
 import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
-import com.adbdeck.feature.logcat.LogcatFontFamily
 
 /**
  * Полное состояние экрана Logcat.
  *
  * @param isRunning        Захват logcat активен.
  * @param activeDeviceId   ID устройства, для которого открыт поток.
- * @param error            Сообщение об ошибке или `null`.
+ * @param error            Ошибка экрана или `null`.
  *
  * @param entries          Буфер всех полученных строк (ограничен [maxBufferedLines]).
  * @param filteredEntries  Строки после применения активных фильтров.
@@ -35,7 +34,7 @@ import com.adbdeck.feature.logcat.LogcatFontFamily
 data class LogcatState(
     val isRunning: Boolean = false,
     val activeDeviceId: String? = null,
-    val error: String? = null,
+    val error: LogcatError? = null,
 
     val entries: List<LogcatEntry> = emptyList(),
     val filteredEntries: List<LogcatEntry> = emptyList(),

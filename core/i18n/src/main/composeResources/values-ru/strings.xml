@@ -1,0 +1,8 @@
+<resources>
+    <string name="common_action_start">Старт</string>
+    <string name="common_action_stop">Стоп</string>
+    <string name="common_action_clear">Очистить</string>
+    <string name="common_action_settings">Настройки</string>
+    <string name="common_action_close_settings">Закрыть настройки</string>
+    <string name="common_placeholder_search">Поиск...</string>
+</resources>

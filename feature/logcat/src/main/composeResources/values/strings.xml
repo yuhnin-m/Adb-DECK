@@ -1,0 +1,62 @@
+<resources>
+    <string name="logcat_toolbar_level_button">Level: %1$s</string>
+    <string name="logcat_level_all_short">All</string>
+
+    <string name="logcat_toolbar_copy_selected">Copy selected (%1$d)</string>
+    <string name="logcat_toolbar_clear_selection">Clear selection</string>
+
+    <string name="logcat_level_verbose">Verbose (V)</string>
+    <string name="logcat_level_debug">Debug (D)</string>
+    <string name="logcat_level_info">Info (I)</string>
+    <string name="logcat_level_warning">Warning (W)</string>
+    <string name="logcat_level_error">Error (E)</string>
+    <string name="logcat_level_fatal">Fatal (F)</string>
+
+    <string name="logcat_filter_tag_placeholder">Tag filter</string>
+    <string name="logcat_filter_package_placeholder">Package filter</string>
+    <string name="logcat_filter_package_loading_placeholder">Package filter (loading...)</string>
+
+    <string name="logcat_content_desc_scroll_down">Scroll down</string>
+
+    <string name="logcat_empty_error_format">⚠  %1$s</string>
+    <string name="logcat_error_no_active_device">No active device. Select a device in the top bar.</string>
+    <string name="logcat_error_device_unavailable">Device %1$s is unavailable (%2$s).</string>
+    <string name="logcat_error_stream_generic">Logcat stream error</string>
+    <string name="logcat_error_stream_with_reason">Logcat stream error: %1$s</string>
+    <string name="logcat_empty_no_device_title">No device selected</string>
+    <string name="logcat_empty_no_device_subtitle">Select a device in the top bar, then press Start</string>
+    <string name="logcat_empty_waiting_stream">Waiting for logcat output...</string>
+    <string name="logcat_empty_no_results">No records match the active filters</string>
+    <string name="logcat_empty_start_hint">Press Start to begin capturing logcat</string>
+
+    <string name="logcat_context_copy_line">Copy line</string>
+    <string name="logcat_context_copy_selected">Copy selected</string>
+    <string name="logcat_context_select_all_filtered">Select all filtered</string>
+
+    <string name="logcat_status_streaming">Streaming</string>
+    <string name="logcat_status_error">Error</string>
+    <string name="logcat_status_stopped">Stopped</string>
+    <string name="logcat_status_paused">Paused</string>
+    <string name="logcat_status_paused_indicator">↑ Paused</string>
+    <string name="logcat_status_lines_total">%1$d lines</string>
+    <string name="logcat_status_lines_filtered">%1$d / %2$d lines</string>
+
+    <string name="logcat_settings_title">Logcat settings</string>
+    <string name="logcat_settings_output_section_title">Output format</string>
+    <string name="logcat_settings_output_format_label">Log format</string>
+    <string name="logcat_settings_mode_compact">Compact</string>
+    <string name="logcat_settings_mode_full">Full</string>
+    <string name="logcat_settings_use_colors_label">Use colors</string>
+    <string name="logcat_settings_font_section_title">Font</string>
+    <string name="logcat_settings_font_mono">Mono</string>
+    <string name="logcat_settings_font_sans">Sans</string>
+    <string name="logcat_settings_font_serif">Serif</string>
+    <string name="logcat_settings_font_system">System</string>
+    <string name="logcat_settings_font_size_label">Font size</string>
+    <string name="logcat_settings_font_decrease_content_desc">Decrease font size</string>
+    <string name="logcat_settings_font_increase_content_desc">Increase font size</string>
+    <string name="logcat_settings_timestamps_section_title">Timestamps</string>
+    <string name="logcat_settings_show_date_label">Show date</string>
+    <string name="logcat_settings_show_time_label">Show time</string>
+    <string name="logcat_settings_show_millis_label">Show ms</string>
+</resources>

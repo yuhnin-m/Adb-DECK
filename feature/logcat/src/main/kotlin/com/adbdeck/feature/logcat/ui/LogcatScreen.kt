@@ -69,11 +69,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import adbdeck.feature.logcat.generated.resources.Res
+import adbdeck.feature.logcat.generated.resources.*
 import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.i18n.AdbCommonStringRes
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
@@ -87,8 +90,10 @@ import com.adbdeck.core.ui.splitbuttons.AdbSplitMenuItem
 import com.adbdeck.core.ui.splitbuttons.AdbSplitButtonSize
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
+import com.adbdeck.feature.logcat.LogcatError
 import com.adbdeck.feature.logcat.LogcatState
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Экран Logcat — потоковый просмотр `adb logcat` с фильтрами и панелью настроек.
@@ -259,7 +264,10 @@ private fun LogcatToolbar(
     onToggleSettings: () -> Unit,
 ) {
     val levelMenuItems = rememberLogcatLevelMenuItems()
-    val levelButtonText = "Level: ${state.levelFilter?.code ?: "All"}"
+    val levelButtonText = stringResource(
+        Res.string.logcat_toolbar_level_button,
+        state.levelFilter?.code ?: stringResource(Res.string.logcat_level_all_short),
+    )
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -276,7 +284,7 @@ private fun LogcatToolbar(
             if (!state.isRunning) {
                 AdbFilledButton(
                     onClick = component::onStart,
-                    text = "Start",
+                    text = stringResource(AdbCommonStringRes.actionStart),
                     type = AdbButtonType.NEUTRAL,
                     size = AdbButtonSize.MEDIUM,
                     cornerRadius = AdbCornerRadius.LARGE,
@@ -285,7 +293,7 @@ private fun LogcatToolbar(
             } else {
                 AdbFilledButton(
                     onClick = component::onStop,
-                    text = "Stop",
+                    text = stringResource(AdbCommonStringRes.actionStop),
                     type = AdbButtonType.DANGER,
                     size = AdbButtonSize.MEDIUM,
                     cornerRadius = AdbCornerRadius.LARGE,
@@ -296,7 +304,7 @@ private fun LogcatToolbar(
             // ── Clear ──────────────────────────────────────────────
             AdbOutlinedButton(
                 onClick = onClearAndResetSelection,
-                text = "Clear",
+                text = stringResource(AdbCommonStringRes.actionClear),
                 type = AdbButtonType.NEUTRAL,
                 size = AdbButtonSize.MEDIUM,
                 cornerRadius = AdbCornerRadius.LARGE,
@@ -305,7 +313,7 @@ private fun LogcatToolbar(
             if (selectedCount > 0) {
                 AdbOutlinedButton(
                     onClick = onCopySelected,
-                    text = "Copy selected ($selectedCount)",
+                    text = stringResource(Res.string.logcat_toolbar_copy_selected, selectedCount),
                     type = AdbButtonType.SUCCESS,
                     size = AdbButtonSize.MEDIUM,
                     cornerRadius = AdbCornerRadius.LARGE,
@@ -313,7 +321,7 @@ private fun LogcatToolbar(
 
                 AdbOutlinedButton(
                     onClick = onResetSelection,
-                    text = "Clear selection",
+                    text = stringResource(Res.string.logcat_toolbar_clear_selection),
                     type = AdbButtonType.NEUTRAL,
                     size = AdbButtonSize.MEDIUM,
                     cornerRadius = AdbCornerRadius.LARGE,
@@ -339,7 +347,11 @@ private fun LogcatToolbar(
 
             AdbOutlinedButton(
                 onClick = onToggleSettings,
-                text = if (isSettingsOpen) "Закрыть настройки" else "Настройки",
+                text = if (isSettingsOpen) {
+                    stringResource(AdbCommonStringRes.actionCloseSettings)
+                } else {
+                    stringResource(AdbCommonStringRes.actionSettings)
+                },
                 type = AdbButtonType.NEUTRAL,
                 size = AdbButtonSize.MEDIUM,
                 cornerRadius = AdbCornerRadius.LARGE,
@@ -354,35 +366,51 @@ private fun LogcatToolbar(
  */
 @Composable
 private fun rememberLogcatLevelMenuItems(): List<AdbSplitMenuItem<LogcatLevel?>> {
-    return remember {
+    val allLabel = stringResource(Res.string.logcat_level_all_short)
+    val verboseLabel = stringResource(Res.string.logcat_level_verbose)
+    val debugLabel = stringResource(Res.string.logcat_level_debug)
+    val infoLabel = stringResource(Res.string.logcat_level_info)
+    val warningLabel = stringResource(Res.string.logcat_level_warning)
+    val errorLabel = stringResource(Res.string.logcat_level_error)
+    val fatalLabel = stringResource(Res.string.logcat_level_fatal)
+
+    return remember(
+        allLabel,
+        verboseLabel,
+        debugLabel,
+        infoLabel,
+        warningLabel,
+        errorLabel,
+        fatalLabel,
+    ) {
         listOf(
             AdbSplitMenuItem(
                 value = null,
-                label = "All",
+                label = allLabel,
             ),
             AdbSplitMenuItem(
                 value = LogcatLevel.VERBOSE,
-                label = "Verbose (V)",
+                label = verboseLabel,
             ),
             AdbSplitMenuItem(
                 value = LogcatLevel.DEBUG,
-                label = "Debug (D)",
+                label = debugLabel,
             ),
             AdbSplitMenuItem(
                 value = LogcatLevel.INFO,
-                label = "Info (I)",
+                label = infoLabel,
             ),
             AdbSplitMenuItem(
                 value = LogcatLevel.WARNING,
-                label = "Warning (W)",
+                label = warningLabel,
             ),
             AdbSplitMenuItem(
                 value = LogcatLevel.ERROR,
-                label = "Error (E)",
+                label = errorLabel,
             ),
             AdbSplitMenuItem(
                 value = LogcatLevel.FATAL,
-                label = "Fatal (F)",
+                label = fatalLabel,
             ),
         )
     }
@@ -411,22 +439,22 @@ private fun FilterBar(
             CompactTextField(
                 value = state.searchQuery,
                 onValueChange = component::onSearchChanged,
-                placeholder = "Search…",
+                placeholder = stringResource(AdbCommonStringRes.placeholderSearch),
                 modifier = Modifier.weight(1f),
             )
             CompactTextField(
                 value = state.tagFilter,
                 onValueChange = component::onTagFilterChanged,
-                placeholder = "Tag filter",
+                placeholder = stringResource(Res.string.logcat_filter_tag_placeholder),
                 modifier = Modifier.weight(1f),
             )
             CompactTextField(
                 value = state.packageFilter,
                 onValueChange = component::onPackageFilterChanged,
                 placeholder = if (state.isPackageSuggestionsLoading) {
-                    "Package filter (loading...)"
+                    stringResource(Res.string.logcat_filter_package_loading_placeholder)
                 } else {
-                    "Package filter"
+                    stringResource(Res.string.logcat_filter_package_placeholder)
                 },
                 suggestions = state.packageSuggestions,
                 modifier = Modifier.weight(1f),
@@ -637,7 +665,7 @@ private fun LogList(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.KeyboardArrowDown,
-                    contentDescription = "Прокрутить вниз",
+                    contentDescription = stringResource(Res.string.logcat_content_desc_scroll_down),
                 )
             }
         }
@@ -658,8 +686,12 @@ private fun EmptyLogState(state: LogcatState) {
         ) {
             when {
                 state.error != null -> {
+                    val errorMessage = localizeLogcatError(state.error)
                     Text(
-                        text = "⚠  ${state.error}",
+                        text = stringResource(
+                            Res.string.logcat_empty_error_format,
+                            errorMessage,
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -667,12 +699,12 @@ private fun EmptyLogState(state: LogcatState) {
 
                 state.activeDeviceId == null -> {
                     Text(
-                        text = "Устройство не выбрано",
+                        text = stringResource(Res.string.logcat_empty_no_device_title),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline,
                     )
                     Text(
-                        text = "Выберите устройство в верхней панели, затем нажмите Start",
+                        text = stringResource(Res.string.logcat_empty_no_device_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -680,7 +712,7 @@ private fun EmptyLogState(state: LogcatState) {
 
                 state.isRunning && state.entries.isEmpty() -> {
                     Text(
-                        text = "Ожидание вывода logcat…",
+                        text = stringResource(Res.string.logcat_empty_waiting_stream),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -689,7 +721,7 @@ private fun EmptyLogState(state: LogcatState) {
                 state.entries.isNotEmpty() -> {
                     // Есть данные, но фильтр ничего не пропустил
                     Text(
-                        text = "Нет записей, соответствующих фильтру",
+                        text = stringResource(Res.string.logcat_empty_no_results),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -697,7 +729,7 @@ private fun EmptyLogState(state: LogcatState) {
 
                 else -> {
                     Text(
-                        text = "Нажмите Start для начала захвата logcat",
+                        text = stringResource(Res.string.logcat_empty_start_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -765,7 +797,7 @@ private fun LogEntryRow(
             onDismissRequest = { isContextMenuExpanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text("Copy line") },
+                text = { Text(stringResource(Res.string.logcat_context_copy_line)) },
                 onClick = {
                     isContextMenuExpanded = false
                     onCopyLine()
@@ -773,7 +805,7 @@ private fun LogEntryRow(
             )
             if (hasAnySelection) {
                 DropdownMenuItem(
-                    text = { Text("Copy selected") },
+                    text = { Text(stringResource(Res.string.logcat_context_copy_selected)) },
                     onClick = {
                         isContextMenuExpanded = false
                         onCopySelected()
@@ -781,7 +813,7 @@ private fun LogEntryRow(
                 )
             }
             DropdownMenuItem(
-                text = { Text("Select all filtered") },
+                text = { Text(stringResource(Res.string.logcat_context_select_all_filtered)) },
                 onClick = {
                     isContextMenuExpanded = false
                     onSelectAll()
@@ -944,9 +976,9 @@ private fun LogcatStatusBar(state: LogcatState) {
 
         Text(
             text = when {
-                state.isRunning -> "Streaming"
-                state.error != null -> "Error"
-                else -> "Stopped"
+                state.isRunning -> stringResource(Res.string.logcat_status_streaming)
+                state.error != null -> stringResource(Res.string.logcat_status_error)
+                else -> stringResource(Res.string.logcat_status_stopped)
             },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -967,7 +999,7 @@ private fun LogcatStatusBar(state: LogcatState) {
 
         if (!state.autoScroll) {
             Text(
-                text = "↑ Пауза",
+                text = stringResource(Res.string.logcat_status_paused_indicator),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -980,9 +1012,16 @@ private fun LogcatStatusBar(state: LogcatState) {
                     state.packageFilter.isNotBlank()
             Text(
                 text = if (hasFilter) {
-                    "${state.filteredEntries.size} / ${state.totalLineCount} строк"
+                    stringResource(
+                        Res.string.logcat_status_lines_filtered,
+                        state.filteredEntries.size,
+                        state.totalLineCount,
+                    )
                 } else {
-                    "${state.totalLineCount} строк"
+                    stringResource(
+                        Res.string.logcat_status_lines_total,
+                        state.totalLineCount,
+                    )
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -991,7 +1030,7 @@ private fun LogcatStatusBar(state: LogcatState) {
 
         if (state.error != null) {
             Text(
-                text = state.error,
+                text = localizeLogcatError(state.error),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.error,
                 maxLines = 1,
@@ -1003,6 +1042,28 @@ private fun LogcatStatusBar(state: LogcatState) {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+@Composable
+private fun localizeLogcatError(error: LogcatError?): String {
+    if (error == null) return ""
+
+    return when (error) {
+        LogcatError.NoActiveDevice -> stringResource(Res.string.logcat_error_no_active_device)
+        is LogcatError.DeviceUnavailable -> stringResource(
+            Res.string.logcat_error_device_unavailable,
+            error.deviceId,
+            error.deviceStateRaw,
+        )
+        is LogcatError.StreamFailure -> {
+            val details = error.details.orEmpty().trim()
+            if (details.isNotEmpty()) {
+                stringResource(Res.string.logcat_error_stream_with_reason, details)
+            } else {
+                stringResource(Res.string.logcat_error_stream_generic)
+            }
+        }
+    }
+}
 
 private data class LogSelectionModifiers(
     val shiftPressed: Boolean = false,

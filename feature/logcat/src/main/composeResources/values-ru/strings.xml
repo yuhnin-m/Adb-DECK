@@ -1,0 +1,62 @@
+<resources>
+    <string name="logcat_toolbar_level_button">Уровень: %1$s</string>
+    <string name="logcat_level_all_short">Все</string>
+
+    <string name="logcat_toolbar_copy_selected">Скопировать выделенное (%1$d)</string>
+    <string name="logcat_toolbar_clear_selection">Сбросить выделение</string>
+
+    <string name="logcat_level_verbose">Подробно (V)</string>
+    <string name="logcat_level_debug">Отладка (D)</string>
+    <string name="logcat_level_info">Инфо (I)</string>
+    <string name="logcat_level_warning">Предупреждение (W)</string>
+    <string name="logcat_level_error">Ошибка (E)</string>
+    <string name="logcat_level_fatal">Критический (F)</string>
+
+    <string name="logcat_filter_tag_placeholder">Фильтр тега</string>
+    <string name="logcat_filter_package_placeholder">Фильтр пакета</string>
+    <string name="logcat_filter_package_loading_placeholder">Фильтр пакета (загрузка...)</string>
+
+    <string name="logcat_content_desc_scroll_down">Прокрутить вниз</string>
+
+    <string name="logcat_empty_error_format">⚠  %1$s</string>
+    <string name="logcat_error_no_active_device">Нет активного устройства. Выберите устройство в верхней панели.</string>
+    <string name="logcat_error_device_unavailable">Устройство %1$s недоступно (%2$s).</string>
+    <string name="logcat_error_stream_generic">Ошибка потока logcat</string>
+    <string name="logcat_error_stream_with_reason">Ошибка потока logcat: %1$s</string>
+    <string name="logcat_empty_no_device_title">Устройство не выбрано</string>
+    <string name="logcat_empty_no_device_subtitle">Выберите устройство в верхней панели, затем нажмите Старт</string>
+    <string name="logcat_empty_waiting_stream">Ожидание вывода logcat...</string>
+    <string name="logcat_empty_no_results">Нет записей, соответствующих фильтрам</string>
+    <string name="logcat_empty_start_hint">Нажмите Старт для начала захвата logcat</string>
+
+    <string name="logcat_context_copy_line">Копировать строку</string>
+    <string name="logcat_context_copy_selected">Копировать выделенное</string>
+    <string name="logcat_context_select_all_filtered">Выделить все отфильтрованные</string>
+
+    <string name="logcat_status_streaming">Поток</string>
+    <string name="logcat_status_error">Ошибка</string>
+    <string name="logcat_status_stopped">Остановлен</string>
+    <string name="logcat_status_paused">Пауза</string>
+    <string name="logcat_status_paused_indicator">↑ Пауза</string>
+    <string name="logcat_status_lines_total">%1$d строк</string>
+    <string name="logcat_status_lines_filtered">%1$d / %2$d строк</string>
+
+    <string name="logcat_settings_title">Настройки Logcat</string>
+    <string name="logcat_settings_output_section_title">Формат вывода</string>
+    <string name="logcat_settings_output_format_label">Формат логов</string>
+    <string name="logcat_settings_mode_compact">Компактный</string>
+    <string name="logcat_settings_mode_full">Полный</string>
+    <string name="logcat_settings_use_colors_label">Использовать цвета</string>
+    <string name="logcat_settings_font_section_title">Шрифт</string>
+    <string name="logcat_settings_font_mono">Моно</string>
+    <string name="logcat_settings_font_sans">Без засечек</string>
+    <string name="logcat_settings_font_serif">С засечками</string>
+    <string name="logcat_settings_font_system">Системный</string>
+    <string name="logcat_settings_font_size_label">Размер шрифта</string>
+    <string name="logcat_settings_font_decrease_content_desc">Уменьшить шрифт</string>
+    <string name="logcat_settings_font_increase_content_desc">Увеличить шрифт</string>
+    <string name="logcat_settings_timestamps_section_title">Временные метки</string>
+    <string name="logcat_settings_show_date_label">Отображать дату</string>
+    <string name="logcat_settings_show_time_label">Отображать время</string>
+    <string name="logcat_settings_show_millis_label">Отображать ms</string>
+</resources>

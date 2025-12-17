@@ -30,6 +30,7 @@ include(":core:process")
 include(":core:adb-api")
 include(":core:adb-impl")
 include(":core:settings")
+include(":core:i18n")
 
 // Feature-модули — отдельные экраны и бизнес-логика
 include(":feature:dashboard")

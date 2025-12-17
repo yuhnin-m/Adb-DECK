@@ -5,14 +5,12 @@ package com.adbdeck.feature.logcat
  *
  * Хранится в [com.adbdeck.core.settings.AppSettings] как строка ([name]),
  * чтобы не создавать зависимость core:settings → feature:logcat.
- *
- * @param displayName Читаемое название для UI.
  */
-enum class LogcatFontFamily(val displayName: String) {
-    MONOSPACE("Monospace"),
-    SANS_SERIF("Sans Serif"),
-    SERIF("Serif"),
-    DEFAULT("System");
+enum class LogcatFontFamily {
+    MONOSPACE,
+    SANS_SERIF,
+    SERIF,
+    DEFAULT;
 
     companion object {
         /**

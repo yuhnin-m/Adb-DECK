@@ -8,7 +8,6 @@ import com.adbdeck.core.adb.api.logcat.LogcatParser
 import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
-import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
@@ -124,13 +123,18 @@ class DefaultLogcatComponent(
         when {
             device == null -> {
                 _state.update {
-                    it.copy(error = "Нет активного устройства. Выберите устройство в верхней панели.")
+                    it.copy(error = LogcatError.NoActiveDevice)
                 }
                 return
             }
             device.state != DeviceState.DEVICE -> {
                 _state.update {
-                    it.copy(error = "Устройство ${device.deviceId} недоступно (${device.state.rawValue}).")
+                    it.copy(
+                        error = LogcatError.DeviceUnavailable(
+                            deviceId = device.deviceId,
+                            deviceStateRaw = device.state.rawValue,
+                        )
+                    )
                 }
                 return
             }
@@ -164,7 +168,7 @@ class DefaultLogcatComponent(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(error = "Ошибка потока logcat: ${e.message}") }
+                _state.update { it.copy(error = LogcatError.StreamFailure(details = e.message)) }
             } finally {
                 _state.update { it.copy(isRunning = false) }
             }
@@ -187,7 +191,7 @@ class DefaultLogcatComponent(
         }
     }
 
-    private fun stopStream(reason: String?) {
+    private fun stopStream(reason: LogcatError?) {
         streamJob?.cancel()
         streamJob = null
         _state.update { it.copy(isRunning = false, error = reason) }

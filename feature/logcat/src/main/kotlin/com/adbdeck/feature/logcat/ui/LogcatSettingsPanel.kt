@@ -26,6 +26,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import adbdeck.feature.logcat.generated.resources.Res
+import adbdeck.feature.logcat.generated.resources.*
 import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.buttons.AdbButtonSize
@@ -38,6 +40,7 @@ import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
 import com.adbdeck.feature.logcat.LogcatFontFamily
 import com.adbdeck.feature.logcat.LogcatState
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Дочерняя панель настроек Logcat.
@@ -68,13 +71,15 @@ internal fun LogcatSettingsPanel(
             verticalArrangement = Arrangement.spacedBy(blockSpacing),
         ) {
             Text(
-                text = "Настройки Logcat",
+                text = stringResource(Res.string.logcat_settings_title),
                 style = MaterialTheme.typography.titleMedium,
             )
 
-            LogcatSettingsSection(title = "Формат вывода") {
+            LogcatSettingsSection(
+                title = stringResource(Res.string.logcat_settings_output_section_title),
+            ) {
                 Text(
-                    text = "Формат логов",
+                    text = stringResource(Res.string.logcat_settings_output_format_label),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -87,11 +92,11 @@ internal fun LogcatSettingsPanel(
                         options = listOf(
                             AdbSegmentedOption(
                                 value = LogcatDisplayMode.COMPACT,
-                                label = "Compact",
+                                label = stringResource(Res.string.logcat_settings_mode_compact),
                             ),
                             AdbSegmentedOption(
                                 value = LogcatDisplayMode.FULL,
-                                label = "Full",
+                                label = stringResource(Res.string.logcat_settings_mode_full),
                             ),
                         ),
                         selectedValue = state.displayMode,
@@ -101,13 +106,15 @@ internal fun LogcatSettingsPanel(
                 }
 
                 LabeledSwitchRow(
-                    label = "Использовать цвета",
+                    label = stringResource(Res.string.logcat_settings_use_colors_label),
                     checked = state.coloredLevels,
                     onCheckedChange = component::onToggleColoredLevels,
                 )
             }
 
-            LogcatSettingsSection(title = "Шрифт") {
+            LogcatSettingsSection(
+                title = stringResource(Res.string.logcat_settings_font_section_title),
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -116,19 +123,19 @@ internal fun LogcatSettingsPanel(
                         options = listOf(
                             AdbSegmentedOption(
                                 value = LogcatFontFamily.MONOSPACE,
-                                label = "Mono",
+                                label = stringResource(Res.string.logcat_settings_font_mono),
                             ),
                             AdbSegmentedOption(
                                 value = LogcatFontFamily.SANS_SERIF,
-                                label = "Sans",
+                                label = stringResource(Res.string.logcat_settings_font_sans),
                             ),
                             AdbSegmentedOption(
                                 value = LogcatFontFamily.SERIF,
-                                label = "Serif",
+                                label = stringResource(Res.string.logcat_settings_font_serif),
                             ),
                             AdbSegmentedOption(
                                 value = LogcatFontFamily.DEFAULT,
-                                label = "System",
+                                label = stringResource(Res.string.logcat_settings_font_system),
                             ),
                         ),
                         selectedValue = state.fontFamily,
@@ -144,19 +151,21 @@ internal fun LogcatSettingsPanel(
                 )
             }
 
-            LogcatSettingsSection(title = "Временные метки") {
+            LogcatSettingsSection(
+                title = stringResource(Res.string.logcat_settings_timestamps_section_title),
+            ) {
                 LabeledSwitchRow(
-                    label = "Отображать дату",
+                    label = stringResource(Res.string.logcat_settings_show_date_label),
                     checked = state.showDate,
                     onCheckedChange = component::onToggleShowDate,
                 )
                 LabeledSwitchRow(
-                    label = "Отображать время",
+                    label = stringResource(Res.string.logcat_settings_show_time_label),
                     checked = state.showTime,
                     onCheckedChange = component::onToggleShowTime,
                 )
                 LabeledSwitchRow(
-                    label = "Отображать ms",
+                    label = stringResource(Res.string.logcat_settings_show_millis_label),
                     checked = state.showMillis,
                     onCheckedChange = component::onToggleShowMillis,
                 )
@@ -239,7 +248,7 @@ private fun FontSizeSelector(
         horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
         Text(
-            text = "Размер шрифта",
+            text = stringResource(Res.string.logcat_settings_font_size_label),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -252,7 +261,7 @@ private fun FontSizeSelector(
             cornerRadius = AdbCornerRadius.MEDIUM,
             enabled = fontSizeSp > 8,
             leadingIcon = Icons.Outlined.Remove,
-            contentDescription = "Уменьшить шрифт",
+            contentDescription = stringResource(Res.string.logcat_settings_font_decrease_content_desc),
             modifier = Modifier.size(40.dp),
         )
 
@@ -281,7 +290,7 @@ private fun FontSizeSelector(
             cornerRadius = AdbCornerRadius.MEDIUM,
             enabled = fontSizeSp < 24,
             leadingIcon = Icons.Outlined.Add,
-            contentDescription = "Увеличить шрифт",
+            contentDescription = stringResource(Res.string.logcat_settings_font_increase_content_desc),
             modifier = Modifier.size(40.dp),
         )
     }
