@@ -3,7 +3,6 @@
     <string name="logcat_level_all_short">All</string>
 
     <string name="logcat_toolbar_copy_selected">Copy selected (%1$d)</string>
-    <string name="logcat_toolbar_clear_selection">Clear selection</string>
 
     <string name="logcat_level_verbose">Verbose (V)</string>
     <string name="logcat_level_debug">Debug (D)</string>
@@ -29,8 +28,6 @@
     <string name="logcat_empty_no_results">No records match the active filters</string>
     <string name="logcat_empty_start_hint">Press Start to begin capturing logcat</string>
 
-    <string name="logcat_context_copy_line">Copy line</string>
-    <string name="logcat_context_copy_selected">Copy selected</string>
     <string name="logcat_context_select_all_filtered">Select all filtered</string>
 
     <string name="logcat_status_streaming">Streaming</string>

@@ -3,7 +3,6 @@
     <string name="logcat_level_all_short">Все</string>
 
     <string name="logcat_toolbar_copy_selected">Скопировать выделенное (%1$d)</string>
-    <string name="logcat_toolbar_clear_selection">Сбросить выделение</string>
 
     <string name="logcat_level_verbose">Подробно (V)</string>
     <string name="logcat_level_debug">Отладка (D)</string>
@@ -29,8 +28,6 @@
     <string name="logcat_empty_no_results">Нет записей, соответствующих фильтрам</string>
     <string name="logcat_empty_start_hint">Нажмите Старт для начала захвата logcat</string>
 
-    <string name="logcat_context_copy_line">Копировать строку</string>
-    <string name="logcat_context_copy_selected">Копировать выделенное</string>
     <string name="logcat_context_select_all_filtered">Выделить все отфильтрованные</string>
 
     <string name="logcat_status_streaming">Поток</string>

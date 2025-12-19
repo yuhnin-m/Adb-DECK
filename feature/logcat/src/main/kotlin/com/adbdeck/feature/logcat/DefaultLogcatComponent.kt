@@ -178,7 +178,7 @@ class DefaultLogcatComponent(
     override fun onStop() = stopStream(reason = null)
 
     override fun onClear() {
-        // Дренируем канал — иначе батчер добавит старые данные после очистки
+        // Вычистим канал иначе сборщик добавит старые данные после очистки
         while (pendingChannel.tryReceive().isSuccess) { /* drain */ }
         entriesBuffer.clear()
         _state.update {

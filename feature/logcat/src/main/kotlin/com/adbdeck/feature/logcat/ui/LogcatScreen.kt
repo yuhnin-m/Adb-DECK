@@ -321,7 +321,7 @@ private fun LogcatToolbar(
 
                 AdbOutlinedButton(
                     onClick = onResetSelection,
-                    text = stringResource(Res.string.logcat_toolbar_clear_selection),
+                    text = stringResource(AdbCommonStringRes.actionClearSelection),
                     type = AdbButtonType.NEUTRAL,
                     size = AdbButtonSize.MEDIUM,
                     cornerRadius = AdbCornerRadius.LARGE,
@@ -797,7 +797,7 @@ private fun LogEntryRow(
             onDismissRequest = { isContextMenuExpanded = false },
         ) {
             DropdownMenuItem(
-                text = { Text(stringResource(Res.string.logcat_context_copy_line)) },
+                text = { Text(stringResource(AdbCommonStringRes.actionCopyLine)) },
                 onClick = {
                     isContextMenuExpanded = false
                     onCopyLine()
@@ -805,7 +805,7 @@ private fun LogEntryRow(
             )
             if (hasAnySelection) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.logcat_context_copy_selected)) },
+                    text = { Text(stringResource(AdbCommonStringRes.actionCopySelected)) },
                     onClick = {
                         isContextMenuExpanded = false
                         onCopySelected()
