@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -12,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -23,6 +21,11 @@ import com.adbdeck.core.adb.api.device.DeviceInfo
 import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
 import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.buttons.AdbPlainButton
+import com.adbdeck.core.ui.sectioncards.AdbSectionCard
 
 /**
  * Боковая панель деталей устройства.
@@ -96,7 +99,10 @@ fun DeviceDetailsPanel(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Базовые данные (всегда)
-            DetailSection("Подключение") {
+            AdbSectionCard(
+                title = "Подключение",
+                titleUppercase = true,
+            ) {
                 InfoRow("Device ID", device.deviceId)
                 InfoRow("Состояние", device.state.rawValue)
                 InfoRow("Транспорт", when {
@@ -184,12 +190,18 @@ private fun PanelHeader(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        IconButton(onClick = onRefresh, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Outlined.Refresh, "Обновить", modifier = Modifier.size(16.dp))
-        }
-        IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Outlined.Close, "Закрыть", modifier = Modifier.size(16.dp))
-        }
+        AdbPlainButton(
+            onClick = onRefresh,
+            leadingIcon = Icons.Outlined.Refresh,
+            contentDescription = "Обновить",
+            size = AdbButtonSize.SMALL,
+        )
+        AdbPlainButton(
+            onClick = onClose,
+            leadingIcon = Icons.Outlined.Close,
+            contentDescription = "Закрыть",
+            size = AdbButtonSize.SMALL,
+        )
     }
 }
 
@@ -198,7 +210,10 @@ private fun PanelHeader(
 @Composable
 private fun DeviceInfoDetails(info: DeviceInfo) {
     // Идентификация
-    DetailSection("Устройство") {
+    AdbSectionCard(
+        title = "Устройство",
+        titleUppercase = true,
+    ) {
         if (info.model.isNotEmpty())        InfoRow("Модель",        info.model)
         if (info.manufacturer.isNotEmpty()) InfoRow("Производитель", info.manufacturer)
         if (info.brand.isNotEmpty())        InfoRow("Бренд",         info.brand)
@@ -207,7 +222,10 @@ private fun DeviceInfoDetails(info: DeviceInfo) {
 
     // Android
     if (info.androidVersion.isNotEmpty() || info.sdkVersion > 0 || info.securityPatch.isNotEmpty()) {
-        DetailSection("Android") {
+        AdbSectionCard(
+            title = "Android",
+            titleUppercase = true,
+        ) {
             if (info.androidVersion.isNotEmpty()) InfoRow("Версия",        info.androidVersion)
             if (info.sdkVersion > 0)              InfoRow("SDK API Level", info.sdkVersion.toString())
             if (info.securityPatch.isNotEmpty())  InfoRow("Патч безопасности", info.securityPatch)
@@ -217,7 +235,10 @@ private fun DeviceInfoDetails(info: DeviceInfo) {
 
     // Дисплей
     if (info.screenResolution.isNotEmpty() || info.screenDensity > 0) {
-        DetailSection("Дисплей") {
+        AdbSectionCard(
+            title = "Дисплей",
+            titleUppercase = true,
+        ) {
             if (info.screenResolution.isNotEmpty()) InfoRow("Разрешение", info.screenResolution)
             if (info.screenDensity > 0)             InfoRow("Плотность",  "${info.screenDensity} dpi")
         }
@@ -225,7 +246,10 @@ private fun DeviceInfoDetails(info: DeviceInfo) {
 
     // Батарея
     if (info.batteryLevel >= 0) {
-        DetailSection("Батарея") {
+        AdbSectionCard(
+            title = "Батарея",
+            titleUppercase = true,
+        ) {
             InfoRow("Уровень",   "${info.batteryLevel}%")
             InfoRow("Зарядка",  if (info.batteryCharging) "Да ⚡" else "Нет")
         }
@@ -233,7 +257,10 @@ private fun DeviceInfoDetails(info: DeviceInfo) {
 
     // Сборка
     if (info.buildFingerprint.isNotEmpty()) {
-        DetailSection("Сборка") {
+        AdbSectionCard(
+            title = "Сборка",
+            titleUppercase = true,
+        ) {
             Text(
                 text     = info.buildFingerprint,
                 style    = MaterialTheme.typography.bodySmall.copy(
@@ -267,16 +294,14 @@ private fun DeviceControlButtons(
         )
 
         // Обычное действие
-        OutlinedButton(
+        AdbOutlinedButton(
             onClick = onRequestReboot,
             enabled = !isActionRunning,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Icon(Icons.Outlined.RestartAlt, null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Перезагрузить")
-        }
+            text = "Перезагрузить",
+            leadingIcon = Icons.Outlined.RestartAlt,
+            size = AdbButtonSize.SMALL,
+            fullWidth = true,
+        )
 
         // Destructive-зона
         DangerZone(
@@ -303,15 +328,17 @@ private fun DangerZone(
     onRequestRebootBootloader: () -> Unit,
     onRequestDisconnect: () -> Unit,
 ) {
+    val dangerShape = MaterialTheme.shapes.small
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.error.copy(alpha = 0.4f),
-                shape = RoundedCornerShape(10.dp),
+                shape = dangerShape,
             ),
-        shape = RoundedCornerShape(10.dp),
+        shape = dangerShape,
         color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f),
     ) {
         Column(
@@ -335,57 +362,36 @@ private fun DangerZone(
                 )
             }
 
-            OutlinedButton(
+            AdbOutlinedButton(
                 onClick = onRequestRebootRecovery,
                 enabled = !isActionRunning,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error,
-                ),
-                border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
-                    brush = SolidColor(MaterialTheme.colorScheme.error)
-                ),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Icon(Icons.Outlined.Build, null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Recovery Mode")
-            }
+                text = "Recovery Mode",
+                type = AdbButtonType.DANGER,
+                leadingIcon = Icons.Outlined.Build,
+                size = AdbButtonSize.SMALL,
+                fullWidth = true,
+            )
 
-            OutlinedButton(
+            AdbOutlinedButton(
                 onClick = onRequestRebootBootloader,
                 enabled = !isActionRunning,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error,
-                ),
-                border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
-                    brush = SolidColor(MaterialTheme.colorScheme.error)
-                ),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-            ) {
-                Icon(Icons.Outlined.FlashOn, null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Bootloader / Fastboot")
-            }
+                text = "Bootloader / Fastboot",
+                type = AdbButtonType.DANGER,
+                leadingIcon = Icons.Outlined.FlashOn,
+                size = AdbButtonSize.SMALL,
+                fullWidth = true,
+            )
 
             if (isWifi) {
-                OutlinedButton(
+                AdbOutlinedButton(
                     onClick = onRequestDisconnect,
                     enabled = !isActionRunning,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                    border = ButtonDefaults.outlinedButtonBorder(enabled = true).copy(
-                        brush = SolidColor(MaterialTheme.colorScheme.error)
-                    ),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                ) {
-                    Icon(Icons.Outlined.WifiOff, null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Отключить Wi-Fi")
-                }
+                    text = "Отключить Wi-Fi",
+                    type = AdbButtonType.DANGER,
+                    leadingIcon = Icons.Outlined.WifiOff,
+                    size = AdbButtonSize.SMALL,
+                    fullWidth = true,
+                )
             }
         }
     }
@@ -414,81 +420,51 @@ private fun DeviceNavigationButtons(
             color = MaterialTheme.colorScheme.primary,
         )
 
-        OutlinedButton(
+        AdbOutlinedButton(
             onClick = onSelectDevice,
             enabled = !isSelected && !isActionRunning,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Icon(Icons.Outlined.CheckCircle, null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(if (isSelected) "Уже активное" else "Сделать активным")
-        }
+            text = if (isSelected) "Уже активное" else "Сделать активным",
+            leadingIcon = Icons.Outlined.CheckCircle,
+            size = AdbButtonSize.SMALL,
+            fullWidth = true,
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            OutlinedButton(
+            AdbOutlinedButton(
                 onClick = onNavigateToLogcat,
                 enabled = !isActionRunning,
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-            ) {
-                Icon(Icons.Outlined.Terminal, null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Logcat")
-            }
-            OutlinedButton(
+                text = "Logcat",
+                leadingIcon = Icons.Outlined.Terminal,
+                size = AdbButtonSize.SMALL,
+                fullWidth = true,
+            )
+            AdbOutlinedButton(
                 onClick = onNavigateToPackages,
                 enabled = !isActionRunning,
                 modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-            ) {
-                Icon(Icons.Outlined.Apps, null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Packages")
-            }
+                text = "Packages",
+                leadingIcon = Icons.Outlined.Apps,
+                size = AdbButtonSize.SMALL,
+                fullWidth = true,
+            )
         }
 
-        OutlinedButton(
+        AdbOutlinedButton(
             onClick = onNavigateToSystemMonitor,
             enabled = !isActionRunning,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Icon(Icons.Outlined.Monitor, null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("System Monitor")
-        }
+            text = "System Monitor",
+            leadingIcon = Icons.Outlined.Monitor,
+            size = AdbButtonSize.SMALL,
+            fullWidth = true,
+        )
     }
 }
 
 // ── Вспомогательные composable ────────────────────────────────────────────────
-
-@Composable
-private fun DetailSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text  = title.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Surface(
-            shape          = RoundedCornerShape(8.dp),
-            tonalElevation = 1.dp,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                content()
-            }
-        }
-    }
-}
 
 @Composable
 private fun InfoRow(label: String, value: String) {

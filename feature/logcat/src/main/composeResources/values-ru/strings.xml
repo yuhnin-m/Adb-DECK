@@ -45,10 +45,10 @@
     <string name="logcat_settings_mode_full">Полный</string>
     <string name="logcat_settings_use_colors_label">Использовать цвета</string>
     <string name="logcat_settings_font_section_title">Шрифт</string>
-    <string name="logcat_settings_font_mono">Моно</string>
-    <string name="logcat_settings_font_sans">Без засечек</string>
-    <string name="logcat_settings_font_serif">С засечками</string>
-    <string name="logcat_settings_font_system">Системный</string>
+    <string name="logcat_settings_font_mono">Mono</string>
+    <string name="logcat_settings_font_sans">Sans</string>
+    <string name="logcat_settings_font_serif">Serif</string>
+    <string name="logcat_settings_font_system">System</string>
     <string name="logcat_settings_font_size_label">Размер шрифта</string>
     <string name="logcat_settings_font_decrease_content_desc">Уменьшить шрифт</string>
     <string name="logcat_settings_font_increase_content_desc">Увеличить шрифт</string>

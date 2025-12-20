@@ -3,7 +3,6 @@ package com.adbdeck.feature.devices.ui
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -55,6 +54,7 @@ fun DeviceCard(
 ) {
     val transport = detectTransportType(device.deviceId)
     val isOnline  = device.state == DeviceState.DEVICE
+    val cardShape = MaterialTheme.shapes.medium
 
     val borderColor = when {
         isSelected     -> MaterialTheme.colorScheme.primary
@@ -67,8 +67,8 @@ fun DeviceCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onOpenDetails)
-            .border(borderWidth, borderColor, RoundedCornerShape(12.dp)),
-        shape = RoundedCornerShape(12.dp),
+            .border(borderWidth, borderColor, cardShape),
+        shape = cardShape,
         tonalElevation = if (isSelected) 3.dp else 1.dp,
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -221,7 +221,7 @@ private fun ActiveBadge() {
 private fun ColorBadge(text: String, color: Color, bold: Boolean = false) {
     Surface(
         color = color.copy(alpha = 0.15f),
-        shape = RoundedCornerShape(4.dp),
+        shape = MaterialTheme.shapes.extraSmall,
     ) {
         Text(
             text     = text,

@@ -20,6 +20,10 @@ import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
@@ -151,16 +155,22 @@ fun DevicesScreen(component: DevicesComponent) {
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Button(onClick = component::onConfirmAction) {
-                            Text("Подтвердить")
-                        }
+                        AdbFilledButton(
+                            onClick = component::onConfirmAction,
+                            text = "Подтвердить",
+                            type = AdbButtonType.DANGER,
+                            size = AdbButtonSize.MEDIUM,
+                        )
                     }
                 },
                 dismissButton = {
                     if (!state.isActionRunning) {
-                        OutlinedButton(onClick = component::onCancelAction) {
-                            Text("Отмена")
-                        }
+                        AdbOutlinedButton(
+                            onClick = component::onCancelAction,
+                            text = "Отмена",
+                            type = AdbButtonType.NEUTRAL,
+                            size = AdbButtonSize.MEDIUM,
+                        )
                     }
                 },
             )
@@ -201,20 +211,14 @@ private fun DevicesToolbar(
             text  = "Устройства",
             style = MaterialTheme.typography.titleLarge,
         )
-        IconButton(onClick = onRefresh, enabled = !isRefreshing) {
-            if (isRefreshing) {
-                CircularProgressIndicator(
-                    modifier    = Modifier.size(20.dp),
-                    strokeWidth = 2.dp,
-                )
-            } else {
-                Icon(
-                    imageVector        = Icons.Outlined.Refresh,
-                    contentDescription = "Обновить список устройств",
-                    modifier           = Modifier.size(Dimensions.iconSizeNav),
-                )
-            }
-        }
+        AdbOutlinedButton(
+            onClick = onRefresh,
+            enabled = !isRefreshing,
+            loading = isRefreshing,
+            leadingIcon = if (isRefreshing) null else Icons.Outlined.Refresh,
+            contentDescription = "Обновить список устройств",
+            size = AdbButtonSize.SMALL,
+        )
     }
 }
 

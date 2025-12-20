@@ -140,7 +140,7 @@ internal fun LogcatSettingsPanel(
                         ),
                         selectedValue = state.fontFamily,
                         onValueSelected = component::onFontFamilyChanged,
-                        size = AdbSegmentedButtonSize.SMALL,
+                        size = AdbSegmentedButtonSize.MEDIUM,
                     )
                 }
 
