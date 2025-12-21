@@ -1,5 +1,7 @@
 package com.adbdeck.feature.devices.ui
 
+import adbdeck.feature.devices.generated.resources.Res
+import adbdeck.feature.devices.generated.resources.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -20,12 +22,14 @@ import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceInfo
 import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
 import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.i18n.AdbCommonStringRes
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.buttons.AdbPlainButton
 import com.adbdeck.core.ui.sectioncards.AdbSectionCard
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Боковая панель деталей устройства.
@@ -100,17 +104,19 @@ fun DeviceDetailsPanel(
         ) {
             // Базовые данные (всегда)
             AdbSectionCard(
-                title = "Подключение",
+                title = stringResource(Res.string.devices_details_connection_section),
                 titleUppercase = true,
             ) {
-                InfoRow("Device ID", device.deviceId)
-                InfoRow("Состояние", device.state.rawValue)
-                InfoRow("Транспорт", when {
-                    device.deviceId.startsWith("emulator-") -> "Эмулятор"
-                    device.deviceId.contains(':')           -> "Wi-Fi (TCP/IP)"
-                    else                                    -> "USB"
+                InfoRow(stringResource(Res.string.devices_details_row_device_id), device.deviceId)
+                InfoRow(stringResource(Res.string.devices_details_row_state), device.state.rawValue)
+                InfoRow(stringResource(Res.string.devices_details_row_transport), when {
+                    device.deviceId.startsWith("emulator-") -> stringResource(Res.string.devices_details_transport_emulator)
+                    device.deviceId.contains(':')           -> stringResource(Res.string.devices_details_transport_wifi_tcpip)
+                    else                                    -> stringResource(Res.string.devices_details_transport_usb)
                 })
-                if (device.info.isNotBlank()) InfoRow("Info", device.info)
+                if (device.info.isNotBlank()) {
+                    InfoRow(stringResource(Res.string.devices_details_row_info), device.info)
+                }
             }
 
             // Расширенная информация
@@ -120,7 +126,10 @@ fun DeviceDetailsPanel(
 
                 is DeviceInfoLoadState.Failed ->
                     Text(
-                        "Детали недоступны: ${infoState.message}",
+                        text = stringResource(
+                            Res.string.devices_details_unavailable_format,
+                            infoState.message.ifBlank { stringResource(AdbCommonStringRes.errorUnknown) },
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -193,13 +202,13 @@ private fun PanelHeader(
         AdbPlainButton(
             onClick = onRefresh,
             leadingIcon = Icons.Outlined.Refresh,
-            contentDescription = "Обновить",
+            contentDescription = stringResource(AdbCommonStringRes.actionRefresh),
             size = AdbButtonSize.SMALL,
         )
         AdbPlainButton(
             onClick = onClose,
             leadingIcon = Icons.Outlined.Close,
-            contentDescription = "Закрыть",
+            contentDescription = stringResource(AdbCommonStringRes.actionClose),
             size = AdbButtonSize.SMALL,
         )
     }
@@ -211,54 +220,87 @@ private fun PanelHeader(
 private fun DeviceInfoDetails(info: DeviceInfo) {
     // Идентификация
     AdbSectionCard(
-        title = "Устройство",
+        title = stringResource(Res.string.devices_details_device_section),
         titleUppercase = true,
     ) {
-        if (info.model.isNotEmpty())        InfoRow("Модель",        info.model)
-        if (info.manufacturer.isNotEmpty()) InfoRow("Производитель", info.manufacturer)
-        if (info.brand.isNotEmpty())        InfoRow("Бренд",         info.brand)
-        if (info.productName.isNotEmpty())  InfoRow("Продукт",       info.productName)
+        if (info.model.isNotEmpty()) {
+            InfoRow(stringResource(Res.string.devices_details_row_model), info.model)
+        }
+        if (info.manufacturer.isNotEmpty()) {
+            InfoRow(stringResource(Res.string.devices_details_row_manufacturer), info.manufacturer)
+        }
+        if (info.brand.isNotEmpty()) {
+            InfoRow(stringResource(Res.string.devices_details_row_brand), info.brand)
+        }
+        if (info.productName.isNotEmpty()) {
+            InfoRow(stringResource(Res.string.devices_details_row_product), info.productName)
+        }
     }
 
     // Android
     if (info.androidVersion.isNotEmpty() || info.sdkVersion > 0 || info.securityPatch.isNotEmpty()) {
         AdbSectionCard(
-            title = "Android",
+            title = stringResource(Res.string.devices_details_android_section),
             titleUppercase = true,
         ) {
-            if (info.androidVersion.isNotEmpty()) InfoRow("Версия",        info.androidVersion)
-            if (info.sdkVersion > 0)              InfoRow("SDK API Level", info.sdkVersion.toString())
-            if (info.securityPatch.isNotEmpty())  InfoRow("Патч безопасности", info.securityPatch)
-            if (info.cpuAbiList.isNotEmpty())     InfoRow("CPU ABI",       info.cpuAbiList)
+            if (info.androidVersion.isNotEmpty()) {
+                InfoRow(stringResource(Res.string.devices_details_row_version), info.androidVersion)
+            }
+            if (info.sdkVersion > 0) {
+                InfoRow(stringResource(Res.string.devices_details_row_sdk_api), info.sdkVersion.toString())
+            }
+            if (info.securityPatch.isNotEmpty()) {
+                InfoRow(stringResource(Res.string.devices_details_row_security_patch), info.securityPatch)
+            }
+            if (info.cpuAbiList.isNotEmpty()) {
+                InfoRow(stringResource(Res.string.devices_details_row_cpu_abi), info.cpuAbiList)
+            }
         }
     }
 
     // Дисплей
     if (info.screenResolution.isNotEmpty() || info.screenDensity > 0) {
         AdbSectionCard(
-            title = "Дисплей",
+            title = stringResource(Res.string.devices_details_display_section),
             titleUppercase = true,
         ) {
-            if (info.screenResolution.isNotEmpty()) InfoRow("Разрешение", info.screenResolution)
-            if (info.screenDensity > 0)             InfoRow("Плотность",  "${info.screenDensity} dpi")
+            if (info.screenResolution.isNotEmpty()) {
+                InfoRow(stringResource(Res.string.devices_details_row_resolution), info.screenResolution)
+            }
+            if (info.screenDensity > 0) {
+                InfoRow(
+                    stringResource(Res.string.devices_details_row_density),
+                    stringResource(Res.string.devices_details_row_density_format, info.screenDensity),
+                )
+            }
         }
     }
 
     // Батарея
     if (info.batteryLevel >= 0) {
         AdbSectionCard(
-            title = "Батарея",
+            title = stringResource(Res.string.devices_details_battery_section),
             titleUppercase = true,
         ) {
-            InfoRow("Уровень",   "${info.batteryLevel}%")
-            InfoRow("Зарядка",  if (info.batteryCharging) "Да ⚡" else "Нет")
+            InfoRow(
+                stringResource(Res.string.devices_details_row_level),
+                stringResource(Res.string.devices_card_battery_percent_format, info.batteryLevel),
+            )
+            InfoRow(
+                stringResource(Res.string.devices_details_row_charging),
+                if (info.batteryCharging) {
+                    stringResource(Res.string.devices_details_battery_charging_yes)
+                } else {
+                    stringResource(Res.string.devices_details_battery_charging_no)
+                },
+            )
         }
     }
 
     // Сборка
     if (info.buildFingerprint.isNotEmpty()) {
         AdbSectionCard(
-            title = "Сборка",
+            title = stringResource(Res.string.devices_details_build_section),
             titleUppercase = true,
         ) {
             Text(
@@ -288,7 +330,7 @@ private fun DeviceControlButtons(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            "Управление",
+            stringResource(Res.string.devices_details_controls_title),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -297,7 +339,7 @@ private fun DeviceControlButtons(
         AdbOutlinedButton(
             onClick = onRequestReboot,
             enabled = !isActionRunning,
-            text = "Перезагрузить",
+            text = stringResource(Res.string.devices_details_action_reboot),
             leadingIcon = Icons.Outlined.RestartAlt,
             size = AdbButtonSize.SMALL,
             fullWidth = true,
@@ -356,7 +398,7 @@ private fun DangerZone(
                     tint = MaterialTheme.colorScheme.error,
                 )
                 Text(
-                    text = "Опасные действия",
+                    text = stringResource(Res.string.devices_details_danger_title),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -365,7 +407,7 @@ private fun DangerZone(
             AdbOutlinedButton(
                 onClick = onRequestRebootRecovery,
                 enabled = !isActionRunning,
-                text = "Recovery Mode",
+                text = stringResource(Res.string.devices_details_action_recovery_mode),
                 type = AdbButtonType.DANGER,
                 leadingIcon = Icons.Outlined.Build,
                 size = AdbButtonSize.SMALL,
@@ -375,7 +417,7 @@ private fun DangerZone(
             AdbOutlinedButton(
                 onClick = onRequestRebootBootloader,
                 enabled = !isActionRunning,
-                text = "Bootloader / Fastboot",
+                text = stringResource(Res.string.devices_details_action_bootloader_fastboot),
                 type = AdbButtonType.DANGER,
                 leadingIcon = Icons.Outlined.FlashOn,
                 size = AdbButtonSize.SMALL,
@@ -386,7 +428,7 @@ private fun DangerZone(
                 AdbOutlinedButton(
                     onClick = onRequestDisconnect,
                     enabled = !isActionRunning,
-                    text = "Отключить Wi-Fi",
+                    text = stringResource(Res.string.devices_details_action_disconnect_wifi),
                     type = AdbButtonType.DANGER,
                     leadingIcon = Icons.Outlined.WifiOff,
                     size = AdbButtonSize.SMALL,
@@ -415,7 +457,7 @@ private fun DeviceNavigationButtons(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            "Навигация и контекст",
+            stringResource(Res.string.devices_details_navigation_title),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -423,7 +465,11 @@ private fun DeviceNavigationButtons(
         AdbOutlinedButton(
             onClick = onSelectDevice,
             enabled = !isSelected && !isActionRunning,
-            text = if (isSelected) "Уже активное" else "Сделать активным",
+            text = if (isSelected) {
+                stringResource(Res.string.devices_details_action_already_active)
+            } else {
+                stringResource(Res.string.devices_details_action_make_active)
+            },
             leadingIcon = Icons.Outlined.CheckCircle,
             size = AdbButtonSize.SMALL,
             fullWidth = true,
@@ -437,7 +483,7 @@ private fun DeviceNavigationButtons(
                 onClick = onNavigateToLogcat,
                 enabled = !isActionRunning,
                 modifier = Modifier.weight(1f),
-                text = "Logcat",
+                text = stringResource(Res.string.devices_details_nav_logcat),
                 leadingIcon = Icons.Outlined.Terminal,
                 size = AdbButtonSize.SMALL,
                 fullWidth = true,
@@ -446,7 +492,7 @@ private fun DeviceNavigationButtons(
                 onClick = onNavigateToPackages,
                 enabled = !isActionRunning,
                 modifier = Modifier.weight(1f),
-                text = "Packages",
+                text = stringResource(Res.string.devices_details_nav_packages),
                 leadingIcon = Icons.Outlined.Apps,
                 size = AdbButtonSize.SMALL,
                 fullWidth = true,
@@ -456,7 +502,7 @@ private fun DeviceNavigationButtons(
         AdbOutlinedButton(
             onClick = onNavigateToSystemMonitor,
             enabled = !isActionRunning,
-            text = "System Monitor",
+            text = stringResource(Res.string.devices_details_nav_system_monitor),
             leadingIcon = Icons.Outlined.Monitor,
             size = AdbButtonSize.SMALL,
             fullWidth = true,

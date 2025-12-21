@@ -153,9 +153,6 @@ class DefaultDevicesComponent(
                 pendingAction = PendingDeviceAction(
                     device  = device,
                     type    = PendingDeviceActionType.REBOOT,
-                    title   = "Перезагрузить устройство?",
-                    message = "Устройство «${device.deviceId}» будет перезагружено. " +
-                              "Соединение ADB временно прервётся.",
                 )
             )
         }
@@ -167,8 +164,6 @@ class DefaultDevicesComponent(
                 pendingAction = PendingDeviceAction(
                     device  = device,
                     type    = PendingDeviceActionType.REBOOT_RECOVERY,
-                    title   = "Перезагрузить в Recovery?",
-                    message = "Устройство «${device.deviceId}» перезагрузится в режим Recovery.",
                 )
             )
         }
@@ -180,8 +175,6 @@ class DefaultDevicesComponent(
                 pendingAction = PendingDeviceAction(
                     device  = device,
                     type    = PendingDeviceActionType.REBOOT_BOOTLOADER,
-                    title   = "Перезагрузить в Bootloader?",
-                    message = "Устройство «${device.deviceId}» перезагрузится в режим Bootloader (Fastboot).",
                 )
             )
         }
@@ -193,8 +186,6 @@ class DefaultDevicesComponent(
                 pendingAction = PendingDeviceAction(
                     device  = device,
                     type    = PendingDeviceActionType.DISCONNECT,
-                    title   = "Отключить устройство?",
-                    message = "Wi-Fi-соединение с «${device.deviceId}» будет разорвано.",
                 )
             )
         }
@@ -232,20 +223,14 @@ class DefaultDevicesComponent(
 
             result.fold(
                 onSuccess = {
-                    val label = when (action.type) {
-                        PendingDeviceActionType.REBOOT             -> "Перезагрузка запущена"
-                        PendingDeviceActionType.REBOOT_RECOVERY    -> "Перезагрузка в Recovery запущена"
-                        PendingDeviceActionType.REBOOT_BOOTLOADER  -> "Перезагрузка в Bootloader запущена"
-                        PendingDeviceActionType.DISCONNECT         -> "Устройство отключено"
-                    }
-                    showFeedback(label, isError = false)
+                    showFeedback(DeviceActionFeedback.ActionSuccess(action.type))
                     // Обновляем список после disconnect
                     if (action.type == PendingDeviceActionType.DISCONNECT) {
                         refreshDeviceList()
                     }
                 },
                 onFailure = { e ->
-                    showFeedback("Ошибка: ${e.message}", isError = true)
+                    showFeedback(DeviceActionFeedback.ActionError(details = e.message))
                 },
             )
         }
@@ -295,7 +280,7 @@ class DefaultDevicesComponent(
 
             val newState = result.fold(
                 onSuccess = { DeviceInfoLoadState.Loaded(it) },
-                onFailure = { DeviceInfoLoadState.Failed(it.message ?: "Неизвестная ошибка") },
+                onFailure = { DeviceInfoLoadState.Failed(it.message.orEmpty()) },
             )
 
             _state.update { state ->
@@ -307,9 +292,9 @@ class DefaultDevicesComponent(
     /**
      * Показывает feedback-баннер и планирует его автосброс через 3 секунды.
      */
-    private fun showFeedback(message: String, isError: Boolean) {
+    private fun showFeedback(feedback: DeviceActionFeedback) {
         feedbackJob?.cancel()
-        _state.update { it.copy(actionFeedback = DeviceActionFeedback(message, isError)) }
+        _state.update { it.copy(actionFeedback = feedback) }
         feedbackJob = scope.launch {
             delay(3_000L)
             _state.update { it.copy(actionFeedback = null) }

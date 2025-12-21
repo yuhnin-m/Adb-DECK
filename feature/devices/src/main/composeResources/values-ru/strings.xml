@@ -1,0 +1,84 @@
+<resources>
+    <string name="devices_screen_loading_devices">Получение списка устройств...</string>
+    <string name="devices_screen_empty_devices">Нет подключенных устройств.\nПодключите устройство по USB или запустите эмулятор.</string>
+
+    <string name="devices_toolbar_title">Устройства</string>
+    <string name="devices_toolbar_refresh_list_content_desc">Обновить список устройств</string>
+
+    <string name="devices_dialog_reboot_title">Перезагрузить устройство?</string>
+    <string name="devices_dialog_reboot_message">Устройство \"%1$s\" будет перезагружено. Соединение ADB временно прервётся.</string>
+    <string name="devices_dialog_reboot_recovery_title">Перезагрузить в Recovery?</string>
+    <string name="devices_dialog_reboot_recovery_message">Устройство \"%1$s\" перезагрузится в режим Recovery.</string>
+    <string name="devices_dialog_reboot_bootloader_title">Перезагрузить в Bootloader?</string>
+    <string name="devices_dialog_reboot_bootloader_message">Устройство \"%1$s\" перезагрузится в режим Bootloader (Fastboot).</string>
+    <string name="devices_dialog_disconnect_title">Отключить устройство?</string>
+    <string name="devices_dialog_disconnect_message">Wi-Fi-соединение с \"%1$s\" будет разорвано.</string>
+
+    <string name="devices_feedback_reboot_started">Перезагрузка запущена</string>
+    <string name="devices_feedback_recovery_started">Перезагрузка в Recovery запущена</string>
+    <string name="devices_feedback_bootloader_started">Перезагрузка в Bootloader запущена</string>
+    <string name="devices_feedback_disconnected">Устройство отключено</string>
+
+    <string name="devices_details_connection_section">Подключение</string>
+    <string name="devices_details_row_device_id">Device ID</string>
+    <string name="devices_details_row_state">Состояние</string>
+    <string name="devices_details_row_transport">Транспорт</string>
+    <string name="devices_details_row_info">Info</string>
+    <string name="devices_details_transport_emulator">Эмулятор</string>
+    <string name="devices_details_transport_wifi_tcpip">Wi-Fi (TCP/IP)</string>
+    <string name="devices_details_transport_usb">USB</string>
+    <string name="devices_details_unavailable_format">Детали недоступны: %1$s</string>
+
+    <string name="devices_details_device_section">Устройство</string>
+    <string name="devices_details_row_model">Модель</string>
+    <string name="devices_details_row_manufacturer">Производитель</string>
+    <string name="devices_details_row_brand">Бренд</string>
+    <string name="devices_details_row_product">Продукт</string>
+
+    <string name="devices_details_android_section">Android</string>
+    <string name="devices_details_row_version">Версия</string>
+    <string name="devices_details_row_sdk_api">SDK API Level</string>
+    <string name="devices_details_row_security_patch">Патч безопасности</string>
+    <string name="devices_details_row_cpu_abi">CPU ABI</string>
+
+    <string name="devices_details_display_section">Дисплей</string>
+    <string name="devices_details_row_resolution">Разрешение</string>
+    <string name="devices_details_row_density">Плотность</string>
+    <string name="devices_details_row_density_format">%1$d dpi</string>
+
+    <string name="devices_details_battery_section">Батарея</string>
+    <string name="devices_details_row_level">Уровень</string>
+    <string name="devices_details_row_charging">Зарядка</string>
+    <string name="devices_details_battery_charging_yes">Да ⚡</string>
+    <string name="devices_details_battery_charging_no">Нет</string>
+
+    <string name="devices_details_build_section">Сборка</string>
+    <string name="devices_details_controls_title">Управление</string>
+    <string name="devices_details_action_reboot">Перезагрузить</string>
+    <string name="devices_details_danger_title">Опасные действия</string>
+    <string name="devices_details_action_recovery_mode">Recovery Mode</string>
+    <string name="devices_details_action_bootloader_fastboot">Bootloader / Fastboot</string>
+    <string name="devices_details_action_disconnect_wifi">Отключить Wi-Fi</string>
+    <string name="devices_details_navigation_title">Навигация и контекст</string>
+    <string name="devices_details_action_already_active">Уже активное</string>
+    <string name="devices_details_action_make_active">Сделать активным</string>
+    <string name="devices_details_nav_logcat">Logcat</string>
+    <string name="devices_details_nav_packages">Packages</string>
+    <string name="devices_details_nav_system_monitor">System Monitor</string>
+    <string name="devices_details_action_refresh_content_desc">Обновить</string>
+    <string name="devices_details_action_close_content_desc">Закрыть</string>
+
+    <string name="devices_card_chip_android">Android</string>
+    <string name="devices_card_chip_manufacturer_short">Произв.</string>
+    <string name="devices_card_chip_battery">Батарея</string>
+    <string name="devices_card_android_api_format">%1$s (API %2$d)</string>
+    <string name="devices_card_unknown_placeholder">?</string>
+    <string name="devices_card_battery_percent_format">%1$d%%</string>
+    <string name="devices_card_state_device">device</string>
+    <string name="devices_card_state_offline">offline</string>
+    <string name="devices_card_state_unauthorized">unauthorized</string>
+    <string name="devices_card_transport_usb">USB</string>
+    <string name="devices_card_transport_wifi">Wi-Fi</string>
+    <string name="devices_card_transport_emulator">Emulator</string>
+    <string name="devices_card_badge_active">ACTIVE</string>
+</resources>

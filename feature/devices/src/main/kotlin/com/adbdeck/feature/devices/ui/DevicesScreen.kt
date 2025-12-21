@@ -1,5 +1,7 @@
 package com.adbdeck.feature.devices.ui
 
+import adbdeck.feature.devices.generated.resources.Res
+import adbdeck.feature.devices.generated.resources.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -15,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.i18n.AdbCommonStringRes
 import com.adbdeck.core.ui.AdbBanner
 import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
@@ -24,9 +27,13 @@ import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.feature.devices.DeviceActionFeedback
 import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
+import com.adbdeck.feature.devices.PendingDeviceAction
+import com.adbdeck.feature.devices.PendingDeviceActionType
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Основной экран управления ADB-устройствами.
@@ -75,12 +82,11 @@ fun DevicesScreen(component: DevicesComponent) {
                 Box(modifier = Modifier.weight(1f)) {
                     when (val ls = state.listState) {
                         is DeviceListState.Loading ->
-                            LoadingView(message = "Получение списка устройств…")
+                            LoadingView(message = stringResource(Res.string.devices_screen_loading_devices))
 
                         is DeviceListState.Empty ->
                             EmptyView(
-                                message = "Нет подключенных устройств.\n" +
-                                          "Подключите устройство по USB или запустите эмулятор."
+                                message = stringResource(Res.string.devices_screen_empty_devices)
                             )
 
                         is DeviceListState.Error ->
@@ -146,8 +152,8 @@ fun DevicesScreen(component: DevicesComponent) {
         if (pending != null) {
             AlertDialog(
                 onDismissRequest = { if (!state.isActionRunning) component.onCancelAction() },
-                title   = { Text(pending.title) },
-                text    = { Text(pending.message) },
+                title   = { Text(localizePendingActionTitle(pending)) },
+                text    = { Text(localizePendingActionMessage(pending)) },
                 confirmButton = {
                     if (state.isActionRunning) {
                         CircularProgressIndicator(
@@ -157,7 +163,7 @@ fun DevicesScreen(component: DevicesComponent) {
                     } else {
                         AdbFilledButton(
                             onClick = component::onConfirmAction,
-                            text = "Подтвердить",
+                            text = stringResource(AdbCommonStringRes.actionConfirm),
                             type = AdbButtonType.DANGER,
                             size = AdbButtonSize.MEDIUM,
                         )
@@ -167,7 +173,7 @@ fun DevicesScreen(component: DevicesComponent) {
                     if (!state.isActionRunning) {
                         AdbOutlinedButton(
                             onClick = component::onCancelAction,
-                            text = "Отмена",
+                            text = stringResource(AdbCommonStringRes.actionCancel),
                             type = AdbButtonType.NEUTRAL,
                             size = AdbButtonSize.MEDIUM,
                         )
@@ -180,8 +186,12 @@ fun DevicesScreen(component: DevicesComponent) {
         val feedback = state.actionFeedback
         if (feedback != null) {
             AdbBanner(
-                message = feedback.message,
-                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
+                message = localizeFeedbackMessage(feedback),
+                type = if (feedback is DeviceActionFeedback.ActionError) {
+                    AdbBannerType.VARNING
+                } else {
+                    AdbBannerType.SUCCESS
+                },
                 onDismiss = component::onDismissFeedback,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -208,7 +218,7 @@ private fun DevicesToolbar(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text  = "Устройства",
+            text  = stringResource(Res.string.devices_toolbar_title),
             style = MaterialTheme.typography.titleLarge,
         )
         AdbOutlinedButton(
@@ -216,7 +226,7 @@ private fun DevicesToolbar(
             enabled = !isRefreshing,
             loading = isRefreshing,
             leadingIcon = if (isRefreshing) null else Icons.Outlined.Refresh,
-            contentDescription = "Обновить список устройств",
+            contentDescription = stringResource(Res.string.devices_toolbar_refresh_list_content_desc),
             size = AdbButtonSize.SMALL,
         )
     }
@@ -247,3 +257,52 @@ private fun DevicesList(
         }
     }
 }
+
+@Composable
+private fun localizePendingActionTitle(action: PendingDeviceAction): String =
+    when (action.type) {
+        PendingDeviceActionType.REBOOT ->
+            stringResource(Res.string.devices_dialog_reboot_title)
+        PendingDeviceActionType.REBOOT_RECOVERY ->
+            stringResource(Res.string.devices_dialog_reboot_recovery_title)
+        PendingDeviceActionType.REBOOT_BOOTLOADER ->
+            stringResource(Res.string.devices_dialog_reboot_bootloader_title)
+        PendingDeviceActionType.DISCONNECT ->
+            stringResource(Res.string.devices_dialog_disconnect_title)
+    }
+
+@Composable
+private fun localizePendingActionMessage(action: PendingDeviceAction): String =
+    when (action.type) {
+        PendingDeviceActionType.REBOOT ->
+            stringResource(Res.string.devices_dialog_reboot_message, action.device.deviceId)
+        PendingDeviceActionType.REBOOT_RECOVERY ->
+            stringResource(Res.string.devices_dialog_reboot_recovery_message, action.device.deviceId)
+        PendingDeviceActionType.REBOOT_BOOTLOADER ->
+            stringResource(Res.string.devices_dialog_reboot_bootloader_message, action.device.deviceId)
+        PendingDeviceActionType.DISCONNECT ->
+            stringResource(Res.string.devices_dialog_disconnect_message, action.device.deviceId)
+    }
+
+@Composable
+private fun localizeFeedbackMessage(feedback: DeviceActionFeedback): String =
+    when (feedback) {
+        is DeviceActionFeedback.ActionSuccess -> when (feedback.actionType) {
+            PendingDeviceActionType.REBOOT ->
+                stringResource(Res.string.devices_feedback_reboot_started)
+            PendingDeviceActionType.REBOOT_RECOVERY ->
+                stringResource(Res.string.devices_feedback_recovery_started)
+            PendingDeviceActionType.REBOOT_BOOTLOADER ->
+                stringResource(Res.string.devices_feedback_bootloader_started)
+            PendingDeviceActionType.DISCONNECT ->
+                stringResource(Res.string.devices_feedback_disconnected)
+        }
+        is DeviceActionFeedback.ActionError -> {
+            val details = feedback.details.orEmpty().trim()
+            if (details.isNotEmpty()) {
+                stringResource(AdbCommonStringRes.errorWithDetails, details)
+            } else {
+                stringResource(AdbCommonStringRes.errorUnknown)
+            }
+        }
+    }

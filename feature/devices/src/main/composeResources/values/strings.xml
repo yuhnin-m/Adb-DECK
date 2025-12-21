@@ -1,0 +1,84 @@
+<resources>
+    <string name="devices_screen_loading_devices">Loading device list...</string>
+    <string name="devices_screen_empty_devices">No connected devices.\nConnect a device via USB or start an emulator.</string>
+
+    <string name="devices_toolbar_title">Devices</string>
+    <string name="devices_toolbar_refresh_list_content_desc">Refresh device list</string>
+
+    <string name="devices_dialog_reboot_title">Reboot device?</string>
+    <string name="devices_dialog_reboot_message">Device \"%1$s\" will be rebooted. ADB connection will be temporarily interrupted.</string>
+    <string name="devices_dialog_reboot_recovery_title">Reboot to Recovery?</string>
+    <string name="devices_dialog_reboot_recovery_message">Device \"%1$s\" will reboot into Recovery mode.</string>
+    <string name="devices_dialog_reboot_bootloader_title">Reboot to Bootloader?</string>
+    <string name="devices_dialog_reboot_bootloader_message">Device \"%1$s\" will reboot into Bootloader (Fastboot) mode.</string>
+    <string name="devices_dialog_disconnect_title">Disconnect device?</string>
+    <string name="devices_dialog_disconnect_message">Wi-Fi connection to \"%1$s\" will be disconnected.</string>
+
+    <string name="devices_feedback_reboot_started">Reboot started</string>
+    <string name="devices_feedback_recovery_started">Recovery reboot started</string>
+    <string name="devices_feedback_bootloader_started">Bootloader reboot started</string>
+    <string name="devices_feedback_disconnected">Device disconnected</string>
+
+    <string name="devices_details_connection_section">Connection</string>
+    <string name="devices_details_row_device_id">Device ID</string>
+    <string name="devices_details_row_state">State</string>
+    <string name="devices_details_row_transport">Transport</string>
+    <string name="devices_details_row_info">Info</string>
+    <string name="devices_details_transport_emulator">Emulator</string>
+    <string name="devices_details_transport_wifi_tcpip">Wi-Fi (TCP/IP)</string>
+    <string name="devices_details_transport_usb">USB</string>
+    <string name="devices_details_unavailable_format">Details unavailable: %1$s</string>
+
+    <string name="devices_details_device_section">Device</string>
+    <string name="devices_details_row_model">Model</string>
+    <string name="devices_details_row_manufacturer">Manufacturer</string>
+    <string name="devices_details_row_brand">Brand</string>
+    <string name="devices_details_row_product">Product</string>
+
+    <string name="devices_details_android_section">Android</string>
+    <string name="devices_details_row_version">Version</string>
+    <string name="devices_details_row_sdk_api">SDK API Level</string>
+    <string name="devices_details_row_security_patch">Security patch</string>
+    <string name="devices_details_row_cpu_abi">CPU ABI</string>
+
+    <string name="devices_details_display_section">Display</string>
+    <string name="devices_details_row_resolution">Resolution</string>
+    <string name="devices_details_row_density">Density</string>
+    <string name="devices_details_row_density_format">%1$d dpi</string>
+
+    <string name="devices_details_battery_section">Battery</string>
+    <string name="devices_details_row_level">Level</string>
+    <string name="devices_details_row_charging">Charging</string>
+    <string name="devices_details_battery_charging_yes">Yes ⚡</string>
+    <string name="devices_details_battery_charging_no">No</string>
+
+    <string name="devices_details_build_section">Build</string>
+    <string name="devices_details_controls_title">Controls</string>
+    <string name="devices_details_action_reboot">Reboot</string>
+    <string name="devices_details_danger_title">Dangerous actions</string>
+    <string name="devices_details_action_recovery_mode">Recovery Mode</string>
+    <string name="devices_details_action_bootloader_fastboot">Bootloader / Fastboot</string>
+    <string name="devices_details_action_disconnect_wifi">Disconnect Wi-Fi</string>
+    <string name="devices_details_navigation_title">Navigation and context</string>
+    <string name="devices_details_action_already_active">Already active</string>
+    <string name="devices_details_action_make_active">Set active</string>
+    <string name="devices_details_nav_logcat">Logcat</string>
+    <string name="devices_details_nav_packages">Packages</string>
+    <string name="devices_details_nav_system_monitor">System Monitor</string>
+    <string name="devices_details_action_refresh_content_desc">Refresh</string>
+    <string name="devices_details_action_close_content_desc">Close</string>
+
+    <string name="devices_card_chip_android">Android</string>
+    <string name="devices_card_chip_manufacturer_short">Mfr</string>
+    <string name="devices_card_chip_battery">Battery</string>
+    <string name="devices_card_android_api_format">%1$s (API %2$d)</string>
+    <string name="devices_card_unknown_placeholder">?</string>
+    <string name="devices_card_battery_percent_format">%1$d%%</string>
+    <string name="devices_card_state_device">device</string>
+    <string name="devices_card_state_offline">offline</string>
+    <string name="devices_card_state_unauthorized">unauthorized</string>
+    <string name="devices_card_transport_usb">USB</string>
+    <string name="devices_card_transport_wifi">Wi-Fi</string>
+    <string name="devices_card_transport_emulator">Emulator</string>
+    <string name="devices_card_badge_active">ACTIVE</string>
+</resources>

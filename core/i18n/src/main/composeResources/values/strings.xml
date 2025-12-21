@@ -2,10 +2,17 @@
     <string name="common_action_start">Start</string>
     <string name="common_action_stop">Stop</string>
     <string name="common_action_clear">Clear</string>
+    <string name="common_action_confirm">Confirm</string>
+    <string name="common_action_cancel">Cancel</string>
+    <string name="common_action_refresh">Refresh</string>
+    <string name="common_action_close">Close</string>
     <string name="common_action_clear_selection">Clear selection</string>
     <string name="common_action_copy_line">Copy line</string>
     <string name="common_action_copy_selected">Copy selected</string>
     <string name="common_action_settings">Settings</string>
     <string name="common_action_close_settings">Close settings</string>
     <string name="common_placeholder_search">Search...</string>
+    <string name="common_error_generic">Error</string>
+    <string name="common_error_unknown">Unknown error</string>
+    <string name="common_error_with_details">Error: %1$s</string>
 </resources>

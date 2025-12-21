@@ -1,5 +1,7 @@
 package com.adbdeck.feature.devices.ui
 
+import adbdeck.feature.devices.generated.resources.Res
+import adbdeck.feature.devices.generated.resources.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,6 +26,7 @@ import com.adbdeck.core.adb.api.device.DeviceTransportType
 import com.adbdeck.core.designsystem.AdbDeckAmber
 import com.adbdeck.core.designsystem.AdbDeckGreen
 import com.adbdeck.core.designsystem.AdbDeckRed
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Карточка одного ADB-устройства в списке.
@@ -152,21 +155,37 @@ private fun DeviceInfoSummary(info: DeviceInfo) {
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (info.androidVersion.isNotEmpty() || info.sdkVersion > 0) {
+            val androidVersion = info.androidVersion.ifEmpty {
+                stringResource(Res.string.devices_card_unknown_placeholder)
+            }
+            val androidValue = if (info.sdkVersion > 0) {
+                stringResource(
+                    Res.string.devices_card_android_api_format,
+                    androidVersion,
+                    info.sdkVersion,
+                )
+            } else {
+                androidVersion
+            }
             InfoChip(
-                label = "Android",
-                value = buildString {
-                    append(info.androidVersion.ifEmpty { "?" })
-                    if (info.sdkVersion > 0) append(" (API ${info.sdkVersion})")
-                },
+                label = stringResource(Res.string.devices_card_chip_android),
+                value = androidValue,
             )
         }
         if (info.manufacturer.isNotEmpty()) {
-            InfoChip(label = "Mfr", value = info.manufacturer)
+            InfoChip(
+                label = stringResource(Res.string.devices_card_chip_manufacturer_short),
+                value = info.manufacturer,
+            )
         }
         if (info.batteryLevel >= 0) {
+            val batteryValue = stringResource(
+                Res.string.devices_card_battery_percent_format,
+                info.batteryLevel,
+            ) + if (info.batteryCharging) " ⚡" else ""
             InfoChip(
-                label = "Battery",
-                value = "${info.batteryLevel}%" + if (info.batteryCharging) " ⚡" else "",
+                label = stringResource(Res.string.devices_card_chip_battery),
+                value = batteryValue,
             )
         }
     }
@@ -193,9 +212,9 @@ private fun InfoChip(label: String, value: String) {
 @Composable
 fun DeviceStateBadge(state: DeviceState) {
     val (color, label) = when (state) {
-        DeviceState.DEVICE       -> Pair(AdbDeckGreen, "device")
-        DeviceState.OFFLINE      -> Pair(AdbDeckRed, "offline")
-        DeviceState.UNAUTHORIZED -> Pair(AdbDeckAmber, "unauthorized")
+        DeviceState.DEVICE       -> Pair(AdbDeckGreen, stringResource(Res.string.devices_card_state_device))
+        DeviceState.OFFLINE      -> Pair(AdbDeckRed, stringResource(Res.string.devices_card_state_offline))
+        DeviceState.UNAUTHORIZED -> Pair(AdbDeckAmber, stringResource(Res.string.devices_card_state_unauthorized))
         DeviceState.UNKNOWN      -> Pair(MaterialTheme.colorScheme.outline, state.rawValue)
     }
     ColorBadge(label, color)
@@ -204,9 +223,18 @@ fun DeviceStateBadge(state: DeviceState) {
 @Composable
 private fun DeviceTransportBadge(transport: DeviceTransportType) {
     val (color, label) = when (transport) {
-        DeviceTransportType.USB      -> Pair(MaterialTheme.colorScheme.secondary, "USB")
-        DeviceTransportType.WIFI     -> Pair(MaterialTheme.colorScheme.tertiary,  "Wi-Fi")
-        DeviceTransportType.EMULATOR -> Pair(MaterialTheme.colorScheme.primary,   "Emulator")
+        DeviceTransportType.USB      -> Pair(
+            MaterialTheme.colorScheme.secondary,
+            stringResource(Res.string.devices_card_transport_usb),
+        )
+        DeviceTransportType.WIFI     -> Pair(
+            MaterialTheme.colorScheme.tertiary,
+            stringResource(Res.string.devices_card_transport_wifi),
+        )
+        DeviceTransportType.EMULATOR -> Pair(
+            MaterialTheme.colorScheme.primary,
+            stringResource(Res.string.devices_card_transport_emulator),
+        )
         DeviceTransportType.UNKNOWN  -> return
     }
     ColorBadge(label, color)
@@ -214,7 +242,7 @@ private fun DeviceTransportBadge(transport: DeviceTransportType) {
 
 @Composable
 private fun ActiveBadge() {
-    ColorBadge("ACTIVE", AdbDeckGreen, bold = true)
+    ColorBadge(stringResource(Res.string.devices_card_badge_active), AdbDeckGreen, bold = true)
 }
 
 @Composable

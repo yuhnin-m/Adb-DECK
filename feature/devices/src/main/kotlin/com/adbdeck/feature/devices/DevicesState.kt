@@ -54,14 +54,10 @@ enum class PendingDeviceActionType {
  *
  * @param device  Целевое устройство.
  * @param type    Тип действия.
- * @param title   Заголовок диалога подтверждения.
- * @param message Пояснение к действию.
  */
 data class PendingDeviceAction(
     val device: AdbDevice,
     val type: PendingDeviceActionType,
-    val title: String,
-    val message: String,
 )
 
 // ── Обратная связь по действиям ───────────────────────────────────────────────
@@ -70,14 +66,26 @@ data class PendingDeviceAction(
  * Краткосрочное уведомление о результате действия над устройством.
  *
  * Автоматически убирается через 3 секунды (управляется компонентом).
- *
- * @param message Текст сообщения.
- * @param isError `true` → красный баннер (ошибка).
  */
-data class DeviceActionFeedback(
-    val message: String,
-    val isError: Boolean,
-)
+sealed interface DeviceActionFeedback {
+    /**
+     * Успешное завершение действия над устройством.
+     *
+     * @param actionType Тип выполненного действия.
+     */
+    data class ActionSuccess(
+        val actionType: PendingDeviceActionType,
+    ) : DeviceActionFeedback
+
+    /**
+     * Ошибка выполнения действия.
+     *
+     * @param details Текст детали ошибки (может быть `null`).
+     */
+    data class ActionError(
+        val details: String?,
+    ) : DeviceActionFeedback
+}
 
 // ── Главное состояние экрана ──────────────────────────────────────────────────
 

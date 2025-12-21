@@ -42,7 +42,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * @param containerColor Цвет контейнера секции.
  * @param border Граница контейнера.
  * @param shape Форма контейнера. По умолчанию берется из темы.
- * @param tonalElevation Тональное поднятие контейнера.
+ * @param tonalElevation Тоновое поднятие контейнера.
  * @param contentPadding Внутренние отступы контейнера.
  * @param contentSpacing Вертикальный шаг между элементами внутри секции.
  * @param headerTrailing Дополнительный контент справа от заголовка (например, кнопки).
