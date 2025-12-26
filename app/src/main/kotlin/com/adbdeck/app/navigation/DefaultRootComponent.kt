@@ -78,6 +78,7 @@ class DefaultRootComponent(
 
     private val navigation = StackNavigation<Screen>()
     private var pendingPackageToReveal: String? = null
+    private var pendingPackageForLogcat: String? = null
     private var pendingDeepLinkUri: String? = null
 
     override val childStack: Value<ChildStack<*, RootComponent.Child>> = childStack(
@@ -111,6 +112,32 @@ class DefaultRootComponent(
             pendingPackageToReveal = normalized
             navigate(Screen.Packages)
         }
+    }
+
+    /**
+     * Перейти в Logcat и предзаполнить фильтр пакета.
+     *
+     * Если компонент Logcat уже создан, фильтр применяется сразу.
+     * Иначе значение сохраняется в pending и будет применено при создании экрана.
+     */
+    private fun openPackageInLogcat(packageName: String) {
+        val normalized = packageName.trim()
+        if (normalized.isEmpty()) return
+
+        val existingLogcat = childStack.value.items
+            .asSequence()
+            .map { it.instance }
+            .filterIsInstance<RootComponent.Child.Logcat>()
+            .map { it.component }
+            .firstOrNull()
+
+        if (existingLogcat != null) {
+            existingLogcat.onPackageFilterChanged(normalized)
+        } else {
+            pendingPackageForLogcat = normalized
+        }
+
+        navigate(Screen.Logcat)
     }
 
     /**
@@ -172,7 +199,11 @@ class DefaultRootComponent(
                 logcatStreamer = logcatStreamer,
                 packageClient = packageClient,
                 settingsRepository = settingsRepository,
-            )
+            ).also { component ->
+                pendingPackageForLogcat
+                    ?.also(component::onPackageFilterChanged)
+                pendingPackageForLogcat = null
+            }
         )
 
         is Screen.Settings -> RootComponent.Child.Settings(
@@ -189,6 +220,7 @@ class DefaultRootComponent(
                 deviceManager = deviceManager,
                 packageClient = packageClient,
                 settingsRepository = settingsRepository,
+                openPackageInLogcat = ::openPackageInLogcat,
                 initialPackageToReveal = pendingPackageToReveal.also { pendingPackageToReveal = null },
             )
         )

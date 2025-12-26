@@ -99,6 +99,8 @@ private class PackagesPreviewComponent(
     override fun onLaunchApp(pkg: AppPackage) = Unit
     override fun onForceStop(pkg: AppPackage) = Unit
     override fun onOpenAppInfo(pkg: AppPackage) = Unit
+    override fun onTrackInLogcat(pkg: AppPackage) = Unit
+    override fun onExportApk(pkg: AppPackage, localPath: String) = Unit
     override fun onCopyPackageName(pkg: AppPackage) = Unit
     override fun onRequestClearData(pkg: AppPackage) = Unit
     override fun onRequestUninstall(pkg: AppPackage) = Unit

@@ -7,6 +7,7 @@ import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,12 +30,14 @@ import kotlinx.coroutines.launch
  * @param deviceManager      Менеджер устройств — источник активного устройства.
  * @param packageClient      ADB-клиент для работы с пакетами.
  * @param settingsRepository Репозиторий настроек (для получения пути к adb).
+ * @param openPackageInLogcat Внешний callback для перехода в Logcat с package-фильтром.
  */
 class DefaultPackagesComponent(
     componentContext: ComponentContext,
     private val deviceManager: DeviceManager,
     private val packageClient: PackageClient,
     private val settingsRepository: SettingsRepository,
+    private val openPackageInLogcat: (String) -> Unit = {},
     initialPackageToReveal: String? = null,
 ) : PackagesComponent, ComponentContext by componentContext {
 
@@ -342,6 +345,31 @@ class DefaultPackagesComponent(
     override fun onOpenAppInfo(pkg: AppPackage) = runAction("Открыта информация о приложении") {
         val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
         packageClient.openAppInfo(device, pkg.packageName, adbPath)
+    }
+
+    override fun onTrackInLogcat(pkg: AppPackage) {
+        val packageName = pkg.packageName.trim()
+        if (packageName.isBlank()) return
+        openPackageInLogcat(packageName)
+    }
+
+    override fun onExportApk(pkg: AppPackage, localPath: String) {
+        val destination = localPath.trim()
+        val fileName = File(destination).name.ifBlank { destination }
+
+        runAction("APK сохранен: $fileName") {
+            if (destination.isBlank()) {
+                error("Не выбран путь для сохранения APK")
+            }
+
+            val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
+            packageClient.exportBaseApk(
+                deviceId = device,
+                packageName = pkg.packageName,
+                localPath = destination,
+                adbPath = adbPath,
+            )
+        }
     }
 
     /** Копирование имени пакета в буфер обмена обрабатывается непосредственно в UI-слое. */

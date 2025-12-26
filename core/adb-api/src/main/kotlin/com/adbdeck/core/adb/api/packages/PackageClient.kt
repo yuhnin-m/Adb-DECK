@@ -14,6 +14,7 @@ package com.adbdeck.core.adb.api.packages
  * - `adb -s <id> shell pm uninstall <pkg>` — удаление
  * - `adb -s <id> shell am start -a android.settings.APPLICATION_DETAILS_SETTINGS` — системная инфо
  * - `adb -s <id> shell pm grant/revoke <pkg> <perm>` — управление разрешениями
+ * - `adb -s <id> shell pm path <pkg>` + `adb -s <id> pull ...` — выгрузка APK
  */
 interface PackageClient {
 
@@ -123,6 +124,24 @@ interface PackageClient {
     suspend fun openAppInfo(
         deviceId: String,
         packageName: String,
+        adbPath: String = "adb",
+    ): Result<Unit>
+
+    /**
+     * Выгрузить основной APK-файл пакета на хост.
+     *
+     * Реализация должна определить путь к base APK на устройстве и выполнить `adb pull`.
+     * Для split-приложений выгружается только основной APK (base.apk).
+     *
+     * @param deviceId    Серийный номер / адрес устройства.
+     * @param packageName Имя пакета.
+     * @param localPath   Абсолютный путь к файлу назначения на хосте (например `/tmp/app.apk`).
+     * @param adbPath     Путь к `adb`.
+     */
+    suspend fun exportBaseApk(
+        deviceId: String,
+        packageName: String,
+        localPath: String,
         adbPath: String = "adb",
     ): Result<Unit>
 

@@ -32,11 +32,34 @@ class SystemPackageClient(
         deviceId: String,
         adbPath: String,
     ): Result<List<AppPackage>> = runCatchingPreserveCancellation {
-        val result = processRunner.run(adbPath, "-s", deviceId, "shell", "pm", "list", "packages", "-f")
-        if (!result.isSuccess && result.stdout.isBlank()) {
-            error("Не удалось получить список пакетов: ${result.stderr.take(200)}")
+        val listResult = processRunner.run(adbPath, "-s", deviceId, "shell", "pm", "list", "packages", "-f")
+        if (!listResult.isSuccess && listResult.stdout.isBlank()) {
+            error("Не удалось получить список пакетов: ${listResult.stderr.take(200)}")
         }
-        parsePackageList(result.stdout)
+
+        val basePackages = parsePackageList(listResult.stdout)
+
+        // Best-effort: дополнительно получаем отключенные пакеты (`pm list packages -d`),
+        // чтобы корректно выставлять AppPackage.isEnabled в списке.
+        val disabledResult = processRunner.run(
+            adbPath,
+            "-s",
+            deviceId,
+            "shell",
+            "pm",
+            "list",
+            "packages",
+            "-d",
+        )
+        val disabledPackages = if (disabledResult.isSuccess || disabledResult.stdout.isNotBlank()) {
+            parsePackageNames(disabledResult.stdout)
+        } else {
+            emptySet()
+        }
+
+        basePackages.map { pkg ->
+            pkg.copy(isEnabled = pkg.packageName !in disabledPackages)
+        }
     }
 
     /** Разбирает вывод `pm list packages -f` в список [AppPackage]. */
@@ -62,6 +85,28 @@ class SystemPackageClient(
             }
             .sortedBy { it.packageName }
             .toList()
+
+    /**
+     * Разбирает вывод `pm list packages` в множество имен пакетов.
+     *
+     * Поддерживает форматы:
+     * - `package:com.example.app`
+     * - `package:/data/app/.../base.apk=com.example.app`
+     */
+    private fun parsePackageNames(output: String): Set<String> =
+        output.lineSequence()
+            .filter { it.startsWith("package:") }
+            .mapNotNull { line ->
+                val value = line.removePrefix("package:").trim()
+                if (value.isBlank()) return@mapNotNull null
+
+                if ('=' in value) {
+                    value.substringAfterLast('=').trim().takeIf { it.isNotBlank() }
+                } else {
+                    value.takeIf { it.isNotBlank() }
+                }
+            }
+            .toSet()
 
     /**
      * Определяет тип пакета по пути APK.
@@ -328,6 +373,57 @@ class SystemPackageClient(
         )
         if (!result.isSuccess) {
             error(result.stderr.ifBlank { "Не удалось открыть информацию о приложении" })
+        }
+    }
+
+    /**
+     * Выгружает base APK выбранного пакета на хост.
+     *
+     * Шаги:
+     * 1. `pm path <packageName>` -> получает путь вида `package:/data/app/.../base.apk`.
+     * 2. `adb pull <remoteApkPath> <localPath>`.
+     */
+    override suspend fun exportBaseApk(
+        deviceId: String,
+        packageName: String,
+        localPath: String,
+        adbPath: String,
+    ): Result<Unit> = runCatchingPreserveCancellation {
+        val pathResult = processRunner.run(
+            adbPath,
+            "-s",
+            deviceId,
+            "shell",
+            "pm",
+            "path",
+            packageName,
+        )
+        if (!pathResult.isSuccess && pathResult.stdout.isBlank()) {
+            error(pathResult.stderr.ifBlank { "Не удалось получить путь APK для '$packageName'" })
+        }
+
+        val remoteApkPath = pathResult.stdout
+            .lineSequence()
+            .map(String::trim)
+            .firstOrNull { it.startsWith("package:") }
+            ?.removePrefix("package:")
+            ?.trim()
+            .orEmpty()
+
+        if (remoteApkPath.isBlank()) {
+            error("Не найден base APK для '$packageName'")
+        }
+
+        val pullResult = processRunner.run(
+            adbPath,
+            "-s",
+            deviceId,
+            "pull",
+            remoteApkPath,
+            localPath,
+        )
+        if (!pullResult.isSuccess) {
+            error(pullResult.stderr.ifBlank { pullResult.stdout }.ifBlank { "Не удалось выгрузить APK" })
         }
     }
 

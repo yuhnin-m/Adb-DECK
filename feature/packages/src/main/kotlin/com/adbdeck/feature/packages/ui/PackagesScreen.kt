@@ -1,5 +1,6 @@
 package com.adbdeck.feature.packages.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,17 +26,14 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -50,12 +48,24 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.packages.PackageType
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.AdbBanner
 import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.buttons.AdbPlainButton
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
+import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
+import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
+import com.adbdeck.core.ui.textfields.AdbTextFieldSize
+import com.adbdeck.core.ui.textfields.AdbTextFieldType
 import com.adbdeck.feature.packages.PackageTypeFilter
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackagesListState
@@ -148,6 +158,8 @@ private fun PackagesToolbar(
     state: PackagesState,
     component: PackagesComponent,
 ) {
+    val controlCornerRadius = AdbCornerRadius.MEDIUM
+
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
@@ -160,61 +172,52 @@ private fun PackagesToolbar(
             horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
         ) {
             // ── Кнопка обновления ─────────────────────────────────
-            IconButton(
+            AdbOutlinedButton(
                 onClick = component::onRefresh,
                 enabled = state.listState !is PackagesListState.Loading,
-                modifier = Modifier.size(32.dp),
+                loading = state.listState is PackagesListState.Loading,
+                text = "Обновить",
+                leadingIcon = Icons.Outlined.Refresh,
+                contentDescription = "Обновить список пакетов",
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = controlCornerRadius,
+            )
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Refresh,
-                    contentDescription = "Обновить список пакетов",
-                    modifier = Modifier.size(Dimensions.iconSizeNav),
+                // ── Фильтр по типу (центр между refresh и search) ──
+                AdbSingleSegmentedButtons(
+                    options = listOf(
+                        AdbSegmentedOption(value = PackageTypeFilter.ALL, label = "Все"),
+                        AdbSegmentedOption(value = PackageTypeFilter.USER, label = "User"),
+                        AdbSegmentedOption(value = PackageTypeFilter.SYSTEM, label = "System"),
+                    ),
+                    selectedValue = state.typeFilter,
+                    onValueSelected = component::onTypeFilterChanged,
+                    size = AdbSegmentedButtonSize.MEDIUM,
+                    cornerRadius = controlCornerRadius,
                 )
             }
 
-            // ── Фильтр по типу ────────────────────────────────────
-            listOf(
-                PackageTypeFilter.ALL to "Все",
-                PackageTypeFilter.USER to "User",
-                PackageTypeFilter.SYSTEM to "System",
-            ).forEach { (filter, label) ->
-                FilterChip(
-                    selected = state.typeFilter == filter,
-                    onClick = { component.onTypeFilterChanged(filter) },
-                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                )
-            }
-
-            Spacer(Modifier.width(Dimensions.paddingSmall))
-
-            // ── Поле поиска ───────────────────────────────────────
-            OutlinedTextField(
+            // ── Поле поиска (справа) ──────────────────────────────
+            AdbOutlinedTextField(
                 value = state.searchQuery,
                 onValueChange = component::onSearchChanged,
-                modifier = Modifier.weight(1f),
-                placeholder = {
-                    Text(
-                        "Поиск по имени или пути…",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
-                },
-                trailingIcon = if (state.searchQuery.isNotEmpty()) {
-                    {
-                        IconButton(
-                            onClick = { component.onSearchChanged("") },
-                            modifier = Modifier.size(20.dp),
-                        ) {
-                            Icon(
-                                Icons.Outlined.Close,
-                                contentDescription = "Очистить поиск",
-                                modifier = Modifier.size(14.dp),
-                            )
-                        }
-                    }
-                } else null,
+                modifier = Modifier.width(320.dp),
+                placeholder = "Поиск по имени или пути…",
+                type = AdbTextFieldType.NEUTRAL,
+                size = AdbTextFieldSize.MEDIUM,
+                cornerRadius = controlCornerRadius,
                 singleLine = true,
-                textStyle = MaterialTheme.typography.bodySmall,
+                leadingIcon = Icons.Outlined.Search,
+                trailingIcon = if (state.searchQuery.isNotEmpty()) Icons.Outlined.Close else null,
+                onTrailingIconClick = if (state.searchQuery.isNotEmpty()) {
+                    { component.onSearchChanged("") }
+                } else {
+                    null
+                },
             )
         }
     }
@@ -274,7 +277,12 @@ private fun PackagesList(
     component: PackagesComponent,
     clipboard: androidx.compose.ui.platform.ClipboardManager,
 ) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingSmall),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+    ) {
         items(packages, key = { it.packageName }) { pkg ->
             PackageRow(
                 pkg = pkg,
@@ -290,7 +298,6 @@ private fun PackagesList(
                 onInfo = { component.onOpenAppInfo(pkg) },
                 onUninstall = { component.onRequestUninstall(pkg) },
             )
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
         }
     }
 }
@@ -332,98 +339,164 @@ private fun PackageRow(
     onInfo: () -> Unit,
     onUninstall: () -> Unit,
 ) {
-    val backgroundColor = if (isSelected) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+    val containerColor = if (isSelected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.32f)
     } else {
-        Color.Transparent
+        MaterialTheme.colorScheme.surface
+    }
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
     }
 
-    Column(
+    Surface(
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
+        shape = MaterialTheme.shapes.small,
         modifier = Modifier
             .fillMaxWidth()
-            .background(backgroundColor)
             .clickable(onClick = onClick)
-            .padding(horizontal = Dimensions.paddingDefault, vertical = Dimensions.paddingSmall),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        // ── Строка заголовка: название + бейдж типа ──────────────
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+        Column(
+            modifier = Modifier.padding(
+                horizontal = Dimensions.paddingDefault,
+                vertical = Dimensions.paddingSmall,
+            ),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Android,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = if (isSelected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            // Название и имя пакета — вертикально
-            Column(modifier = Modifier.weight(1f)) {
-                // Заголовок: человекочитаемое название (последний сегмент package name)
-                Text(
-                    text = pkg.displayName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            // ── Строка заголовка ──────────────────────────────────
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Android,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                // Подзаголовок: полное reverse-DNS имя пакета
-                Text(
-                    text = pkg.packageName,
-                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = pkg.displayName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = pkg.packageName,
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-            PackageTypeBadge(type = pkg.type)
-        }
 
-        // ── Кнопки действий ──────────────────────────────────────
-        Row(
-            modifier = Modifier.padding(start = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = onLaunch,
-                enabled = !isActionRunning,
-                modifier = Modifier.size(28.dp),
+            // ── Метаданные ────────────────────────────────────────
+            Row(
+                modifier = Modifier.padding(start = 26.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
             ) {
-                Icon(Icons.Outlined.PlayArrow, "Запустить", Modifier.size(16.dp))
+                PackageTypeBadge(type = pkg.type)
+                PackageEnabledBadge(isEnabled = pkg.isEnabled)
+                if (isSelected) {
+                    MetaBadge(
+                        label = "ACTIVE",
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
-            IconButton(
-                onClick = onStop,
-                enabled = !isActionRunning,
-                modifier = Modifier.size(28.dp),
+
+            // ── Кнопки действий ───────────────────────────────────
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 26.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
             ) {
-                Icon(
-                    Icons.Outlined.Stop, "Остановить", Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.error,
+                AdbOutlinedButton(
+                    onClick = onLaunch,
+                    enabled = !isActionRunning,
+                    text = "Запуск",
+                    leadingIcon = Icons.Outlined.PlayArrow,
+                    size = AdbButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
                 )
-            }
-            IconButton(onClick = onCopy, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Outlined.ContentCopy, "Скопировать", Modifier.size(14.dp))
-            }
-            IconButton(
-                onClick = onInfo,
-                enabled = !isActionRunning,
-                modifier = Modifier.size(28.dp),
-            ) {
-                Icon(Icons.Outlined.Info, "Инфо", Modifier.size(16.dp))
-            }
-            IconButton(
-                onClick = onUninstall,
-                enabled = !isActionRunning,
-                modifier = Modifier.size(28.dp),
-            ) {
-                Icon(
-                    Icons.Outlined.Delete, "Удалить", Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.error,
+                AdbOutlinedButton(
+                    onClick = onStop,
+                    enabled = !isActionRunning,
+                    text = "Стоп",
+                    leadingIcon = Icons.Outlined.Stop,
+                    type = AdbButtonType.DANGER,
+                    size = AdbButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                AdbPlainButton(
+                    onClick = onCopy,
+                    leadingIcon = Icons.Outlined.ContentCopy,
+                    contentDescription = "Скопировать",
+                    size = AdbButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
+                )
+                AdbPlainButton(
+                    onClick = onInfo,
+                    enabled = !isActionRunning,
+                    leadingIcon = Icons.Outlined.Info,
+                    contentDescription = "Инфо",
+                    size = AdbButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
+                )
+                AdbPlainButton(
+                    onClick = onUninstall,
+                    enabled = !isActionRunning,
+                    leadingIcon = Icons.Outlined.Delete,
+                    contentDescription = "Удалить",
+                    type = AdbButtonType.DANGER,
+                    size = AdbButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun MetaBadge(
+    label: String,
+    color: Color,
+) {
+    Surface(
+        color = color.copy(alpha = 0.14f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f)),
+        shape = MaterialTheme.shapes.extraSmall,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+@Composable
+private fun PackageEnabledBadge(isEnabled: Boolean) {
+    if (isEnabled) {
+        MetaBadge(
+            label = "ENABLED",
+            color = Color(0xFF2E7D32),
+        )
+    } else {
+        MetaBadge(
+            label = "DISABLED",
+            color = MaterialTheme.colorScheme.error,
+        )
     }
 }
 
@@ -434,69 +507,101 @@ private fun PackageRow(
  */
 @Composable
 private fun PackageTypeBadge(type: PackageType) {
-    val (color, label) = when (type) {
-        PackageType.USER -> Pair(MaterialTheme.colorScheme.primary, "USER")
-        PackageType.SYSTEM -> Pair(MaterialTheme.colorScheme.tertiary, "SYS")
+    when (type) {
+        PackageType.USER -> MetaBadge(
+            label = "USER",
+            color = MaterialTheme.colorScheme.primary,
+        )
+        PackageType.SYSTEM -> MetaBadge(
+            label = "SYSTEM",
+            color = MaterialTheme.colorScheme.tertiary,
+        )
     }
+}
+
+@Composable
+private fun StatusPill(
+    text: String,
+    color: Color,
+) {
     Surface(
-        color = color.copy(alpha = 0.15f),
+        color = color.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.28f)),
         shape = MaterialTheme.shapes.extraSmall,
     ) {
         Text(
-            text = label,
+            text = text,
             style = MaterialTheme.typography.labelSmall,
             color = color,
-            modifier = Modifier.padding(horizontal = Dimensions.paddingSmall, vertical = 1.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+private fun filterLabel(filter: PackageTypeFilter): String = when (filter) {
+    PackageTypeFilter.ALL -> "Все"
+    PackageTypeFilter.USER -> "User"
+    PackageTypeFilter.SYSTEM -> "System"
 }
 
 // ── Строка состояния ──────────────────────────────────────────────────────────
 
 /**
- * Нижняя строка состояния: количество пакетов (всего / отфильтровано).
+ * Нижняя строка состояния: состояние списка, количество пакетов и активные фильтры.
  */
 @Composable
 private fun PackagesStatusBar(state: PackagesState) {
+    val totalCount = (state.listState as? PackagesListState.Success)?.packages?.size ?: 0
+    val shownCount = state.filteredPackages.size
+
+    val (stateLabel, stateColor) = when (state.listState) {
+        is PackagesListState.NoDevice -> "Нет устройства" to MaterialTheme.colorScheme.onSurfaceVariant
+        is PackagesListState.Loading -> "Загрузка" to Color(0xFFFF9800)
+        is PackagesListState.Error -> "Ошибка" to MaterialTheme.colorScheme.error
+        is PackagesListState.Success -> "Готово" to Color(0xFF2E7D32)
+    }
+
+    val countLabel = if (shownCount == totalCount) {
+        "$totalCount пакетов"
+    } else {
+        "$shownCount из $totalCount"
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(Dimensions.statusBarHeight)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .height(34.dp)
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f))
             .padding(horizontal = Dimensions.paddingDefault),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
-        // Индикатор загрузки
-        val dotColor = when (state.listState) {
-            is PackagesListState.NoDevice -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-            is PackagesListState.Loading -> Color(0xFFFF9800)
-            is PackagesListState.Success -> Color(0xFF4CAF50)
-            is PackagesListState.Error -> MaterialTheme.colorScheme.error
-        }
-        Box(Modifier.size(8.dp).background(dotColor, CircleShape))
+        StatusPill(text = stateLabel, color = stateColor)
+        StatusPill(text = countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        val totalCount = (state.listState as? PackagesListState.Success)?.packages?.size ?: 0
-        val shownCount = state.filteredPackages.size
-
-        val statusText = when (state.listState) {
-            is PackagesListState.NoDevice -> "Нет активного устройства"
-            is PackagesListState.Loading -> "Загрузка…"
-            is PackagesListState.Error -> "Ошибка"
-            is PackagesListState.Success -> if (shownCount == totalCount) "$totalCount пакетов"
-            else "$shownCount из $totalCount пакетов"
+        if (state.typeFilter != PackageTypeFilter.ALL) {
+            StatusPill(
+                text = "Фильтр: ${filterLabel(state.typeFilter)}",
+                color = MaterialTheme.colorScheme.secondary,
+            )
         }
-        Text(
-            text = statusText,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+
+        if (state.searchQuery.isNotBlank()) {
+            val query = state.searchQuery.trim()
+            val preview = if (query.length <= 24) query else "${query.take(24)}…"
+            StatusPill(
+                text = "Поиск: $preview",
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
 
         if (state.isActionRunning) {
-            Text("│", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-            Text(
-                "Выполняется операция…",
-                style = MaterialTheme.typography.labelSmall,
+            StatusPill(
+                text = "Выполняется операция",
                 color = MaterialTheme.colorScheme.primary,
             )
         }
@@ -529,16 +634,19 @@ private fun ConfirmationDialog(
         title = { Text(title) },
         text = { Text(text, style = MaterialTheme.typography.bodyMedium) },
         confirmButton = {
-            TextButton(
+            AdbFilledButton(
                 onClick = component::onConfirmAction,
-            ) {
-                Text("Подтвердить", color = MaterialTheme.colorScheme.error)
-            }
+                text = "Подтвердить",
+                type = AdbButtonType.DANGER,
+                size = AdbButtonSize.MEDIUM,
+            )
         },
         dismissButton = {
-            TextButton(onClick = component::onCancelAction) {
-                Text("Отмена")
-            }
+            AdbOutlinedButton(
+                onClick = component::onCancelAction,
+                text = "Отмена",
+                size = AdbButtonSize.MEDIUM,
+            )
         },
     )
 }

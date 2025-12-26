@@ -1,5 +1,6 @@
 package com.adbdeck.feature.packages.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,19 +17,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,15 +40,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.packages.PackageDetails
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.buttons.AdbPlainButton
+import com.adbdeck.core.ui.sectioncards.AdbSectionCard
 import com.adbdeck.feature.packages.PackageDetailState
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackagesState
+import java.io.File
+import javax.swing.JFileChooser
+import javax.swing.filechooser.FileNameExtensionFilter
 
 /**
  * Панель детальной информации о выбранном пакете.
@@ -69,16 +80,14 @@ fun PackageDetailPanel(
     val pkg = state.selectedPackage ?: return
 
     Column(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surface),
+        modifier = modifier.background(MaterialTheme.colorScheme.surface),
     ) {
-        // ── Заголовок панели ──────────────────────────────────────
         DetailPanelHeader(pkg = pkg, onClose = component::onClearSelection)
         HorizontalDivider()
 
-        // ── Контент в зависимости от состояния ───────────────────
         when (val detail = state.detailState) {
             is PackageDetailState.Idle -> Unit
+
             is PackageDetailState.Loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -87,6 +96,7 @@ fun PackageDetailPanel(
                     CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 }
             }
+
             is PackageDetailState.Error -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -100,6 +110,7 @@ fun PackageDetailPanel(
                     )
                 }
             }
+
             is PackageDetailState.Success -> {
                 DetailPanelContent(
                     pkg = pkg,
@@ -111,8 +122,6 @@ fun PackageDetailPanel(
         }
     }
 }
-
-// ── Заголовок панели ──────────────────────────────────────────────────────────
 
 /**
  * Заголовок детальной панели с именем пакета и кнопкой закрытия.
@@ -144,28 +153,27 @@ private fun DetailPanelHeader(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        IconButton(onClick = onClose) {
-            Icon(
-                imageVector = Icons.Outlined.Close,
-                contentDescription = "Закрыть панель",
-                modifier = Modifier.size(Dimensions.iconSizeNav),
-            )
-        }
+        AdbPlainButton(
+            onClick = onClose,
+            leadingIcon = Icons.Outlined.Close,
+            contentDescription = "Закрыть панель",
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+        )
     }
 }
-
-// ── Основной контент панели ───────────────────────────────────────────────────
 
 /**
  * Прокручиваемый контент детальной панели.
  *
  * Секции:
- * 1. Быстрые действия (Launch / Stop / Clear / Uninstall / App Info)
- * 2. Основная информация (версия, UID, SDK)
- * 3. Пути (APK, данные, нативные либы)
- * 4. Временные метки
- * 5. Флаги (Debuggable, System, Enabled, Suspended)
- * 6. Runtime-разрешения
+ * - управление приложением;
+ * - деструктивные действия;
+ * - основная информация;
+ * - временные метки;
+ * - пути;
+ * - флаги;
+ * - runtime-разрешения.
  */
 @Composable
 private fun DetailPanelContent(
@@ -174,166 +182,270 @@ private fun DetailPanelContent(
     state: PackagesState,
     component: PackagesComponent,
 ) {
+    val sectionColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+    val sectionBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.32f))
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(Dimensions.paddingDefault),
-        verticalArrangement = Arrangement.spacedBy(Dimensions.paddingDefault),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
     ) {
-        // ── Быстрые действия ──────────────────────────────────────
-        DetailActionsSection(pkg = pkg, state = state, component = component)
+        DetailActionsSection(
+            pkg = pkg,
+            state = state,
+            component = component,
+            sectionColor = sectionColor,
+            sectionBorder = sectionBorder,
+        )
 
-        HorizontalDivider()
+        PackageInfoSection(
+            details = details,
+            sectionColor = sectionColor,
+            sectionBorder = sectionBorder,
+        )
 
-        // ── Основная информация ───────────────────────────────────
-        DetailSection(title = "Информация") {
-            if (details.appLabel.isNotBlank()) {
-                InfoRow(label = "Название", value = details.appLabel)
-            }
-            if (details.versionName.isNotBlank()) {
-                InfoRow(label = "Версия", value = "${details.versionName} (${details.versionCode})")
-            }
-            if (details.uid != 0) {
-                InfoRow(label = "UID", value = details.uid.toString())
-            }
-            if (details.targetSdk != 0) {
-                InfoRow(label = "Target SDK", value = details.targetSdk.toString())
-            }
-            if (details.minSdk != 0) {
-                InfoRow(label = "Min SDK", value = details.minSdk.toString())
-            }
-        }
-
-        // ── Временные метки ───────────────────────────────────────
         if (details.firstInstallTime.isNotBlank() || details.lastUpdateTime.isNotBlank()) {
-            DetailSection(title = "Временные метки") {
-                if (details.firstInstallTime.isNotBlank()) {
-                    InfoRow(label = "Установлено", value = details.firstInstallTime)
-                }
-                if (details.lastUpdateTime.isNotBlank()) {
-                    InfoRow(label = "Обновлено", value = details.lastUpdateTime)
-                }
-            }
+            PackageTimestampsSection(
+                details = details,
+                sectionColor = sectionColor,
+                sectionBorder = sectionBorder,
+            )
         }
 
-        // ── Пути ─────────────────────────────────────────────────
-        DetailSection(title = "Пути") {
-            if (details.codePath.isNotBlank()) {
-                InfoRow(label = "APK", value = details.codePath, monospace = true)
-            }
-            if (details.dataDir.isNotBlank()) {
-                InfoRow(label = "Данные", value = details.dataDir, monospace = true)
-            }
-            if (details.nativeLibPath.isNotBlank()) {
-                InfoRow(label = "Нативные либы", value = details.nativeLibPath, monospace = true)
-            }
-        }
+        PackagePathsSection(
+            details = details,
+            sectionColor = sectionColor,
+            sectionBorder = sectionBorder,
+        )
 
-        // ── Флаги ─────────────────────────────────────────────────
-        DetailSection(title = "Флаги") {
+        AdbSectionCard(
+            title = "Флаги",
+            titleUppercase = true,
+            containerColor = sectionColor,
+            border = sectionBorder,
+            contentSpacing = Dimensions.paddingSmall,
+        ) {
             FlagsSection(details = details)
         }
 
-        // ── Runtime-разрешения ────────────────────────────────────
         if (details.runtimePermissions.isNotEmpty()) {
-            HorizontalDivider()
             PermissionsSection(
                 pkg = pkg,
                 permissions = details.runtimePermissions,
                 isActionRunning = state.isActionRunning,
                 onGrant = { perm -> component.onGrantPermission(pkg, perm) },
                 onRevoke = { perm -> component.onRevokePermission(pkg, perm) },
+                sectionColor = sectionColor,
+                sectionBorder = sectionBorder,
             )
         }
     }
 }
 
-// ── Секция быстрых действий ───────────────────────────────────────────────────
-
 /**
- * Горизонтальный ряд кнопок для быстрых действий с пакетом.
+ * Карточки действий, разделенные по уровню риска.
  */
 @Composable
 private fun DetailActionsSection(
     pkg: AppPackage,
     state: PackagesState,
     component: PackagesComponent,
+    sectionColor: Color,
+    sectionBorder: BorderStroke,
 ) {
     val isRunning = state.isActionRunning
+    val clipboard = LocalClipboardManager.current
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+    AdbSectionCard(
+        title = "Управление",
+        subtitle = "Быстрые операции с приложением",
+        titleUppercase = true,
+        containerColor = sectionColor,
+        border = sectionBorder,
+        contentSpacing = Dimensions.paddingSmall,
     ) {
-        OutlinedButton(
+        AdbOutlinedButton(
             onClick = { component.onLaunchApp(pkg) },
             enabled = !isRunning,
-        ) {
-            Icon(Icons.Outlined.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(4.dp))
-            Text("Запустить", style = MaterialTheme.typography.labelMedium)
-        }
-
-        OutlinedButton(
+            text = "Запустить",
+            leadingIcon = Icons.Outlined.PlayArrow,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
+        AdbOutlinedButton(
             onClick = { component.onForceStop(pkg) },
             enabled = !isRunning,
-        ) {
-            Icon(
-                Icons.Outlined.Stop,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.error,
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                "Стоп",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-
-        OutlinedButton(
+            text = "Остановить",
+            leadingIcon = Icons.Outlined.Stop,
+            type = AdbButtonType.DANGER,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
+        AdbOutlinedButton(
             onClick = { component.onOpenAppInfo(pkg) },
             enabled = !isRunning,
-        ) {
-            Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(4.dp))
-            Text("Инфо", style = MaterialTheme.typography.labelMedium)
-        }
+            text = "Открыть App Info",
+            leadingIcon = Icons.Outlined.Info,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
+        AdbOutlinedButton(
+            onClick = {
+                val savePath = showSaveApkDialog(pkg.packageName) ?: return@AdbOutlinedButton
+                component.onExportApk(pkg, savePath)
+            },
+            enabled = !isRunning,
+            text = "Выгрузить APK",
+            leadingIcon = Icons.Outlined.FileDownload,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
+        AdbOutlinedButton(
+            onClick = { component.onTrackInLogcat(pkg) },
+            enabled = !isRunning,
+            text = "Отследить в Logcat",
+            leadingIcon = Icons.AutoMirrored.Outlined.OpenInNew,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
+        AdbOutlinedButton(
+            onClick = {
+                clipboard.setText(AnnotatedString(pkg.packageName))
+                component.onCopyPackageName(pkg)
+            },
+            enabled = !isRunning,
+            text = "Скопировать имя пакета",
+            leadingIcon = Icons.Outlined.ContentCopy,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
     }
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+    AdbSectionCard(
+        title = "Опасные действия",
+        subtitle = "Операции, влияющие на данные приложения",
+        titleUppercase = true,
+        titleColor = MaterialTheme.colorScheme.error,
+        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+        contentSpacing = Dimensions.paddingSmall,
     ) {
-        OutlinedButton(
+        AdbOutlinedButton(
             onClick = { component.onRequestClearData(pkg) },
             enabled = !isRunning,
-        ) {
-            Text("Очистить данные", style = MaterialTheme.typography.labelMedium)
-        }
-
-        OutlinedButton(
+            text = "Очистить данные",
+            type = AdbButtonType.DANGER,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
+        AdbOutlinedButton(
             onClick = { component.onRequestUninstall(pkg) },
             enabled = !isRunning,
-        ) {
-            Icon(
-                Icons.Outlined.Delete,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.error,
-            )
-            Spacer(Modifier.width(4.dp))
-            Text(
-                "Удалить",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.error,
-            )
+            text = "Удалить приложение",
+            leadingIcon = Icons.Outlined.Delete,
+            type = AdbButtonType.DANGER,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            fullWidth = true,
+        )
+    }
+}
+
+/**
+ * Секция основной информации о пакете.
+ */
+@Composable
+private fun PackageInfoSection(
+    details: PackageDetails,
+    sectionColor: Color,
+    sectionBorder: BorderStroke,
+) {
+    AdbSectionCard(
+        title = "Информация",
+        titleUppercase = true,
+        containerColor = sectionColor,
+        border = sectionBorder,
+        contentSpacing = Dimensions.paddingSmall,
+    ) {
+        if (details.appLabel.isNotBlank()) {
+            InfoRow(label = "Название", value = details.appLabel)
+        }
+        if (details.versionName.isNotBlank()) {
+            InfoRow(label = "Версия", value = "${details.versionName} (${details.versionCode})")
+        }
+        if (details.uid != 0) {
+            InfoRow(label = "UID", value = details.uid.toString())
+        }
+        if (details.targetSdk != 0) {
+            InfoRow(label = "Target SDK", value = details.targetSdk.toString())
+        }
+        if (details.minSdk != 0) {
+            InfoRow(label = "Min SDK", value = details.minSdk.toString())
         }
     }
 }
 
-// ── Флаги ─────────────────────────────────────────────────────────────────────
+/**
+ * Секция дат установки/обновления.
+ */
+@Composable
+private fun PackageTimestampsSection(
+    details: PackageDetails,
+    sectionColor: Color,
+    sectionBorder: BorderStroke,
+) {
+    AdbSectionCard(
+        title = "Временные метки",
+        titleUppercase = true,
+        containerColor = sectionColor,
+        border = sectionBorder,
+        contentSpacing = Dimensions.paddingSmall,
+    ) {
+        if (details.firstInstallTime.isNotBlank()) {
+            InfoRow(label = "Установлено", value = details.firstInstallTime)
+        }
+        if (details.lastUpdateTime.isNotBlank()) {
+            InfoRow(label = "Обновлено", value = details.lastUpdateTime)
+        }
+    }
+}
+
+/**
+ * Секция путей приложения.
+ */
+@Composable
+private fun PackagePathsSection(
+    details: PackageDetails,
+    sectionColor: Color,
+    sectionBorder: BorderStroke,
+) {
+    AdbSectionCard(
+        title = "Пути",
+        titleUppercase = true,
+        containerColor = sectionColor,
+        border = sectionBorder,
+        contentSpacing = Dimensions.paddingSmall,
+    ) {
+        if (details.codePath.isNotBlank()) {
+            InfoRow(label = "APK", value = details.codePath, monospace = true)
+        }
+        if (details.dataDir.isNotBlank()) {
+            InfoRow(label = "Данные", value = details.dataDir, monospace = true)
+        }
+        if (details.nativeLibPath.isNotBlank()) {
+            InfoRow(label = "Нативные либы", value = details.nativeLibPath, monospace = true)
+        }
+    }
+}
 
 /**
  * Отображает флаги пакета в виде цветных чипов.
@@ -381,12 +493,8 @@ private fun FlagChip(label: String, color: Color) {
     }
 }
 
-// ── Runtime-разрешения ────────────────────────────────────────────────────────
-
 /**
  * Раскрываемая секция со списком runtime-разрешений и кнопками Grant/Revoke.
- *
- * По умолчанию скрыта — разворачивается по нажатию.
  */
 @Composable
 private fun PermissionsSection(
@@ -395,48 +503,62 @@ private fun PermissionsSection(
     isActionRunning: Boolean,
     onGrant: (String) -> Unit,
     onRevoke: (String) -> Unit,
+    sectionColor: Color,
+    sectionBorder: BorderStroke,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val sortedPermissions = permissions.entries.sortedBy { it.key }
 
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Runtime-разрешения (${permissions.size})",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f),
-            )
-            IconButton(
+    AdbSectionCard(
+        title = "Runtime-разрешения",
+        subtitle = "Всего разрешений: ${permissions.size}",
+        titleUppercase = true,
+        containerColor = sectionColor,
+        border = sectionBorder,
+        contentSpacing = Dimensions.paddingSmall,
+        headerTrailing = {
+            AdbPlainButton(
                 onClick = { expanded = !expanded },
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    imageVector = if (expanded) Icons.Outlined.Remove else Icons.Outlined.Add,
-                    contentDescription = if (expanded) "Свернуть" else "Развернуть",
-                    modifier = Modifier.size(16.dp),
-                )
-            }
+                leadingIcon = if (expanded) Icons.Outlined.Remove else Icons.Outlined.Add,
+                contentDescription = if (expanded) "Свернуть" else "Развернуть",
+                size = AdbButtonSize.SMALL,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
+        },
+    ) {
+        if (!expanded) {
+            Text(
+                text = "Нажмите +, чтобы показать список разрешений",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return@AdbSectionCard
         }
 
-        if (expanded) {
-            Spacer(Modifier.height(Dimensions.paddingSmall))
-            permissions.entries.sortedBy { it.key }.forEach { (perm, granted) ->
-                PermissionRow(
-                    permission = perm,
-                    granted = granted,
-                    isRunning = isActionRunning,
-                    onGrant = { onGrant(perm) },
-                    onRevoke = { onRevoke(perm) },
-                )
+        Text(
+            text = "Grant/Revoke права:",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        sortedPermissions.forEachIndexed { index, (perm, granted) ->
+            PermissionRow(
+                permission = perm,
+                granted = granted,
+                isRunning = isActionRunning,
+                onGrant = { onGrant(perm) },
+                onRevoke = { onRevoke(perm) },
+            )
+
+            if (index != sortedPermissions.lastIndex) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
             }
         }
     }
 }
 
 /**
- * Строка одного разрешения с индикатором статуса и кнопками.
+ * Строка одного разрешения с индикатором статуса и кнопкой действия.
  */
 @Composable
 private fun PermissionRow(
@@ -449,10 +571,9 @@ private fun PermissionRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Короткое имя разрешения (последний сегмент)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = permission.substringAfterLast('.'),
@@ -469,62 +590,33 @@ private fun PermissionRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+
         if (granted) {
-            IconButton(
+            AdbOutlinedButton(
                 onClick = onRevoke,
                 enabled = !isRunning,
-                modifier = Modifier.size(28.dp),
-            ) {
-                Icon(
-                    Icons.Outlined.Remove,
-                    contentDescription = "Отозвать",
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.error,
-                )
-            }
+                text = "Отозвать",
+                leadingIcon = Icons.Outlined.Remove,
+                type = AdbButtonType.DANGER,
+                size = AdbButtonSize.SMALL,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
         } else {
-            IconButton(
+            AdbOutlinedButton(
                 onClick = onGrant,
                 enabled = !isRunning,
-                modifier = Modifier.size(28.dp),
-            ) {
-                Icon(
-                    Icons.Outlined.Add,
-                    contentDescription = "Выдать",
-                    modifier = Modifier.size(14.dp),
-                    tint = Color(0xFF4CAF50),
-                )
-            }
+                text = "Выдать",
+                leadingIcon = Icons.Outlined.Add,
+                type = AdbButtonType.SUCCESS,
+                size = AdbButtonSize.SMALL,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
         }
     }
 }
 
-// ── Вспомогательные composable ────────────────────────────────────────────────
-
 /**
- * Обёртка секции с заголовком.
- */
-@Composable
-private fun DetailSection(
-    title: String,
-    content: @Composable () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        content()
-    }
-}
-
-/**
- * Строка «Label: value» для отображения пары информация/значение.
- *
- * @param label     Название параметра.
- * @param value     Значение параметра.
- * @param monospace Если `true`, значение отображается моноширинным шрифтом.
+ * Строка "Label: value" для отображения параметров пакета.
  */
 @Composable
 private fun InfoRow(
@@ -540,15 +632,42 @@ private fun InfoRow(
             text = label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(90.dp),
+            modifier = Modifier.width(108.dp),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = value,
-            style = if (monospace) MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
-            else MaterialTheme.typography.bodySmall,
+            style = if (monospace) {
+                MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+            } else {
+                MaterialTheme.typography.bodySmall
+            },
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
+            maxLines = if (monospace) 3 else 2,
             overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+/**
+ * Открывает диалог сохранения APK-файла и возвращает абсолютный путь назначения.
+ */
+private fun showSaveApkDialog(packageName: String): String? {
+    val defaultName = "$packageName.apk"
+    val chooser = JFileChooser(File(System.getProperty("user.home"))).apply {
+        dialogTitle = "Сохранить APK"
+        selectedFile = File(defaultName)
+        fileFilter = FileNameExtensionFilter("APK (*.apk)", "apk")
+        isAcceptAllFileFilterUsed = false
+    }
+
+    if (chooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) return null
+
+    var file = chooser.selectedFile
+    if (!file.name.endsWith(".apk", ignoreCase = true)) {
+        file = File("${file.absolutePath}.apk")
+    }
+    return file.absolutePath
 }
