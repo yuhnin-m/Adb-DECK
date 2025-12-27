@@ -188,7 +188,7 @@ fun DevicesScreen(component: DevicesComponent) {
             AdbBanner(
                 message = localizeFeedbackMessage(feedback),
                 type = if (feedback is DeviceActionFeedback.ActionError) {
-                    AdbBannerType.VARNING
+                    AdbBannerType.ERROR
                 } else {
                     AdbBannerType.SUCCESS
                 },

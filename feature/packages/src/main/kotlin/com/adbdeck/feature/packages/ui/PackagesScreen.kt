@@ -1,5 +1,40 @@
 package com.adbdeck.feature.packages.ui
 
+import adbdeck.feature.packages.generated.resources.Res
+import adbdeck.feature.packages.generated.resources.packages_action_copy_desc
+import adbdeck.feature.packages.generated.resources.packages_action_delete_desc
+import adbdeck.feature.packages.generated.resources.packages_action_info_desc
+import adbdeck.feature.packages.generated.resources.packages_action_launch
+import adbdeck.feature.packages.generated.resources.packages_action_stop
+import adbdeck.feature.packages.generated.resources.packages_dialog_cancel
+import adbdeck.feature.packages.generated.resources.packages_dialog_clear_data_text
+import adbdeck.feature.packages.generated.resources.packages_dialog_clear_data_title
+import adbdeck.feature.packages.generated.resources.packages_dialog_confirm
+import adbdeck.feature.packages.generated.resources.packages_dialog_uninstall_text
+import adbdeck.feature.packages.generated.resources.packages_dialog_uninstall_title
+import adbdeck.feature.packages.generated.resources.packages_empty_all
+import adbdeck.feature.packages.generated.resources.packages_empty_filtered
+import adbdeck.feature.packages.generated.resources.packages_empty_no_device
+import adbdeck.feature.packages.generated.resources.packages_error_unknown
+import adbdeck.feature.packages.generated.resources.packages_filter_all
+import adbdeck.feature.packages.generated.resources.packages_filter_system
+import adbdeck.feature.packages.generated.resources.packages_filter_user
+import adbdeck.feature.packages.generated.resources.packages_loading_list
+import adbdeck.feature.packages.generated.resources.packages_meta_active
+import adbdeck.feature.packages.generated.resources.packages_meta_disabled
+import adbdeck.feature.packages.generated.resources.packages_meta_enabled
+import adbdeck.feature.packages.generated.resources.packages_search_placeholder
+import adbdeck.feature.packages.generated.resources.packages_status_count_filtered
+import adbdeck.feature.packages.generated.resources.packages_status_count_total
+import adbdeck.feature.packages.generated.resources.packages_status_error
+import adbdeck.feature.packages.generated.resources.packages_status_filter
+import adbdeck.feature.packages.generated.resources.packages_status_loading
+import adbdeck.feature.packages.generated.resources.packages_status_no_device
+import adbdeck.feature.packages.generated.resources.packages_status_operation_running
+import adbdeck.feature.packages.generated.resources.packages_status_ready
+import adbdeck.feature.packages.generated.resources.packages_status_search
+import adbdeck.feature.packages.generated.resources.packages_toolbar_refresh
+import adbdeck.feature.packages.generated.resources.packages_toolbar_refresh_content_desc
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,7 +52,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.Close
@@ -71,6 +105,7 @@ import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackagesListState
 import com.adbdeck.feature.packages.PackagesState
 import com.adbdeck.feature.packages.PendingPackageAction
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Корневой composable экрана пакетов.
@@ -135,7 +170,7 @@ fun PackagesScreen(component: PackagesComponent) {
         state.actionFeedback?.let { feedback ->
             AdbBanner(
                 message = feedback.message,
-                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
+                type = if (feedback.isError) AdbBannerType.ERROR else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(Dimensions.paddingDefault),
             )
@@ -176,9 +211,9 @@ private fun PackagesToolbar(
                 onClick = component::onRefresh,
                 enabled = state.listState !is PackagesListState.Loading,
                 loading = state.listState is PackagesListState.Loading,
-                text = "Обновить",
+                text = stringResource(Res.string.packages_toolbar_refresh),
                 leadingIcon = Icons.Outlined.Refresh,
-                contentDescription = "Обновить список пакетов",
+                contentDescription = stringResource(Res.string.packages_toolbar_refresh_content_desc),
                 size = AdbButtonSize.MEDIUM,
                 cornerRadius = controlCornerRadius,
             )
@@ -190,9 +225,18 @@ private fun PackagesToolbar(
                 // ── Фильтр по типу (центр между refresh и search) ──
                 AdbSingleSegmentedButtons(
                     options = listOf(
-                        AdbSegmentedOption(value = PackageTypeFilter.ALL, label = "Все"),
-                        AdbSegmentedOption(value = PackageTypeFilter.USER, label = "User"),
-                        AdbSegmentedOption(value = PackageTypeFilter.SYSTEM, label = "System"),
+                        AdbSegmentedOption(
+                            value = PackageTypeFilter.ALL,
+                            label = stringResource(Res.string.packages_filter_all),
+                        ),
+                        AdbSegmentedOption(
+                            value = PackageTypeFilter.USER,
+                            label = stringResource(Res.string.packages_filter_user),
+                        ),
+                        AdbSegmentedOption(
+                            value = PackageTypeFilter.SYSTEM,
+                            label = stringResource(Res.string.packages_filter_system),
+                        ),
                     ),
                     selectedValue = state.typeFilter,
                     onValueSelected = component::onTypeFilterChanged,
@@ -206,7 +250,7 @@ private fun PackagesToolbar(
                 value = state.searchQuery,
                 onValueChange = component::onSearchChanged,
                 modifier = Modifier.width(320.dp),
-                placeholder = "Поиск по имени или пути…",
+                placeholder = stringResource(Res.string.packages_search_placeholder),
                 type = AdbTextFieldType.NEUTRAL,
                 size = AdbTextFieldSize.MEDIUM,
                 cornerRadius = controlCornerRadius,
@@ -236,20 +280,20 @@ private fun PackagesContent(
 ) {
     when (val listState = state.listState) {
         is PackagesListState.NoDevice -> EmptyView(
-            message = "Устройство не выбрано.\nВыберите устройство в верхней панели.",
+            message = stringResource(Res.string.packages_empty_no_device),
         )
-        is PackagesListState.Loading -> LoadingView(message = "Загрузка списка пакетов…")
+        is PackagesListState.Loading -> LoadingView(message = stringResource(Res.string.packages_loading_list))
         is PackagesListState.Error -> ErrorView(
-            message = listState.message,
+            message = listState.message.ifBlank { stringResource(Res.string.packages_error_unknown) },
             onRetry = component::onRefresh,
         )
         is PackagesListState.Success -> {
             if (state.filteredPackages.isEmpty()) {
                 EmptyView(
                     message = if (state.searchQuery.isNotBlank() || state.typeFilter != PackageTypeFilter.ALL)
-                        "Нет пакетов, соответствующих фильтру"
+                        stringResource(Res.string.packages_empty_filtered)
                     else
-                        "Нет установленных пакетов",
+                        stringResource(Res.string.packages_empty_all),
                 )
             } else {
                 PackagesList(
@@ -405,7 +449,7 @@ private fun PackageRow(
                 PackageEnabledBadge(isEnabled = pkg.isEnabled)
                 if (isSelected) {
                     MetaBadge(
-                        label = "ACTIVE",
+                        label = stringResource(Res.string.packages_meta_active),
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -422,7 +466,7 @@ private fun PackageRow(
                 AdbOutlinedButton(
                     onClick = onLaunch,
                     enabled = !isActionRunning,
-                    text = "Запуск",
+                    text = stringResource(Res.string.packages_action_launch),
                     leadingIcon = Icons.Outlined.PlayArrow,
                     size = AdbButtonSize.SMALL,
                     cornerRadius = AdbCornerRadius.MEDIUM,
@@ -430,7 +474,7 @@ private fun PackageRow(
                 AdbOutlinedButton(
                     onClick = onStop,
                     enabled = !isActionRunning,
-                    text = "Стоп",
+                    text = stringResource(Res.string.packages_action_stop),
                     leadingIcon = Icons.Outlined.Stop,
                     type = AdbButtonType.DANGER,
                     size = AdbButtonSize.SMALL,
@@ -440,7 +484,7 @@ private fun PackageRow(
                 AdbPlainButton(
                     onClick = onCopy,
                     leadingIcon = Icons.Outlined.ContentCopy,
-                    contentDescription = "Скопировать",
+                    contentDescription = stringResource(Res.string.packages_action_copy_desc),
                     size = AdbButtonSize.SMALL,
                     cornerRadius = AdbCornerRadius.MEDIUM,
                 )
@@ -448,7 +492,7 @@ private fun PackageRow(
                     onClick = onInfo,
                     enabled = !isActionRunning,
                     leadingIcon = Icons.Outlined.Info,
-                    contentDescription = "Инфо",
+                    contentDescription = stringResource(Res.string.packages_action_info_desc),
                     size = AdbButtonSize.SMALL,
                     cornerRadius = AdbCornerRadius.MEDIUM,
                 )
@@ -456,7 +500,7 @@ private fun PackageRow(
                     onClick = onUninstall,
                     enabled = !isActionRunning,
                     leadingIcon = Icons.Outlined.Delete,
-                    contentDescription = "Удалить",
+                    contentDescription = stringResource(Res.string.packages_action_delete_desc),
                     type = AdbButtonType.DANGER,
                     size = AdbButtonSize.SMALL,
                     cornerRadius = AdbCornerRadius.MEDIUM,
@@ -489,12 +533,12 @@ private fun MetaBadge(
 private fun PackageEnabledBadge(isEnabled: Boolean) {
     if (isEnabled) {
         MetaBadge(
-            label = "ENABLED",
+            label = stringResource(Res.string.packages_meta_enabled),
             color = Color(0xFF2E7D32),
         )
     } else {
         MetaBadge(
-            label = "DISABLED",
+            label = stringResource(Res.string.packages_meta_disabled),
             color = MaterialTheme.colorScheme.error,
         )
     }
@@ -509,11 +553,11 @@ private fun PackageEnabledBadge(isEnabled: Boolean) {
 private fun PackageTypeBadge(type: PackageType) {
     when (type) {
         PackageType.USER -> MetaBadge(
-            label = "USER",
+            label = stringResource(Res.string.packages_filter_user),
             color = MaterialTheme.colorScheme.primary,
         )
         PackageType.SYSTEM -> MetaBadge(
-            label = "SYSTEM",
+            label = stringResource(Res.string.packages_filter_system),
             color = MaterialTheme.colorScheme.tertiary,
         )
     }
@@ -540,10 +584,11 @@ private fun StatusPill(
     }
 }
 
+@Composable
 private fun filterLabel(filter: PackageTypeFilter): String = when (filter) {
-    PackageTypeFilter.ALL -> "Все"
-    PackageTypeFilter.USER -> "User"
-    PackageTypeFilter.SYSTEM -> "System"
+    PackageTypeFilter.ALL -> stringResource(Res.string.packages_filter_all)
+    PackageTypeFilter.USER -> stringResource(Res.string.packages_filter_user)
+    PackageTypeFilter.SYSTEM -> stringResource(Res.string.packages_filter_system)
 }
 
 // ── Строка состояния ──────────────────────────────────────────────────────────
@@ -557,16 +602,23 @@ private fun PackagesStatusBar(state: PackagesState) {
     val shownCount = state.filteredPackages.size
 
     val (stateLabel, stateColor) = when (state.listState) {
-        is PackagesListState.NoDevice -> "Нет устройства" to MaterialTheme.colorScheme.onSurfaceVariant
-        is PackagesListState.Loading -> "Загрузка" to Color(0xFFFF9800)
-        is PackagesListState.Error -> "Ошибка" to MaterialTheme.colorScheme.error
-        is PackagesListState.Success -> "Готово" to Color(0xFF2E7D32)
+        is PackagesListState.NoDevice ->
+            stringResource(Res.string.packages_status_no_device) to MaterialTheme.colorScheme.onSurfaceVariant
+
+        is PackagesListState.Loading ->
+            stringResource(Res.string.packages_status_loading) to Color(0xFFFF9800)
+
+        is PackagesListState.Error ->
+            stringResource(Res.string.packages_status_error) to MaterialTheme.colorScheme.error
+
+        is PackagesListState.Success ->
+            stringResource(Res.string.packages_status_ready) to Color(0xFF2E7D32)
     }
 
     val countLabel = if (shownCount == totalCount) {
-        "$totalCount пакетов"
+        stringResource(Res.string.packages_status_count_total, totalCount)
     } else {
-        "$shownCount из $totalCount"
+        stringResource(Res.string.packages_status_count_filtered, shownCount, totalCount)
     }
 
     Row(
@@ -583,7 +635,7 @@ private fun PackagesStatusBar(state: PackagesState) {
 
         if (state.typeFilter != PackageTypeFilter.ALL) {
             StatusPill(
-                text = "Фильтр: ${filterLabel(state.typeFilter)}",
+                text = stringResource(Res.string.packages_status_filter, filterLabel(state.typeFilter)),
                 color = MaterialTheme.colorScheme.secondary,
             )
         }
@@ -592,7 +644,7 @@ private fun PackagesStatusBar(state: PackagesState) {
             val query = state.searchQuery.trim()
             val preview = if (query.length <= 24) query else "${query.take(24)}…"
             StatusPill(
-                text = "Поиск: $preview",
+                text = stringResource(Res.string.packages_status_search, preview),
                 color = MaterialTheme.colorScheme.primary,
             )
         }
@@ -601,7 +653,7 @@ private fun PackagesStatusBar(state: PackagesState) {
 
         if (state.isActionRunning) {
             StatusPill(
-                text = "Выполняется операция",
+                text = stringResource(Res.string.packages_status_operation_running),
                 color = MaterialTheme.colorScheme.primary,
             )
         }
@@ -620,12 +672,12 @@ private fun ConfirmationDialog(
 ) {
     val (title, text) = when (action) {
         is PendingPackageAction.ClearData -> Pair(
-            "Очистить данные",
-            "Очистить данные приложения «${action.pkg.packageName}»?\n\nДанные, кэш и настройки будут удалены безвозвратно.",
+            stringResource(Res.string.packages_dialog_clear_data_title),
+            stringResource(Res.string.packages_dialog_clear_data_text, action.pkg.packageName),
         )
         is PendingPackageAction.Uninstall -> Pair(
-            "Удалить приложение",
-            "Удалить пакет «${action.pkg.packageName}»?\n\nПриложение будет полностью удалено с устройства.",
+            stringResource(Res.string.packages_dialog_uninstall_title),
+            stringResource(Res.string.packages_dialog_uninstall_text, action.pkg.packageName),
         )
     }
 
@@ -636,7 +688,7 @@ private fun ConfirmationDialog(
         confirmButton = {
             AdbFilledButton(
                 onClick = component::onConfirmAction,
-                text = "Подтвердить",
+                text = stringResource(Res.string.packages_dialog_confirm),
                 type = AdbButtonType.DANGER,
                 size = AdbButtonSize.MEDIUM,
             )
@@ -644,7 +696,7 @@ private fun ConfirmationDialog(
         dismissButton = {
             AdbOutlinedButton(
                 onClick = component::onCancelAction,
-                text = "Отмена",
+                text = stringResource(Res.string.packages_dialog_cancel),
                 size = AdbButtonSize.MEDIUM,
             )
         },

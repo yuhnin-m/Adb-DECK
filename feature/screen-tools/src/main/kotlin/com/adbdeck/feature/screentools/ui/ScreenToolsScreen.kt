@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,7 +35,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -58,7 +56,6 @@ import com.adbdeck.core.ui.AdbBannerDismissStyle
 import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.feature.screentools.ScreenToolsComponent
-import com.adbdeck.feature.screentools.ScreenToolsState
 import com.adbdeck.feature.screentools.ScreenToolsStatus
 import com.adbdeck.feature.screentools.ScreenToolsTab
 import com.adbdeck.feature.screentools.ScreenshotQualityPreset
@@ -137,7 +134,7 @@ fun ScreenToolsScreen(component: ScreenToolsComponent) {
             HorizontalDivider()
             AdbBanner(
                 message = it.message,
-                type = if (it.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
+                type = if (it.isError) AdbBannerType.ERROR else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
                 dismissStyle = AdbBannerDismissStyle.TEXT,
                 modifier = Modifier

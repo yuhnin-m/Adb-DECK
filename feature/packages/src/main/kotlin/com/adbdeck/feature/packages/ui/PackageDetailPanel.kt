@@ -1,5 +1,51 @@
 package com.adbdeck.feature.packages.ui
 
+import adbdeck.feature.packages.generated.resources.Res
+import adbdeck.feature.packages.generated.resources.packages_detail_action_clear_data
+import adbdeck.feature.packages.generated.resources.packages_detail_action_copy_package_name
+import adbdeck.feature.packages.generated.resources.packages_detail_action_export_package
+import adbdeck.feature.packages.generated.resources.packages_detail_action_grant
+import adbdeck.feature.packages.generated.resources.packages_detail_action_launch
+import adbdeck.feature.packages.generated.resources.packages_detail_action_open_app_info
+import adbdeck.feature.packages.generated.resources.packages_detail_action_revoke
+import adbdeck.feature.packages.generated.resources.packages_detail_action_stop
+import adbdeck.feature.packages.generated.resources.packages_detail_action_track_logcat
+import adbdeck.feature.packages.generated.resources.packages_detail_action_uninstall
+import adbdeck.feature.packages.generated.resources.packages_detail_close_panel
+import adbdeck.feature.packages.generated.resources.packages_detail_error_format
+import adbdeck.feature.packages.generated.resources.packages_error_detail_load
+import adbdeck.feature.packages.generated.resources.packages_detail_flag_debuggable
+import adbdeck.feature.packages.generated.resources.packages_detail_flag_disabled
+import adbdeck.feature.packages.generated.resources.packages_detail_flag_enabled
+import adbdeck.feature.packages.generated.resources.packages_detail_flag_suspended
+import adbdeck.feature.packages.generated.resources.packages_detail_flag_system
+import adbdeck.feature.packages.generated.resources.packages_detail_flag_user
+import adbdeck.feature.packages.generated.resources.packages_detail_info_apk
+import adbdeck.feature.packages.generated.resources.packages_detail_info_data
+import adbdeck.feature.packages.generated.resources.packages_detail_info_installed
+import adbdeck.feature.packages.generated.resources.packages_detail_info_min_sdk
+import adbdeck.feature.packages.generated.resources.packages_detail_info_name
+import adbdeck.feature.packages.generated.resources.packages_detail_info_native_libs
+import adbdeck.feature.packages.generated.resources.packages_detail_info_target_sdk
+import adbdeck.feature.packages.generated.resources.packages_detail_info_uid
+import adbdeck.feature.packages.generated.resources.packages_detail_info_updated
+import adbdeck.feature.packages.generated.resources.packages_detail_info_version
+import adbdeck.feature.packages.generated.resources.packages_detail_permissions_collapse
+import adbdeck.feature.packages.generated.resources.packages_detail_permissions_expand
+import adbdeck.feature.packages.generated.resources.packages_detail_permissions_expand_hint
+import adbdeck.feature.packages.generated.resources.packages_detail_permissions_grant_revoke
+import adbdeck.feature.packages.generated.resources.packages_detail_permissions_total
+import adbdeck.feature.packages.generated.resources.packages_detail_save_dialog_filter_desc
+import adbdeck.feature.packages.generated.resources.packages_detail_save_dialog_title
+import adbdeck.feature.packages.generated.resources.packages_detail_section_danger
+import adbdeck.feature.packages.generated.resources.packages_detail_section_danger_subtitle
+import adbdeck.feature.packages.generated.resources.packages_detail_section_flags
+import adbdeck.feature.packages.generated.resources.packages_detail_section_info
+import adbdeck.feature.packages.generated.resources.packages_detail_section_management
+import adbdeck.feature.packages.generated.resources.packages_detail_section_management_subtitle
+import adbdeck.feature.packages.generated.resources.packages_detail_section_paths
+import adbdeck.feature.packages.generated.resources.packages_detail_section_permissions
+import adbdeck.feature.packages.generated.resources.packages_detail_section_timestamps
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -60,6 +106,7 @@ import com.adbdeck.feature.packages.PackagesState
 import java.io.File
 import javax.swing.JFileChooser
 import javax.swing.filechooser.FileNameExtensionFilter
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Панель детальной информации о выбранном пакете.
@@ -103,7 +150,12 @@ fun PackageDetailPanel(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "⚠  ${detail.message}",
+                        text = stringResource(
+                            Res.string.packages_detail_error_format,
+                            detail.message.ifBlank {
+                                stringResource(Res.string.packages_error_detail_load)
+                            },
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(Dimensions.paddingDefault),
@@ -156,7 +208,7 @@ private fun DetailPanelHeader(
         AdbPlainButton(
             onClick = onClose,
             leadingIcon = Icons.Outlined.Close,
-            contentDescription = "Закрыть панель",
+            contentDescription = stringResource(Res.string.packages_detail_close_panel),
             size = AdbButtonSize.MEDIUM,
             cornerRadius = AdbCornerRadius.MEDIUM,
         )
@@ -221,7 +273,7 @@ private fun DetailPanelContent(
         )
 
         AdbSectionCard(
-            title = "Флаги",
+            title = stringResource(Res.string.packages_detail_section_flags),
             titleUppercase = true,
             containerColor = sectionColor,
             border = sectionBorder,
@@ -257,10 +309,12 @@ private fun DetailActionsSection(
 ) {
     val isRunning = state.isActionRunning
     val clipboard = LocalClipboardManager.current
+    val saveDialogTitle = stringResource(Res.string.packages_detail_save_dialog_title)
+    val saveDialogFilterDescription = stringResource(Res.string.packages_detail_save_dialog_filter_desc)
 
     AdbSectionCard(
-        title = "Управление",
-        subtitle = "Быстрые операции с приложением",
+        title = stringResource(Res.string.packages_detail_section_management),
+        subtitle = stringResource(Res.string.packages_detail_section_management_subtitle),
         titleUppercase = true,
         containerColor = sectionColor,
         border = sectionBorder,
@@ -269,7 +323,7 @@ private fun DetailActionsSection(
         AdbOutlinedButton(
             onClick = { component.onLaunchApp(pkg) },
             enabled = !isRunning,
-            text = "Запустить",
+            text = stringResource(Res.string.packages_detail_action_launch),
             leadingIcon = Icons.Outlined.PlayArrow,
             size = AdbButtonSize.MEDIUM,
             cornerRadius = AdbCornerRadius.MEDIUM,
@@ -278,7 +332,7 @@ private fun DetailActionsSection(
         AdbOutlinedButton(
             onClick = { component.onForceStop(pkg) },
             enabled = !isRunning,
-            text = "Остановить",
+            text = stringResource(Res.string.packages_detail_action_stop),
             leadingIcon = Icons.Outlined.Stop,
             type = AdbButtonType.DANGER,
             size = AdbButtonSize.MEDIUM,
@@ -288,7 +342,7 @@ private fun DetailActionsSection(
         AdbOutlinedButton(
             onClick = { component.onOpenAppInfo(pkg) },
             enabled = !isRunning,
-            text = "Открыть App Info",
+            text = stringResource(Res.string.packages_detail_action_open_app_info),
             leadingIcon = Icons.Outlined.Info,
             size = AdbButtonSize.MEDIUM,
             cornerRadius = AdbCornerRadius.MEDIUM,
@@ -296,11 +350,15 @@ private fun DetailActionsSection(
         )
         AdbOutlinedButton(
             onClick = {
-                val savePath = showSaveApkDialog(pkg.packageName) ?: return@AdbOutlinedButton
+                val savePath = showSaveApkDialog(
+                    packageName = pkg.packageName,
+                    dialogTitle = saveDialogTitle,
+                    filterDescription = saveDialogFilterDescription,
+                ) ?: return@AdbOutlinedButton
                 component.onExportApk(pkg, savePath)
             },
             enabled = !isRunning,
-            text = "Выгрузить APK",
+            text = stringResource(Res.string.packages_detail_action_export_package),
             leadingIcon = Icons.Outlined.FileDownload,
             size = AdbButtonSize.MEDIUM,
             cornerRadius = AdbCornerRadius.MEDIUM,
@@ -309,7 +367,7 @@ private fun DetailActionsSection(
         AdbOutlinedButton(
             onClick = { component.onTrackInLogcat(pkg) },
             enabled = !isRunning,
-            text = "Отследить в Logcat",
+            text = stringResource(Res.string.packages_detail_action_track_logcat),
             leadingIcon = Icons.AutoMirrored.Outlined.OpenInNew,
             size = AdbButtonSize.MEDIUM,
             cornerRadius = AdbCornerRadius.MEDIUM,
@@ -321,7 +379,7 @@ private fun DetailActionsSection(
                 component.onCopyPackageName(pkg)
             },
             enabled = !isRunning,
-            text = "Скопировать имя пакета",
+            text = stringResource(Res.string.packages_detail_action_copy_package_name),
             leadingIcon = Icons.Outlined.ContentCopy,
             size = AdbButtonSize.MEDIUM,
             cornerRadius = AdbCornerRadius.MEDIUM,
@@ -330,8 +388,8 @@ private fun DetailActionsSection(
     }
 
     AdbSectionCard(
-        title = "Опасные действия",
-        subtitle = "Операции, влияющие на данные приложения",
+        title = stringResource(Res.string.packages_detail_section_danger),
+        subtitle = stringResource(Res.string.packages_detail_section_danger_subtitle),
         titleUppercase = true,
         titleColor = MaterialTheme.colorScheme.error,
         containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f),
@@ -341,7 +399,7 @@ private fun DetailActionsSection(
         AdbOutlinedButton(
             onClick = { component.onRequestClearData(pkg) },
             enabled = !isRunning,
-            text = "Очистить данные",
+            text = stringResource(Res.string.packages_detail_action_clear_data),
             type = AdbButtonType.DANGER,
             size = AdbButtonSize.MEDIUM,
             cornerRadius = AdbCornerRadius.MEDIUM,
@@ -350,7 +408,7 @@ private fun DetailActionsSection(
         AdbOutlinedButton(
             onClick = { component.onRequestUninstall(pkg) },
             enabled = !isRunning,
-            text = "Удалить приложение",
+            text = stringResource(Res.string.packages_detail_action_uninstall),
             leadingIcon = Icons.Outlined.Delete,
             type = AdbButtonType.DANGER,
             size = AdbButtonSize.MEDIUM,
@@ -370,26 +428,35 @@ private fun PackageInfoSection(
     sectionBorder: BorderStroke,
 ) {
     AdbSectionCard(
-        title = "Информация",
+        title = stringResource(Res.string.packages_detail_section_info),
         titleUppercase = true,
         containerColor = sectionColor,
         border = sectionBorder,
         contentSpacing = Dimensions.paddingSmall,
     ) {
         if (details.appLabel.isNotBlank()) {
-            InfoRow(label = "Название", value = details.appLabel)
+            InfoRow(label = stringResource(Res.string.packages_detail_info_name), value = details.appLabel)
         }
         if (details.versionName.isNotBlank()) {
-            InfoRow(label = "Версия", value = "${details.versionName} (${details.versionCode})")
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_version),
+                value = "${details.versionName} (${details.versionCode})",
+            )
         }
         if (details.uid != 0) {
-            InfoRow(label = "UID", value = details.uid.toString())
+            InfoRow(label = stringResource(Res.string.packages_detail_info_uid), value = details.uid.toString())
         }
         if (details.targetSdk != 0) {
-            InfoRow(label = "Target SDK", value = details.targetSdk.toString())
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_target_sdk),
+                value = details.targetSdk.toString(),
+            )
         }
         if (details.minSdk != 0) {
-            InfoRow(label = "Min SDK", value = details.minSdk.toString())
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_min_sdk),
+                value = details.minSdk.toString(),
+            )
         }
     }
 }
@@ -404,17 +471,23 @@ private fun PackageTimestampsSection(
     sectionBorder: BorderStroke,
 ) {
     AdbSectionCard(
-        title = "Временные метки",
+        title = stringResource(Res.string.packages_detail_section_timestamps),
         titleUppercase = true,
         containerColor = sectionColor,
         border = sectionBorder,
         contentSpacing = Dimensions.paddingSmall,
     ) {
         if (details.firstInstallTime.isNotBlank()) {
-            InfoRow(label = "Установлено", value = details.firstInstallTime)
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_installed),
+                value = details.firstInstallTime,
+            )
         }
         if (details.lastUpdateTime.isNotBlank()) {
-            InfoRow(label = "Обновлено", value = details.lastUpdateTime)
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_updated),
+                value = details.lastUpdateTime,
+            )
         }
     }
 }
@@ -429,20 +502,32 @@ private fun PackagePathsSection(
     sectionBorder: BorderStroke,
 ) {
     AdbSectionCard(
-        title = "Пути",
+        title = stringResource(Res.string.packages_detail_section_paths),
         titleUppercase = true,
         containerColor = sectionColor,
         border = sectionBorder,
         contentSpacing = Dimensions.paddingSmall,
     ) {
         if (details.codePath.isNotBlank()) {
-            InfoRow(label = "APK", value = details.codePath, monospace = true)
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_apk),
+                value = details.codePath,
+                monospace = true,
+            )
         }
         if (details.dataDir.isNotBlank()) {
-            InfoRow(label = "Данные", value = details.dataDir, monospace = true)
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_data),
+                value = details.dataDir,
+                monospace = true,
+            )
         }
         if (details.nativeLibPath.isNotBlank()) {
-            InfoRow(label = "Нативные либы", value = details.nativeLibPath, monospace = true)
+            InfoRow(
+                label = stringResource(Res.string.packages_detail_info_native_libs),
+                value = details.nativeLibPath,
+                monospace = true,
+            )
         }
     }
 }
@@ -458,19 +543,27 @@ private fun FlagsSection(details: PackageDetails) {
         verticalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
     ) {
         FlagChip(
-            label = if (details.isSystem) "System" else "User",
+            label = if (details.isSystem) {
+                stringResource(Res.string.packages_detail_flag_system)
+            } else {
+                stringResource(Res.string.packages_detail_flag_user)
+            },
             color = if (details.isSystem) MaterialTheme.colorScheme.tertiary
             else MaterialTheme.colorScheme.primary,
         )
         FlagChip(
-            label = if (details.isEnabled) "Enabled" else "Disabled",
+            label = if (details.isEnabled) {
+                stringResource(Res.string.packages_detail_flag_enabled)
+            } else {
+                stringResource(Res.string.packages_detail_flag_disabled)
+            },
             color = if (details.isEnabled) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
         )
         if (details.isDebuggable) {
-            FlagChip(label = "Debuggable", color = Color(0xFFFF9800))
+            FlagChip(label = stringResource(Res.string.packages_detail_flag_debuggable), color = Color(0xFFFF9800))
         }
         if (details.isSuspended) {
-            FlagChip(label = "Suspended", color = MaterialTheme.colorScheme.error)
+            FlagChip(label = stringResource(Res.string.packages_detail_flag_suspended), color = MaterialTheme.colorScheme.error)
         }
     }
 }
@@ -510,8 +603,8 @@ private fun PermissionsSection(
     val sortedPermissions = permissions.entries.sortedBy { it.key }
 
     AdbSectionCard(
-        title = "Runtime-разрешения",
-        subtitle = "Всего разрешений: ${permissions.size}",
+        title = stringResource(Res.string.packages_detail_section_permissions),
+        subtitle = stringResource(Res.string.packages_detail_permissions_total, permissions.size),
         titleUppercase = true,
         containerColor = sectionColor,
         border = sectionBorder,
@@ -520,7 +613,11 @@ private fun PermissionsSection(
             AdbPlainButton(
                 onClick = { expanded = !expanded },
                 leadingIcon = if (expanded) Icons.Outlined.Remove else Icons.Outlined.Add,
-                contentDescription = if (expanded) "Свернуть" else "Развернуть",
+                contentDescription = if (expanded) {
+                    stringResource(Res.string.packages_detail_permissions_collapse)
+                } else {
+                    stringResource(Res.string.packages_detail_permissions_expand)
+                },
                 size = AdbButtonSize.SMALL,
                 cornerRadius = AdbCornerRadius.MEDIUM,
             )
@@ -528,7 +625,7 @@ private fun PermissionsSection(
     ) {
         if (!expanded) {
             Text(
-                text = "Нажмите +, чтобы показать список разрешений",
+                text = stringResource(Res.string.packages_detail_permissions_expand_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -536,7 +633,7 @@ private fun PermissionsSection(
         }
 
         Text(
-            text = "Grant/Revoke права:",
+            text = stringResource(Res.string.packages_detail_permissions_grant_revoke),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -595,7 +692,7 @@ private fun PermissionRow(
             AdbOutlinedButton(
                 onClick = onRevoke,
                 enabled = !isRunning,
-                text = "Отозвать",
+                text = stringResource(Res.string.packages_detail_action_revoke),
                 leadingIcon = Icons.Outlined.Remove,
                 type = AdbButtonType.DANGER,
                 size = AdbButtonSize.SMALL,
@@ -605,7 +702,7 @@ private fun PermissionRow(
             AdbOutlinedButton(
                 onClick = onGrant,
                 enabled = !isRunning,
-                text = "Выдать",
+                text = stringResource(Res.string.packages_detail_action_grant),
                 leadingIcon = Icons.Outlined.Add,
                 type = AdbButtonType.SUCCESS,
                 size = AdbButtonSize.SMALL,
@@ -651,22 +748,25 @@ private fun InfoRow(
     }
 }
 
-/**
- * Открывает диалог сохранения APK-файла и возвращает абсолютный путь назначения.
- */
-private fun showSaveApkDialog(packageName: String): String? {
+private fun showSaveApkDialog(
+    packageName: String,
+    dialogTitle: String,
+    filterDescription: String,
+): String? {
     val defaultName = "$packageName.apk"
     val chooser = JFileChooser(File(System.getProperty("user.home"))).apply {
-        dialogTitle = "Сохранить APK"
+        this.dialogTitle = dialogTitle
         selectedFile = File(defaultName)
-        fileFilter = FileNameExtensionFilter("APK (*.apk)", "apk")
+        fileFilter = FileNameExtensionFilter(filterDescription, "apk", "apks")
         isAcceptAllFileFilterUsed = false
     }
 
     if (chooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) return null
 
     var file = chooser.selectedFile
-    if (!file.name.endsWith(".apk", ignoreCase = true)) {
+    val hasKnownExtension = file.name.endsWith(".apk", ignoreCase = true) ||
+        file.name.endsWith(".apks", ignoreCase = true)
+    if (!hasKnownExtension) {
         file = File("${file.absolutePath}.apk")
     }
     return file.absolutePath

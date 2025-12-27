@@ -1,0 +1,111 @@
+<resources>
+    <string name="packages_toolbar_refresh">Обновить</string>
+    <string name="packages_toolbar_refresh_content_desc">Обновить список пакетов</string>
+    <string name="packages_filter_all">Все</string>
+    <string name="packages_filter_user">User</string>
+    <string name="packages_filter_system">System</string>
+    <string name="packages_search_placeholder">Поиск по имени или пути...</string>
+
+    <string name="packages_empty_no_device">Устройство не выбрано.\nВыберите устройство в верхней панели.</string>
+    <string name="packages_loading_list">Загрузка списка пакетов...</string>
+    <string name="packages_empty_filtered">Нет пакетов, соответствующих фильтру</string>
+    <string name="packages_empty_all">Нет установленных пакетов</string>
+
+    <string name="packages_meta_active">ACTIVE</string>
+    <string name="packages_meta_enabled">ENABLED</string>
+    <string name="packages_meta_disabled">DISABLED</string>
+
+    <string name="packages_action_launch">Запуск</string>
+    <string name="packages_action_stop">Стоп</string>
+    <string name="packages_action_copy_desc">Скопировать имя пакета</string>
+    <string name="packages_action_info_desc">Открыть App Info</string>
+    <string name="packages_action_delete_desc">Удалить приложение</string>
+
+    <string name="packages_status_no_device">Нет устройства</string>
+    <string name="packages_status_loading">Загрузка</string>
+    <string name="packages_status_error">Ошибка</string>
+    <string name="packages_status_ready">Готово</string>
+    <string name="packages_status_count_total">%1$d пакетов</string>
+    <string name="packages_status_count_filtered">%1$d из %2$d</string>
+    <string name="packages_status_filter">Фильтр: %1$s</string>
+    <string name="packages_status_search">Поиск: %1$s</string>
+    <string name="packages_status_operation_running">Выполняется операция</string>
+
+    <string name="packages_dialog_clear_data_title">Очистить данные</string>
+    <string name="packages_dialog_clear_data_text">Очистить данные приложения «%1$s»?\n\nДанные, кэш и настройки будут удалены безвозвратно.</string>
+    <string name="packages_dialog_uninstall_title">Удалить приложение</string>
+    <string name="packages_dialog_uninstall_text">Удалить пакет «%1$s»?\n\nПриложение будет полностью удалено с устройства.</string>
+    <string name="packages_dialog_confirm">Подтвердить</string>
+    <string name="packages_dialog_cancel">Отмена</string>
+
+    <string name="packages_detail_error_format">⚠  %1$s</string>
+    <string name="packages_detail_close_panel">Закрыть панель</string>
+
+    <string name="packages_detail_section_flags">Флаги</string>
+    <string name="packages_detail_section_management">Управление</string>
+    <string name="packages_detail_section_management_subtitle">Быстрые операции с приложением</string>
+    <string name="packages_detail_action_launch">Запустить</string>
+    <string name="packages_detail_action_stop">Остановить</string>
+    <string name="packages_detail_action_open_app_info">Открыть App Info</string>
+    <string name="packages_detail_action_export_package">Выгрузить пакет</string>
+    <string name="packages_detail_action_track_logcat">Отследить в Logcat</string>
+    <string name="packages_detail_action_copy_package_name">Скопировать имя пакета</string>
+
+    <string name="packages_detail_section_danger">Опасные действия</string>
+    <string name="packages_detail_section_danger_subtitle">Операции, влияющие на данные приложения</string>
+    <string name="packages_detail_action_clear_data">Очистить данные</string>
+    <string name="packages_detail_action_uninstall">Удалить приложение</string>
+
+    <string name="packages_detail_section_info">Информация</string>
+    <string name="packages_detail_info_name">Название</string>
+    <string name="packages_detail_info_version">Версия</string>
+    <string name="packages_detail_info_uid">UID</string>
+    <string name="packages_detail_info_target_sdk">Target SDK</string>
+    <string name="packages_detail_info_min_sdk">Min SDK</string>
+
+    <string name="packages_detail_section_timestamps">Временные метки</string>
+    <string name="packages_detail_info_installed">Установлено</string>
+    <string name="packages_detail_info_updated">Обновлено</string>
+
+    <string name="packages_detail_section_paths">Пути</string>
+    <string name="packages_detail_info_apk">APK</string>
+    <string name="packages_detail_info_data">Данные</string>
+    <string name="packages_detail_info_native_libs">Нативные либы</string>
+
+    <string name="packages_detail_flag_system">System</string>
+    <string name="packages_detail_flag_user">User</string>
+    <string name="packages_detail_flag_enabled">Enabled</string>
+    <string name="packages_detail_flag_disabled">Disabled</string>
+    <string name="packages_detail_flag_debuggable">Debuggable</string>
+    <string name="packages_detail_flag_suspended">Suspended</string>
+
+    <string name="packages_detail_section_permissions">Runtime-разрешения</string>
+    <string name="packages_detail_permissions_total">Всего разрешений: %1$d</string>
+    <string name="packages_detail_permissions_collapse">Свернуть</string>
+    <string name="packages_detail_permissions_expand">Развернуть</string>
+    <string name="packages_detail_permissions_expand_hint">Нажмите +, чтобы показать список разрешений</string>
+    <string name="packages_detail_permissions_grant_revoke">Grant/Revoke права:</string>
+    <string name="packages_detail_action_revoke">Отозвать</string>
+    <string name="packages_detail_action_grant">Выдать</string>
+
+    <string name="packages_detail_save_dialog_title">Сохранить пакет</string>
+    <string name="packages_detail_save_dialog_filter_desc">APK/APKS (*.apk, *.apks)</string>
+
+    <string name="packages_error_unknown">Неизвестная ошибка</string>
+    <string name="packages_feedback_open_package_device_unavailable">Открыть пакет: устройство недоступно</string>
+    <string name="packages_feedback_package_not_found">Пакет «%1$s» не найден на устройстве</string>
+    <string name="packages_error_detail_load">Ошибка загрузки</string>
+    <string name="packages_feedback_app_launched">Приложение запущено</string>
+    <string name="packages_feedback_app_stopped">Приложение остановлено</string>
+    <string name="packages_feedback_app_info_opened">Открыта информация о приложении</string>
+    <string name="packages_feedback_package_exported">Пакет выгружен</string>
+    <string name="packages_error_export_path_not_selected">Не выбран путь для сохранения APK</string>
+    <string name="packages_feedback_package_copied">Скопировано: %1$s</string>
+    <string name="packages_feedback_data_cleared">Данные очищены</string>
+    <string name="packages_feedback_package_deleted">Пакет удалён</string>
+    <string name="packages_feedback_permission_granted">Разрешение выдано: %1$s</string>
+    <string name="packages_feedback_permission_revoked">Разрешение отозвано: %1$s</string>
+    <string name="packages_feedback_operation_failed">Операция завершилась с ошибкой: %1$s</string>
+    <string name="packages_error_operation_failed_default">Операция завершилась с ошибкой</string>
+    <string name="packages_feedback_device_unavailable">Устройство не выбрано или недоступно</string>
+</resources>

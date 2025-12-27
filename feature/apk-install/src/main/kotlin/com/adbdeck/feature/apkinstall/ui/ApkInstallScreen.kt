@@ -83,7 +83,7 @@ fun ApkInstallScreen(component: ApkInstallComponent) {
             HorizontalDivider()
             AdbBanner(
                 message = it.message,
-                type = if (it.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
+                type = if (it.isError) AdbBannerType.ERROR else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
                 dismissStyle = AdbBannerDismissStyle.TEXT,
                 modifier = Modifier

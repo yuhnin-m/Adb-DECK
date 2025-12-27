@@ -45,7 +45,7 @@ enum class AdbBannerType {
     WARNING,
 
     /** Ошибка или критическое состояние. */
-    VARNING,
+    ERROR,
 }
 
 /**
@@ -195,7 +195,7 @@ private fun bannerVisuals(type: AdbBannerType): AdbBannerVisuals {
             icon = Icons.Outlined.WarningAmber,
         )
 
-        AdbBannerType.VARNING -> AdbBannerVisuals(
+        AdbBannerType.ERROR -> AdbBannerVisuals(
             containerColor = MaterialTheme.colorScheme.errorContainer,
             contentColor = MaterialTheme.colorScheme.onErrorContainer,
             icon = Icons.Outlined.Error,
@@ -231,7 +231,7 @@ private fun AdbBannerPreviewContent(isDarkTheme: Boolean) {
                 )
                 AdbBanner(
                     message = "Не удалось выполнить adb shell",
-                    type = AdbBannerType.VARNING,
+                    type = AdbBannerType.ERROR,
                     onDismiss = {},
                 )
                 AdbBanner(

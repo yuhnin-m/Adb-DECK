@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -49,7 +48,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
@@ -70,7 +68,6 @@ import com.adbdeck.core.ui.AdbBanner
 import com.adbdeck.core.ui.AdbBannerDismissStyle
 import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
-import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.core.utils.formatBytes
 import com.adbdeck.feature.fileexplorer.CreateDirectoryDialogState
@@ -171,7 +168,7 @@ fun FileExplorerScreen(component: FileExplorerComponent) {
             HorizontalDivider()
             AdbBanner(
                 message = feedback.message,
-                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
+                type = if (feedback.isError) AdbBannerType.ERROR else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
                 dismissStyle = AdbBannerDismissStyle.TEXT,
                 dismissText = "OK",

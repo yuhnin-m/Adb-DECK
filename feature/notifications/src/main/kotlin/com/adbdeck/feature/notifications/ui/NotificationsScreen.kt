@@ -127,7 +127,7 @@ fun NotificationsScreen(component: NotificationsComponent) {
         state.feedback?.let { feedback ->
             AdbBanner(
                 message = feedback.message,
-                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
+                type = if (feedback.isError) AdbBannerType.ERROR else AdbBannerType.SUCCESS,
                 onDismiss = component::onDismissFeedback,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import adbdeck.feature.packages.generated.resources.Res
+import adbdeck.feature.packages.generated.resources.packages_feedback_app_launched
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.packages.PackageDetails
 import com.adbdeck.core.adb.api.packages.PackageType
@@ -19,6 +21,7 @@ import com.adbdeck.feature.packages.PendingPackageAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.jetbrains.compose.resources.stringResource
 
 // ── Тестовые данные ───────────────────────────────────────────────────────────
 
@@ -141,11 +144,15 @@ private val stateWithDialog = PackagesState(
 )
 
 /** Список с баннером обратной связи. */
-private val stateWithFeedback = PackagesState(
-    listState = PackagesListState.Success(previewPackages),
-    filteredPackages = previewPackages,
-    actionFeedback = ActionFeedback("Приложение запущено", isError = false),
-)
+@Composable
+private fun stateWithFeedback(): PackagesState {
+    val feedbackMessage = stringResource(Res.string.packages_feedback_app_launched)
+    return PackagesState(
+        listState = PackagesListState.Success(previewPackages),
+        filteredPackages = previewPackages,
+        actionFeedback = ActionFeedback(feedbackMessage, isError = false),
+    )
+}
 
 // ── Обёртка превью ─────────────────────────────────────────────────────────────
 
@@ -216,5 +223,5 @@ private fun PackagesDialogLightPreview() {
 @Preview
 @Composable
 private fun PackagesFeedbackDarkPreview() {
-    PackagesPreviewWrapper(isDarkTheme = true, state = stateWithFeedback)
+    PackagesPreviewWrapper(isDarkTheme = true, state = stateWithFeedback())
 }

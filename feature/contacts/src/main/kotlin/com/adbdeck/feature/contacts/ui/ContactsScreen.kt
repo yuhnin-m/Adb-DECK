@@ -62,7 +62,6 @@ import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
-import com.adbdeck.feature.contacts.ContactDetailState
 import com.adbdeck.feature.contacts.ContactsComponent
 import com.adbdeck.feature.contacts.ContactsListState
 import com.adbdeck.feature.contacts.ContactsOperationState
@@ -172,7 +171,7 @@ fun ContactsScreen(component: ContactsComponent) {
         state.actionFeedback?.let { feedback ->
             AdbBanner(
                 message = feedback.message,
-                type = if (feedback.isError) AdbBannerType.VARNING else AdbBannerType.SUCCESS,
+                type = if (feedback.isError) AdbBannerType.ERROR else AdbBannerType.SUCCESS,
                 onDismiss = { component.onDismissFeedback() },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)

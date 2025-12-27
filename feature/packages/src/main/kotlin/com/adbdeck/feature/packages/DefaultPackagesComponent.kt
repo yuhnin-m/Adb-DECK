@@ -1,5 +1,21 @@
 package com.adbdeck.feature.packages
 
+import adbdeck.feature.packages.generated.resources.Res
+import adbdeck.feature.packages.generated.resources.packages_error_export_path_not_selected
+import adbdeck.feature.packages.generated.resources.packages_error_operation_failed_default
+import adbdeck.feature.packages.generated.resources.packages_feedback_app_info_opened
+import adbdeck.feature.packages.generated.resources.packages_feedback_app_launched
+import adbdeck.feature.packages.generated.resources.packages_feedback_app_stopped
+import adbdeck.feature.packages.generated.resources.packages_feedback_data_cleared
+import adbdeck.feature.packages.generated.resources.packages_feedback_device_unavailable
+import adbdeck.feature.packages.generated.resources.packages_feedback_open_package_device_unavailable
+import adbdeck.feature.packages.generated.resources.packages_feedback_operation_failed
+import adbdeck.feature.packages.generated.resources.packages_feedback_package_copied
+import adbdeck.feature.packages.generated.resources.packages_feedback_package_deleted
+import adbdeck.feature.packages.generated.resources.packages_feedback_package_exported
+import adbdeck.feature.packages.generated.resources.packages_feedback_package_not_found
+import adbdeck.feature.packages.generated.resources.packages_feedback_permission_granted
+import adbdeck.feature.packages.generated.resources.packages_feedback_permission_revoked
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
@@ -7,7 +23,6 @@ import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
-import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +30,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 
 /**
  * Реализация [PackagesComponent].
@@ -162,7 +179,7 @@ class DefaultPackagesComponent(
                     _state.update {
                         it.copy(
                             listState = PackagesListState.Error(
-                                error.message ?: "Неизвестная ошибка",
+                                error.message ?: "",
                             ),
                             filteredPackages = emptyList(),
                         )
@@ -177,7 +194,10 @@ class DefaultPackagesComponent(
 
         val device = deviceManager.selectedDeviceFlow.value
         if (device == null || device.state != DeviceState.DEVICE) {
-            showFeedback(ActionFeedback("Откройте пакет: устройство недоступно", isError = true))
+            showFeedbackResource(
+                messageRes = Res.string.packages_feedback_open_package_device_unavailable,
+                isError = true,
+            )
             return
         }
 
@@ -210,7 +230,11 @@ class DefaultPackagesComponent(
         if (match != null) {
             onSelectPackage(match)
         } else {
-            showFeedback(ActionFeedback("Пакет '$target' не найден на устройстве", isError = true))
+            showFeedbackResource(
+                messageRes = Res.string.packages_feedback_package_not_found,
+                isError = true,
+                target,
+            )
         }
     }
 
@@ -319,7 +343,11 @@ class DefaultPackagesComponent(
                     if (!isRequestStillValid(requestDeviceId)) return@onFailure
                     if (_state.value.selectedPackage?.packageName != requestPackageName) return@onFailure
                     _state.update {
-                        it.copy(detailState = PackageDetailState.Error(error.message ?: "Ошибка загрузки"))
+                        it.copy(
+                            detailState = PackageDetailState.Error(
+                                error.message ?: "",
+                            )
+                        )
                     }
                 }
         }
@@ -332,17 +360,23 @@ class DefaultPackagesComponent(
 
     // ── Быстрые действия ──────────────────────────────────────────────────────
 
-    override fun onLaunchApp(pkg: AppPackage) = runAction("Приложение запущено") {
+    override fun onLaunchApp(pkg: AppPackage) = runAction(
+        successMessage = { getString(Res.string.packages_feedback_app_launched) }
+    ) {
         val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
         packageClient.launchApp(device, pkg.packageName, adbPath)
     }
 
-    override fun onForceStop(pkg: AppPackage) = runAction("Приложение остановлено") {
+    override fun onForceStop(pkg: AppPackage) = runAction(
+        successMessage = { getString(Res.string.packages_feedback_app_stopped) }
+    ) {
         val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
         packageClient.forceStop(device, pkg.packageName, adbPath)
     }
 
-    override fun onOpenAppInfo(pkg: AppPackage) = runAction("Открыта информация о приложении") {
+    override fun onOpenAppInfo(pkg: AppPackage) = runAction(
+        successMessage = { getString(Res.string.packages_feedback_app_info_opened) }
+    ) {
         val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
         packageClient.openAppInfo(device, pkg.packageName, adbPath)
     }
@@ -355,20 +389,37 @@ class DefaultPackagesComponent(
 
     override fun onExportApk(pkg: AppPackage, localPath: String) {
         val destination = localPath.trim()
-        val fileName = File(destination).name.ifBlank { destination }
-
-        runAction("APK сохранен: $fileName") {
+        runAction(
+            successMessage = { getString(Res.string.packages_feedback_package_exported) },
+        ) {
             if (destination.isBlank()) {
-                error("Не выбран путь для сохранения APK")
+                error(getString(Res.string.packages_error_export_path_not_selected))
             }
 
             val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
-            packageClient.exportBaseApk(
+            val apkPaths = packageClient.getPackageApkPaths(
                 deviceId = device,
                 packageName = pkg.packageName,
-                localPath = destination,
                 adbPath = adbPath,
-            )
+            ).getOrElse { throw it }
+
+            if (apkPaths.size > 1) {
+                val targetPath = ensureExtension(destination, "apks")
+                packageClient.exportApkSet(
+                    deviceId = device,
+                    packageName = pkg.packageName,
+                    localArchivePath = targetPath,
+                    adbPath = adbPath,
+                )
+            } else {
+                val targetPath = ensureExtension(destination, "apk")
+                packageClient.exportBaseApk(
+                    deviceId = device,
+                    packageName = pkg.packageName,
+                    localPath = targetPath,
+                    adbPath = adbPath,
+                )
+            }
         }
     }
 
@@ -376,7 +427,11 @@ class DefaultPackagesComponent(
     override fun onCopyPackageName(pkg: AppPackage) {
         // Фактическое копирование выполняется в composable через java.awt.Toolkit.
         // Компонент только инициирует feedback.
-        showFeedback(ActionFeedback(message = "Скопировано: ${pkg.packageName}", isError = false))
+        showFeedbackResource(
+            messageRes = Res.string.packages_feedback_package_copied,
+            isError = false,
+            pkg.packageName,
+        )
     }
 
     // ── Деструктивные действия ────────────────────────────────────────────────
@@ -399,13 +454,13 @@ class DefaultPackagesComponent(
 
         when (action) {
             is PendingPackageAction.ClearData ->
-                runAction("Данные очищены") {
+                runAction(successMessage = { getString(Res.string.packages_feedback_data_cleared) }) {
                     val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
                     packageClient.clearData(device, action.pkg.packageName, adbPath)
                 }
 
             is PendingPackageAction.Uninstall ->
-                runAction("Пакет удалён") {
+                runAction(successMessage = { getString(Res.string.packages_feedback_package_deleted) }) {
                     val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
                     val result = packageClient.uninstall(
                         device, action.pkg.packageName, action.keepData, adbPath,
@@ -432,7 +487,11 @@ class DefaultPackagesComponent(
     // ── Разрешения ────────────────────────────────────────────────────────────
 
     override fun onGrantPermission(pkg: AppPackage, permission: String) {
-        runAction("Разрешение выдано: $permission") {
+        runAction(
+            successMessage = {
+                getString(Res.string.packages_feedback_permission_granted, permission)
+            }
+        ) {
             val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
             val result = packageClient.grantPermission(device, pkg.packageName, permission, adbPath)
             if (result.isSuccess && isRequestStillValid(device)) {
@@ -443,7 +502,11 @@ class DefaultPackagesComponent(
     }
 
     override fun onRevokePermission(pkg: AppPackage, permission: String) {
-        runAction("Разрешение отозвано: $permission") {
+        runAction(
+            successMessage = {
+                getString(Res.string.packages_feedback_permission_revoked, permission)
+            }
+        ) {
             val (device, adbPath) = requireDeviceAndPath() ?: return@runAction null
             val result = packageClient.revokePermission(device, pkg.packageName, permission, adbPath)
             if (result.isSuccess && isRequestStillValid(device)) {
@@ -468,11 +531,11 @@ class DefaultPackagesComponent(
      * [block] должен вернуть [Result]<Unit> или `null` (если операция невозможна).
      * При успехе показывает [successMessage], при ошибке — текст исключения.
      *
-     * @param successMessage Сообщение об успехе для [ActionFeedback].
+     * @param successMessage Suspend-поставщик локализованного сообщения об успехе.
      * @param block          Suspend-блок, выполняющий действие; возвращает `null` для отмены.
      */
     private fun runAction(
-        successMessage: String,
+        successMessage: suspend () -> String,
         block: suspend () -> Result<Unit>?,
     ) {
         var shouldStart = false
@@ -490,9 +553,15 @@ class DefaultPackagesComponent(
             try {
                 val result = block() ?: return@launch
                 result
-                    .onSuccess { showFeedback(ActionFeedback(successMessage, isError = false)) }
+                    .onSuccess {
+                        showFeedback(ActionFeedback(successMessage(), isError = false))
+                    }
                     .onFailure { e ->
-                        showFeedback(ActionFeedback(e.message ?: "Операция завершилась с ошибкой", isError = true))
+                        val details = e.message
+                            ?.takeIf { it.isNotBlank() }
+                            ?: getString(Res.string.packages_error_operation_failed_default)
+                        val message = getString(Res.string.packages_feedback_operation_failed, details)
+                        showFeedback(ActionFeedback(message = message, isError = true))
                     }
             } finally {
                 _state.update { it.copy(isActionRunning = false) }
@@ -504,7 +573,10 @@ class DefaultPackagesComponent(
     private fun requireDeviceAndPath(): Pair<String, String>? {
         val device = deviceManager.selectedDeviceFlow.value
         if (device == null || device.state != DeviceState.DEVICE) {
-            showFeedback(ActionFeedback("Устройство не выбрано или недоступно", isError = true))
+            showFeedbackResource(
+                messageRes = Res.string.packages_feedback_device_unavailable,
+                isError = true,
+            )
             return null
         }
         val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
@@ -519,6 +591,32 @@ class DefaultPackagesComponent(
         feedbackJob = scope.launch {
             delay(3_000)
             _state.update { it.copy(actionFeedback = null) }
+        }
+    }
+
+    /**
+     * Локализованный helper для показа feedback по string-resource.
+     */
+    private fun showFeedbackResource(
+        messageRes: StringResource,
+        isError: Boolean,
+        vararg args: Any,
+    ) {
+        scope.launch {
+            val message = getString(messageRes, *args)
+            showFeedback(ActionFeedback(message = message, isError = isError))
+        }
+    }
+
+    /** Добавляет расширение [extension], если путь его не содержит. */
+    private fun ensureExtension(path: String, extension: String): String {
+        val normalized = path.trim()
+        val normalizedExtension = extension.trim().removePrefix(".")
+        if (normalized.isBlank() || normalizedExtension.isBlank()) return normalized
+        return if (normalized.endsWith(".$normalizedExtension", ignoreCase = true)) {
+            normalized
+        } else {
+            "$normalized.$normalizedExtension"
         }
     }
 

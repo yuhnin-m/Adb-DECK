@@ -14,7 +14,7 @@ package com.adbdeck.core.adb.api.packages
  * - `adb -s <id> shell pm uninstall <pkg>` — удаление
  * - `adb -s <id> shell am start -a android.settings.APPLICATION_DETAILS_SETTINGS` — системная инфо
  * - `adb -s <id> shell pm grant/revoke <pkg> <perm>` — управление разрешениями
- * - `adb -s <id> shell pm path <pkg>` + `adb -s <id> pull ...` — выгрузка APK
+ * - `adb -s <id> shell pm path <pkg>` + `adb -s <id> pull ...` — выгрузка APK/набора split APK
  */
 interface PackageClient {
 
@@ -128,6 +128,22 @@ interface PackageClient {
     ): Result<Unit>
 
     /**
+     * Получить все пути APK выбранного пакета на устройстве.
+     *
+     * Основано на `pm path <packageName>`. Для обычного пакета
+     * обычно возвращается один путь (`base.apk`), для split-пакета — несколько.
+     *
+     * @param deviceId    Серийный номер / адрес устройства.
+     * @param packageName Имя пакета.
+     * @param adbPath     Путь к `adb`.
+     */
+    suspend fun getPackageApkPaths(
+        deviceId: String,
+        packageName: String,
+        adbPath: String = "adb",
+    ): Result<List<String>>
+
+    /**
      * Выгрузить основной APK-файл пакета на хост.
      *
      * Реализация должна определить путь к base APK на устройстве и выполнить `adb pull`.
@@ -142,6 +158,24 @@ interface PackageClient {
         deviceId: String,
         packageName: String,
         localPath: String,
+        adbPath: String = "adb",
+    ): Result<Unit>
+
+    /**
+     * Выгрузить полный набор APK (base + split) в один архив `.apks`.
+     *
+     * Реализация должна получить все пути из `pm path <packageName>`,
+     * скачать каждый APK на хост и упаковать в архив.
+     *
+     * @param deviceId         Серийный номер / адрес устройства.
+     * @param packageName      Имя пакета.
+     * @param localArchivePath Абсолютный путь к `.apks` архиву на хосте.
+     * @param adbPath          Путь к `adb`.
+     */
+    suspend fun exportApkSet(
+        deviceId: String,
+        packageName: String,
+        localArchivePath: String,
         adbPath: String = "adb",
     ): Result<Unit>
 

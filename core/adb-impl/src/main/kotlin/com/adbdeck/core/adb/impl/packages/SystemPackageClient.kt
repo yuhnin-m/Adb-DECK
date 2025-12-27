@@ -6,6 +6,13 @@ import com.adbdeck.core.adb.api.packages.PackageDetails
 import com.adbdeck.core.adb.api.packages.PackageType
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
+import java.io.BufferedOutputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlin.io.path.createTempDirectory
 
 /**
  * Реализация [com.adbdeck.core.adb.api.packages.PackageClient] поверх системного `adb`.
@@ -376,6 +383,18 @@ class SystemPackageClient(
         }
     }
 
+    override suspend fun getPackageApkPaths(
+        deviceId: String,
+        packageName: String,
+        adbPath: String,
+    ): Result<List<String>> = runCatchingPreserveCancellation {
+        resolvePackageApkPaths(
+            deviceId = deviceId,
+            packageName = packageName,
+            adbPath = adbPath,
+        )
+    }
+
     /**
      * Выгружает base APK выбранного пакета на хост.
      *
@@ -389,6 +408,73 @@ class SystemPackageClient(
         localPath: String,
         adbPath: String,
     ): Result<Unit> = runCatchingPreserveCancellation {
+        val remoteApkPath = resolvePackageApkPaths(
+            deviceId = deviceId,
+            packageName = packageName,
+            adbPath = adbPath,
+        ).firstOrNull() ?: error("Не найден base APK для '$packageName'")
+
+        pullRemoteFile(
+            deviceId = deviceId,
+            remotePath = remoteApkPath,
+            localPath = localPath,
+            adbPath = adbPath,
+        )
+    }
+
+    /**
+     * Выгружает полный набор APK (base + split) и упаковывает его в `.apks` архив.
+     */
+    override suspend fun exportApkSet(
+        deviceId: String,
+        packageName: String,
+        localArchivePath: String,
+        adbPath: String,
+    ): Result<Unit> = runCatchingPreserveCancellation {
+        val remoteApkPaths = resolvePackageApkPaths(
+            deviceId = deviceId,
+            packageName = packageName,
+            adbPath = adbPath,
+        )
+
+        if (remoteApkPaths.isEmpty()) {
+            error("Не найдено APK-файлов для '$packageName'")
+        }
+
+        val archiveFile = File(localArchivePath)
+        archiveFile.parentFile?.mkdirs()
+
+        val tempDir = createTempDirectory("adbdeck-apkset-").toFile()
+        try {
+            val usedNames = mutableSetOf<String>()
+            val downloadedFiles = remoteApkPaths.mapIndexed { index, remotePath ->
+                val rawName = remotePath.substringAfterLast('/').ifBlank { "part_${index + 1}.apk" }
+                val uniqueName = uniqueFileName(rawName, usedNames)
+                val localFile = File(tempDir, uniqueName)
+
+                pullRemoteFile(
+                    deviceId = deviceId,
+                    remotePath = remotePath,
+                    localPath = localFile.absolutePath,
+                    adbPath = adbPath,
+                )
+                localFile
+            }
+
+            zipFiles(files = downloadedFiles, archiveFile = archiveFile)
+        } finally {
+            tempDir.deleteRecursively()
+        }
+    }
+
+    /**
+     * Возвращает все APK-пути выбранного пакета из `pm path`.
+     */
+    private suspend fun resolvePackageApkPaths(
+        deviceId: String,
+        packageName: String,
+        adbPath: String,
+    ): List<String> {
         val pathResult = processRunner.run(
             adbPath,
             "-s",
@@ -402,28 +488,74 @@ class SystemPackageClient(
             error(pathResult.stderr.ifBlank { "Не удалось получить путь APK для '$packageName'" })
         }
 
-        val remoteApkPath = pathResult.stdout
+        return pathResult.stdout
             .lineSequence()
             .map(String::trim)
-            .firstOrNull { it.startsWith("package:") }
-            ?.removePrefix("package:")
-            ?.trim()
-            .orEmpty()
+            .filter { it.startsWith("package:") }
+            .map { it.removePrefix("package:").trim() }
+            .filter { it.isNotBlank() }
+            .toList()
+    }
 
-        if (remoteApkPath.isBlank()) {
-            error("Не найден base APK для '$packageName'")
-        }
-
+    /**
+     * Копирует один APK-файл с устройства на хост через `adb pull`.
+     */
+    private suspend fun pullRemoteFile(
+        deviceId: String,
+        remotePath: String,
+        localPath: String,
+        adbPath: String,
+    ) {
         val pullResult = processRunner.run(
             adbPath,
             "-s",
             deviceId,
             "pull",
-            remoteApkPath,
+            remotePath,
             localPath,
         )
         if (!pullResult.isSuccess) {
             error(pullResult.stderr.ifBlank { pullResult.stdout }.ifBlank { "Не удалось выгрузить APK" })
+        }
+    }
+
+    /**
+     * Подбирает уникальное имя файла внутри временной директории.
+     */
+    private fun uniqueFileName(rawName: String, usedNames: MutableSet<String>): String {
+        val normalized = rawName.ifBlank { "part.apk" }
+        if (usedNames.add(normalized)) return normalized
+
+        val extension = normalized.substringAfterLast('.', missingDelimiterValue = "")
+        val baseName = normalized.substringBeforeLast('.', missingDelimiterValue = normalized)
+        var index = 2
+        while (true) {
+            val candidate = if (extension.isBlank()) {
+                "${baseName}_$index"
+            } else {
+                "${baseName}_$index.$extension"
+            }
+            if (usedNames.add(candidate)) return candidate
+            index++
+        }
+    }
+
+    /**
+     * Упаковывает выгруженные APK-файлы в zip-архив `.apks`.
+     */
+    private fun zipFiles(files: List<File>, archiveFile: File) {
+        if (archiveFile.exists() && !archiveFile.delete()) {
+            error("Не удалось перезаписать архив: ${archiveFile.absolutePath}")
+        }
+
+        ZipOutputStream(BufferedOutputStream(FileOutputStream(archiveFile))).use { zip ->
+            files.forEach { file ->
+                FileInputStream(file).use { input ->
+                    zip.putNextEntry(ZipEntry(file.name))
+                    input.copyTo(zip)
+                    zip.closeEntry()
+                }
+            }
         }
     }
 
