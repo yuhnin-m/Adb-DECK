@@ -219,10 +219,14 @@ class DefaultPackagesComponent(
             val nextState = current.copy(
                 searchQuery = target,
                 typeFilter = PackageTypeFilter.ALL,
+                showDisabledOnly = false,
+                showDebuggableOnly = false,
             )
             current.copy(
                 searchQuery = target,
                 typeFilter = PackageTypeFilter.ALL,
+                showDisabledOnly = false,
+                showDebuggableOnly = false,
                 filteredPackages = applyFilters(packages, nextState),
             )
         }
@@ -260,6 +264,26 @@ class DefaultPackagesComponent(
         }
     }
 
+    override fun onDisabledFilterChanged(enabled: Boolean) {
+        _state.update { current ->
+            val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
+            current.copy(
+                showDisabledOnly = enabled,
+                filteredPackages = applyFilters(packages, current.copy(showDisabledOnly = enabled)),
+            )
+        }
+    }
+
+    override fun onDebuggableFilterChanged(enabled: Boolean) {
+        _state.update { current ->
+            val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
+            current.copy(
+                showDebuggableOnly = enabled,
+                filteredPackages = applyFilters(packages, current.copy(showDebuggableOnly = enabled)),
+            )
+        }
+    }
+
     override fun onSortOrderChanged(order: PackageSortOrder) {
         _state.update { current ->
             val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
@@ -275,7 +299,8 @@ class DefaultPackagesComponent(
      *
      * Фильтрация:
      * 1. По типу ([PackageTypeFilter.USER] / [PackageTypeFilter.SYSTEM])
-     * 2. По поисковому запросу (substring, case-insensitive в [AppPackage.packageName] и [AppPackage.apkPath])
+     * 2. По состоянию disabled/debuggable
+     * 3. По поисковому запросу (substring, case-insensitive в [AppPackage.packageName] и [AppPackage.apkPath])
      *
      * Сортировка: по [AppPackage.packageName] (BY_NAME) или по метке (BY_LABEL — в данном случае тоже packageName).
      */
@@ -287,6 +312,14 @@ class DefaultPackagesComponent(
             PackageTypeFilter.ALL -> result
             PackageTypeFilter.USER -> result.filter { it.type == com.adbdeck.core.adb.api.packages.PackageType.USER }
             PackageTypeFilter.SYSTEM -> result.filter { it.type == com.adbdeck.core.adb.api.packages.PackageType.SYSTEM }
+        }
+
+        // Дополнительные фильтры
+        if (state.showDisabledOnly) {
+            result = result.filter { !it.isEnabled }
+        }
+        if (state.showDebuggableOnly) {
+            result = result.filter { it.isDebuggable }
         }
 
         // Текстовый поиск

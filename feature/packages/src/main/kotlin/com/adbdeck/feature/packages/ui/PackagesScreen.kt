@@ -17,6 +17,8 @@ import adbdeck.feature.packages.generated.resources.packages_empty_filtered
 import adbdeck.feature.packages.generated.resources.packages_empty_no_device
 import adbdeck.feature.packages.generated.resources.packages_error_unknown
 import adbdeck.feature.packages.generated.resources.packages_filter_all
+import adbdeck.feature.packages.generated.resources.packages_filter_debuggable
+import adbdeck.feature.packages.generated.resources.packages_filter_disabled
 import adbdeck.feature.packages.generated.resources.packages_filter_system
 import adbdeck.feature.packages.generated.resources.packages_filter_user
 import adbdeck.feature.packages.generated.resources.packages_loading_list
@@ -95,6 +97,7 @@ import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.buttons.AdbPlainButton
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
+import com.adbdeck.core.ui.segmentedbuttons.AdbMultiSegmentedButtons
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
 import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
 import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
@@ -109,25 +112,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * Корневой composable экрана пакетов.
- *
- * Компоновка (desktop master-detail):
- * ```
- * Column {
- *   PackagesToolbar          (фильтры, поиск, обновление)
- *   HorizontalDivider
- *   Row {
- *     PackagesContent        (список или пустое/загрузка/ошибка — занимает 55% или 100%)
- *     VerticalDivider        (только при выбранном пакете)
- *     PackageDetailPanel     (только при выбранном пакете — 45%)
- *   }
- *   HorizontalDivider
- *   PackagesStatusBar
- * }
- * + ConfirmationDialog (при pendingAction)
- * + AdbBanner (при actionFeedback)
- * ```
- *
- * @param component Компонент пакетов.
+ * @param component Компонент пакетов
  */
 @Composable
 fun PackagesScreen(component: PackagesComponent) {
@@ -185,6 +170,12 @@ fun PackagesScreen(component: PackagesComponent) {
 
 // ── Панель инструментов ───────────────────────────────────────────────────────
 
+/** Дополнительные быстрые фильтры списка пакетов. */
+private enum class AdditionalPackagesFilter {
+    DISABLED,
+    DEBUGGABLE,
+}
+
 /**
  * Панель с кнопкой обновления, фильтрами по типу и полем поиска.
  */
@@ -194,6 +185,10 @@ private fun PackagesToolbar(
     component: PackagesComponent,
 ) {
     val controlCornerRadius = AdbCornerRadius.MEDIUM
+    val selectedAdditionalFilters = buildSet {
+        if (state.showDisabledOnly) add(AdditionalPackagesFilter.DISABLED)
+        if (state.showDebuggableOnly) add(AdditionalPackagesFilter.DEBUGGABLE)
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -222,27 +217,57 @@ private fun PackagesToolbar(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.Center,
             ) {
-                // ── Фильтр по типу (центр между refresh и search) ──
-                AdbSingleSegmentedButtons(
-                    options = listOf(
-                        AdbSegmentedOption(
-                            value = PackageTypeFilter.ALL,
-                            label = stringResource(Res.string.packages_filter_all),
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+                ) {
+                    // ── Основной фильтр по типу ───────────────────
+                    AdbSingleSegmentedButtons(
+                        options = listOf(
+                            AdbSegmentedOption(
+                                value = PackageTypeFilter.ALL,
+                                label = stringResource(Res.string.packages_filter_all),
+                            ),
+                            AdbSegmentedOption(
+                                value = PackageTypeFilter.USER,
+                                label = stringResource(Res.string.packages_filter_user),
+                            ),
+                            AdbSegmentedOption(
+                                value = PackageTypeFilter.SYSTEM,
+                                label = stringResource(Res.string.packages_filter_system),
+                            ),
                         ),
-                        AdbSegmentedOption(
-                            value = PackageTypeFilter.USER,
-                            label = stringResource(Res.string.packages_filter_user),
+                        selectedValue = state.typeFilter,
+                        onValueSelected = component::onTypeFilterChanged,
+                        size = AdbSegmentedButtonSize.MEDIUM,
+                        cornerRadius = controlCornerRadius,
+                    )
+
+                    // ── Дополнительные быстрые фильтры ─────────────
+                    AdbMultiSegmentedButtons(
+                        options = listOf(
+                            AdbSegmentedOption(
+                                value = AdditionalPackagesFilter.DISABLED,
+                                label = stringResource(Res.string.packages_filter_disabled),
+                            ),
+                            AdbSegmentedOption(
+                                value = AdditionalPackagesFilter.DEBUGGABLE,
+                                label = stringResource(Res.string.packages_filter_debuggable),
+                            ),
                         ),
-                        AdbSegmentedOption(
-                            value = PackageTypeFilter.SYSTEM,
-                            label = stringResource(Res.string.packages_filter_system),
-                        ),
-                    ),
-                    selectedValue = state.typeFilter,
-                    onValueSelected = component::onTypeFilterChanged,
-                    size = AdbSegmentedButtonSize.MEDIUM,
-                    cornerRadius = controlCornerRadius,
-                )
+                        selectedValues = selectedAdditionalFilters,
+                        onValueToggle = { filter, checked ->
+                            when (filter) {
+                                AdditionalPackagesFilter.DISABLED ->
+                                    component.onDisabledFilterChanged(checked)
+                                AdditionalPackagesFilter.DEBUGGABLE ->
+                                    component.onDebuggableFilterChanged(checked)
+                            }
+                        },
+                        size = AdbSegmentedButtonSize.MEDIUM,
+                        cornerRadius = controlCornerRadius,
+                    )
+                }
             }
 
             // ── Поле поиска (справа) ──────────────────────────────
@@ -290,7 +315,12 @@ private fun PackagesContent(
         is PackagesListState.Success -> {
             if (state.filteredPackages.isEmpty()) {
                 EmptyView(
-                    message = if (state.searchQuery.isNotBlank() || state.typeFilter != PackageTypeFilter.ALL)
+                    message = if (
+                        state.searchQuery.isNotBlank() ||
+                        state.typeFilter != PackageTypeFilter.ALL ||
+                        state.showDisabledOnly ||
+                        state.showDebuggableOnly
+                    )
                         stringResource(Res.string.packages_empty_filtered)
                     else
                         stringResource(Res.string.packages_empty_all),
@@ -447,6 +477,12 @@ private fun PackageRow(
             ) {
                 PackageTypeBadge(type = pkg.type)
                 PackageEnabledBadge(isEnabled = pkg.isEnabled)
+                if (pkg.isDebuggable) {
+                    MetaBadge(
+                        label = stringResource(Res.string.packages_filter_debuggable),
+                        color = Color(0xFF1976D2),
+                    )
+                }
                 if (isSelected) {
                     MetaBadge(
                         label = stringResource(Res.string.packages_meta_active),
@@ -637,6 +673,24 @@ private fun PackagesStatusBar(state: PackagesState) {
             StatusPill(
                 text = stringResource(Res.string.packages_status_filter, filterLabel(state.typeFilter)),
                 color = MaterialTheme.colorScheme.secondary,
+            )
+        }
+        if (state.showDisabledOnly) {
+            StatusPill(
+                text = stringResource(
+                    Res.string.packages_status_filter,
+                    stringResource(Res.string.packages_filter_disabled),
+                ),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        if (state.showDebuggableOnly) {
+            StatusPill(
+                text = stringResource(
+                    Res.string.packages_status_filter,
+                    stringResource(Res.string.packages_filter_debuggable),
+                ),
+                color = Color(0xFF1976D2),
             )
         }
 

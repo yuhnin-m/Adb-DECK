@@ -4,6 +4,8 @@
     <string name="packages_filter_all">All</string>
     <string name="packages_filter_user">User</string>
     <string name="packages_filter_system">System</string>
+    <string name="packages_filter_disabled">Disabled</string>
+    <string name="packages_filter_debuggable">Debuggable</string>
     <string name="packages_search_placeholder">Search by package or path...</string>
 
     <string name="packages_empty_no_device">No device selected.\nSelect a device in the top bar.</string>

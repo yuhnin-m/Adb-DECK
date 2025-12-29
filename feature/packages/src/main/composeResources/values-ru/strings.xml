@@ -4,6 +4,8 @@
     <string name="packages_filter_all">Все</string>
     <string name="packages_filter_user">User</string>
     <string name="packages_filter_system">System</string>
+    <string name="packages_filter_disabled">Disabled</string>
+    <string name="packages_filter_debuggable">Debuggable</string>
     <string name="packages_search_placeholder">Поиск по имени или пути...</string>
 
     <string name="packages_empty_no_device">Устройство не выбрано.\nВыберите устройство в верхней панели.</string>

@@ -9,12 +9,14 @@ package com.adbdeck.core.adb.api.packages
  * @param apkPath     Абсолютный путь к основному APK-файлу на устройстве.
  * @param type        Тип пакета: пользовательский или системный.
  * @param isEnabled   Включён ли пакет (`pm disable` может отключить его).
+ * @param isDebuggable Отмечен ли пакет флагом `DEBUGGABLE`.
  */
 data class AppPackage(
     val packageName: String,
     val apkPath: String = "",
     val type: PackageType = PackageType.USER,
     val isEnabled: Boolean = true,
+    val isDebuggable: Boolean = false,
 ) {
     /**
      * Возвращает имя APK-файла без полного пути — удобно для краткого отображения.

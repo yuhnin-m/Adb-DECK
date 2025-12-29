@@ -42,6 +42,20 @@ interface PackagesComponent {
     fun onTypeFilterChanged(filter: PackageTypeFilter)
 
     /**
+     * Включить или выключить фильтр только по отключенным пакетам.
+     *
+     * @param enabled `true` — показывать только disabled-пакеты, `false` — не применять фильтр.
+     */
+    fun onDisabledFilterChanged(enabled: Boolean)
+
+    /**
+     * Включить или выключить фильтр только по debuggable-пакетам.
+     *
+     * @param enabled `true` — показывать только debuggable-пакеты, `false` — не применять фильтр.
+     */
+    fun onDebuggableFilterChanged(enabled: Boolean)
+
+    /**
      * Изменить порядок сортировки.
      *
      * @param order [PackageSortOrder.BY_NAME] (по имени пакета) или [PackageSortOrder.BY_LABEL].

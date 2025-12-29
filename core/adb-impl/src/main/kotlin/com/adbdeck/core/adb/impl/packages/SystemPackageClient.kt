@@ -25,6 +25,9 @@ import kotlin.io.path.createTempDirectory
 class SystemPackageClient(
     private val processRunner: ProcessRunner,
 ) : PackageClient {
+    private companion object {
+        val PACKAGE_HEADER_REGEX = Regex("""Package \[([^\]]+)]""")
+    }
 
     // ── Список пакетов ─────────────────────────────────────────────────────────
 
@@ -64,8 +67,27 @@ class SystemPackageClient(
             emptySet()
         }
 
+        // Best-effort: получаем debuggable-флаги из полного dumpsys по пакетам.
+        val debuggableResult = processRunner.run(
+            adbPath,
+            "-s",
+            deviceId,
+            "shell",
+            "dumpsys",
+            "package",
+            "packages",
+        )
+        val debuggablePackages = if (debuggableResult.isSuccess || debuggableResult.stdout.isNotBlank()) {
+            parseDebuggablePackageNames(debuggableResult.stdout)
+        } else {
+            emptySet()
+        }
+
         basePackages.map { pkg ->
-            pkg.copy(isEnabled = pkg.packageName !in disabledPackages)
+            pkg.copy(
+                isEnabled = pkg.packageName !in disabledPackages,
+                isDebuggable = pkg.packageName in debuggablePackages,
+            )
         }
     }
 
@@ -114,6 +136,38 @@ class SystemPackageClient(
                 }
             }
             .toSet()
+
+    /**
+     * Разбирает вывод `dumpsys package packages` в множество debuggable-пакетов.
+     *
+     * Алгоритм:
+     * 1. Находит начало блока пакета по строке `Package [<name>]`.
+     * 2. Внутри блока ищет строки `pkgFlags=[...]` или `flags=[...]`.
+     * 3. Если присутствует `DEBUGGABLE`, добавляет текущий пакет в результат.
+     */
+    private fun parseDebuggablePackageNames(output: String): Set<String> {
+        val result = mutableSetOf<String>()
+        var currentPackage: String? = null
+
+        output.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+
+            val headerMatch = PACKAGE_HEADER_REGEX.find(trimmed)
+            if (headerMatch != null) {
+                currentPackage = headerMatch.groupValues[1]
+                return@forEach
+            }
+
+            val activePackage = currentPackage ?: return@forEach
+            if ((trimmed.startsWith("pkgFlags=[") || trimmed.startsWith("flags=[")) &&
+                trimmed.contains("DEBUGGABLE")
+            ) {
+                result += activePackage
+            }
+        }
+
+        return result
+    }
 
     /**
      * Определяет тип пакета по пути APK.

@@ -23,6 +23,8 @@ interface PackageClient {
      *
      * Выполняет `pm list packages -f`. Типы пакетов определяются по пути APK:
      * `/system`, `/product`, `/vendor` → [PackageType.SYSTEM], иначе → [PackageType.USER].
+     * Реализация также может дополнительно извлекать признаки `disabled/debuggable`
+     * из вспомогательных команд (`pm list packages -d`, `dumpsys package packages`).
      *
      * @param deviceId  Серийный номер / адрес устройства (передаётся в `adb -s`).
      * @param adbPath   Путь к исполняемому файлу `adb` (по умолчанию `"adb"`).

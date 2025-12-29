@@ -121,6 +121,8 @@ data class ActionFeedback(
  * @param filteredPackages Отфильтрованный и отсортированный список для отображения.
  * @param searchQuery      Текстовый поиск по имени пакета / APK-пути.
  * @param typeFilter       Фильтр по типу пакета (ALL / USER / SYSTEM).
+ * @param showDisabledOnly Показывать только отключенные (`disabled`) пакеты.
+ * @param showDebuggableOnly Показывать только `debuggable` пакеты.
  * @param sortOrder        Порядок сортировки.
  * @param selectedPackage  Выбранный пакет (отображается в панели деталей).
  * @param detailState      Состояние загрузки деталей выбранного пакета.
@@ -133,6 +135,8 @@ data class PackagesState(
     val filteredPackages: List<AppPackage> = emptyList(),
     val searchQuery: String = "",
     val typeFilter: PackageTypeFilter = PackageTypeFilter.ALL,
+    val showDisabledOnly: Boolean = false,
+    val showDebuggableOnly: Boolean = false,
     val sortOrder: PackageSortOrder = PackageSortOrder.BY_NAME,
     val selectedPackage: AppPackage? = null,
     val detailState: PackageDetailState = PackageDetailState.Idle,

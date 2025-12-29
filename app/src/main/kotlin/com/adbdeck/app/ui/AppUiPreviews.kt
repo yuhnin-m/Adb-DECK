@@ -236,6 +236,8 @@ private class PreviewPackagesComponent : PackagesComponent {
     override fun onRefresh() = Unit
     override fun onSearchChanged(query: String) = Unit
     override fun onTypeFilterChanged(filter: PackageTypeFilter) = Unit
+    override fun onDisabledFilterChanged(enabled: Boolean) = Unit
+    override fun onDebuggableFilterChanged(enabled: Boolean) = Unit
     override fun onSortOrderChanged(order: PackageSortOrder) = Unit
     override fun onSelectPackage(pkg: AppPackage) = Unit
     override fun onClearSelection() = Unit
