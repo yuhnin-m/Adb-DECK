@@ -5,6 +5,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 private val AdbDeckShapes = Shapes(
     extraSmall = RoundedCornerShape(AdbCornerRadius.SMALL.value),
@@ -30,10 +31,16 @@ fun AdbDeckTheme(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme,
-        typography = AdbDeckTypography,
-        shapes = AdbDeckShapes,
-        content = content,
-    )
+    val semanticColors = if (isDarkTheme) DarkAdbSemanticColors else LightAdbSemanticColors
+
+    CompositionLocalProvider(
+        LocalAdbSemanticColors provides semanticColors,
+    ) {
+        MaterialTheme(
+            colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme,
+            typography = AdbDeckTypography,
+            shapes = AdbDeckShapes,
+            content = content,
+        )
+    }
 }

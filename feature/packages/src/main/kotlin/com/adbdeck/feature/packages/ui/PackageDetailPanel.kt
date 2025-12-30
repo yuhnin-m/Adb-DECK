@@ -94,6 +94,7 @@ import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.packages.PackageDetails
 import com.adbdeck.core.designsystem.AdbCornerRadius
+import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
@@ -127,7 +128,7 @@ fun PackageDetailPanel(
     val pkg = state.selectedPackage ?: return
 
     Column(
-        modifier = modifier.background(MaterialTheme.colorScheme.surface),
+        modifier = modifier.background(AdbTheme.colorScheme.surface),
     ) {
         DetailPanelHeader(pkg = pkg, onClose = component::onClearSelection)
         HorizontalDivider()
@@ -157,7 +158,7 @@ fun PackageDetailPanel(
                             },
                         ),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        color = AdbTheme.colorScheme.error,
                         modifier = Modifier.padding(Dimensions.paddingDefault),
                     )
                 }
@@ -200,7 +201,7 @@ private fun DetailPanelHeader(
             Text(
                 text = pkg.packageName,
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AdbTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -234,8 +235,8 @@ private fun DetailPanelContent(
     state: PackagesState,
     component: PackagesComponent,
 ) {
-    val sectionColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-    val sectionBorder = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.32f))
+    val sectionColor = AdbTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+    val sectionBorder = BorderStroke(1.dp, AdbTheme.colorScheme.outline.copy(alpha = 0.32f))
 
     Column(
         modifier = Modifier
@@ -391,9 +392,9 @@ private fun DetailActionsSection(
         title = stringResource(Res.string.packages_detail_section_danger),
         subtitle = stringResource(Res.string.packages_detail_section_danger_subtitle),
         titleUppercase = true,
-        titleColor = MaterialTheme.colorScheme.error,
-        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.22f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)),
+        titleColor = AdbTheme.colorScheme.error,
+        containerColor = AdbTheme.colorScheme.errorContainer.copy(alpha = 0.22f),
+        border = BorderStroke(1.dp, AdbTheme.colorScheme.error.copy(alpha = 0.35f)),
         contentSpacing = Dimensions.paddingSmall,
     ) {
         AdbOutlinedButton(
@@ -548,8 +549,8 @@ private fun FlagsSection(details: PackageDetails) {
             } else {
                 stringResource(Res.string.packages_detail_flag_user)
             },
-            color = if (details.isSystem) MaterialTheme.colorScheme.tertiary
-            else MaterialTheme.colorScheme.primary,
+            color = if (details.isSystem) AdbTheme.colorScheme.tertiary
+            else AdbTheme.colorScheme.primary,
         )
         FlagChip(
             label = if (details.isEnabled) {
@@ -557,13 +558,16 @@ private fun FlagsSection(details: PackageDetails) {
             } else {
                 stringResource(Res.string.packages_detail_flag_disabled)
             },
-            color = if (details.isEnabled) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
+            color = if (details.isEnabled) AdbTheme.semanticColors.success else AdbTheme.colorScheme.error,
         )
         if (details.isDebuggable) {
-            FlagChip(label = stringResource(Res.string.packages_detail_flag_debuggable), color = Color(0xFFFF9800))
+            FlagChip(
+                label = stringResource(Res.string.packages_detail_flag_debuggable),
+                color = AdbTheme.semanticColors.warning,
+            )
         }
         if (details.isSuspended) {
-            FlagChip(label = stringResource(Res.string.packages_detail_flag_suspended), color = MaterialTheme.colorScheme.error)
+            FlagChip(label = stringResource(Res.string.packages_detail_flag_suspended), color = AdbTheme.colorScheme.error)
         }
     }
 }
@@ -627,7 +631,7 @@ private fun PermissionsSection(
             Text(
                 text = stringResource(Res.string.packages_detail_permissions_expand_hint),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AdbTheme.colorScheme.onSurfaceVariant,
             )
             return@AdbSectionCard
         }
@@ -635,7 +639,7 @@ private fun PermissionsSection(
         Text(
             text = stringResource(Res.string.packages_detail_permissions_grant_revoke),
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
         )
 
         sortedPermissions.forEachIndexed { index, (perm, granted) ->
@@ -648,7 +652,7 @@ private fun PermissionsSection(
             )
 
             if (index != sortedPermissions.lastIndex) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                HorizontalDivider(color = AdbTheme.colorScheme.outline.copy(alpha = 0.2f))
             }
         }
     }
@@ -675,14 +679,14 @@ private fun PermissionRow(
             Text(
                 text = permission.substringAfterLast('.'),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (granted) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error,
+                color = if (granted) AdbTheme.semanticColors.success else AdbTheme.colorScheme.error,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = permission,
                 style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AdbTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -728,7 +732,7 @@ private fun InfoRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(108.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -740,7 +744,7 @@ private fun InfoRow(
             } else {
                 MaterialTheme.typography.bodySmall
             },
-            color = MaterialTheme.colorScheme.onSurface,
+            color = AdbTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
             maxLines = if (monospace) 3 else 2,
             overflow = TextOverflow.Ellipsis,

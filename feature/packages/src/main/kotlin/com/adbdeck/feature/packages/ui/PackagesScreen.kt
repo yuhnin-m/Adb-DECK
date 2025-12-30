@@ -85,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.packages.PackageType
 import com.adbdeck.core.designsystem.AdbCornerRadius
+import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.AdbBanner
 import com.adbdeck.core.ui.AdbBannerType
@@ -191,7 +192,7 @@ private fun PackagesToolbar(
     }
 
     Surface(
-        color = MaterialTheme.colorScheme.surface,
+        color = AdbTheme.colorScheme.surface,
         tonalElevation = 1.dp,
     ) {
         Row(
@@ -414,19 +415,19 @@ private fun PackageRow(
     onUninstall: () -> Unit,
 ) {
     val containerColor = if (isSelected) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.32f)
+        AdbTheme.colorScheme.primaryContainer.copy(alpha = 0.32f)
     } else {
-        MaterialTheme.colorScheme.surface
+        AdbTheme.colorScheme.surface
     }
     val borderColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+        AdbTheme.colorScheme.primary.copy(alpha = 0.45f)
     } else {
-        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        AdbTheme.colorScheme.outline.copy(alpha = 0.2f)
     }
 
     Surface(
         color = containerColor,
-        border = BorderStroke(1.dp, borderColor),
+        border = BorderStroke(2.dp, borderColor),
         shape = MaterialTheme.shapes.small,
         modifier = Modifier
             .fillMaxWidth()
@@ -448,21 +449,21 @@ private fun PackageRow(
                     imageVector = Icons.Outlined.Android,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = if (isSelected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isSelected) AdbTheme.colorScheme.primary
+                    else AdbTheme.colorScheme.onSurfaceVariant,
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = pkg.displayName,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = AdbTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = pkg.packageName,
                         style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = AdbTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -480,13 +481,13 @@ private fun PackageRow(
                 if (pkg.isDebuggable) {
                     MetaBadge(
                         label = stringResource(Res.string.packages_filter_debuggable),
-                        color = Color(0xFF1976D2),
+                        color = AdbTheme.semanticColors.info,
                     )
                 }
                 if (isSelected) {
                     MetaBadge(
                         label = stringResource(Res.string.packages_meta_active),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = AdbTheme.colorScheme.primary,
                     )
                 }
             }
@@ -570,12 +571,12 @@ private fun PackageEnabledBadge(isEnabled: Boolean) {
     if (isEnabled) {
         MetaBadge(
             label = stringResource(Res.string.packages_meta_enabled),
-            color = Color(0xFF2E7D32),
+            color = AdbTheme.semanticColors.success,
         )
     } else {
         MetaBadge(
             label = stringResource(Res.string.packages_meta_disabled),
-            color = MaterialTheme.colorScheme.error,
+            color = AdbTheme.colorScheme.error,
         )
     }
 }
@@ -590,11 +591,11 @@ private fun PackageTypeBadge(type: PackageType) {
     when (type) {
         PackageType.USER -> MetaBadge(
             label = stringResource(Res.string.packages_filter_user),
-            color = MaterialTheme.colorScheme.primary,
+            color = AdbTheme.colorScheme.primary,
         )
         PackageType.SYSTEM -> MetaBadge(
             label = stringResource(Res.string.packages_filter_system),
-            color = MaterialTheme.colorScheme.tertiary,
+            color = AdbTheme.colorScheme.tertiary,
         )
     }
 }
@@ -639,16 +640,16 @@ private fun PackagesStatusBar(state: PackagesState) {
 
     val (stateLabel, stateColor) = when (state.listState) {
         is PackagesListState.NoDevice ->
-            stringResource(Res.string.packages_status_no_device) to MaterialTheme.colorScheme.onSurfaceVariant
+            stringResource(Res.string.packages_status_no_device) to AdbTheme.colorScheme.onSurfaceVariant
 
         is PackagesListState.Loading ->
-            stringResource(Res.string.packages_status_loading) to Color(0xFFFF9800)
+            stringResource(Res.string.packages_status_loading) to AdbTheme.semanticColors.warning
 
         is PackagesListState.Error ->
-            stringResource(Res.string.packages_status_error) to MaterialTheme.colorScheme.error
+            stringResource(Res.string.packages_status_error) to AdbTheme.colorScheme.error
 
         is PackagesListState.Success ->
-            stringResource(Res.string.packages_status_ready) to Color(0xFF2E7D32)
+            stringResource(Res.string.packages_status_ready) to AdbTheme.semanticColors.success
     }
 
     val countLabel = if (shownCount == totalCount) {
@@ -661,18 +662,18 @@ private fun PackagesStatusBar(state: PackagesState) {
         modifier = Modifier
             .fillMaxWidth()
             .height(34.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f))
+            .background(AdbTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f))
             .padding(horizontal = Dimensions.paddingDefault),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
         StatusPill(text = stateLabel, color = stateColor)
-        StatusPill(text = countLabel, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        StatusPill(text = countLabel, color = AdbTheme.colorScheme.onSurfaceVariant)
 
         if (state.typeFilter != PackageTypeFilter.ALL) {
             StatusPill(
                 text = stringResource(Res.string.packages_status_filter, filterLabel(state.typeFilter)),
-                color = MaterialTheme.colorScheme.secondary,
+                color = AdbTheme.colorScheme.secondary,
             )
         }
         if (state.showDisabledOnly) {
@@ -681,7 +682,7 @@ private fun PackagesStatusBar(state: PackagesState) {
                     Res.string.packages_status_filter,
                     stringResource(Res.string.packages_filter_disabled),
                 ),
-                color = MaterialTheme.colorScheme.error,
+                color = AdbTheme.colorScheme.error,
             )
         }
         if (state.showDebuggableOnly) {
@@ -690,7 +691,7 @@ private fun PackagesStatusBar(state: PackagesState) {
                     Res.string.packages_status_filter,
                     stringResource(Res.string.packages_filter_debuggable),
                 ),
-                color = Color(0xFF1976D2),
+                color = AdbTheme.semanticColors.info,
             )
         }
 
@@ -699,7 +700,7 @@ private fun PackagesStatusBar(state: PackagesState) {
             val preview = if (query.length <= 24) query else "${query.take(24)}…"
             StatusPill(
                 text = stringResource(Res.string.packages_status_search, preview),
-                color = MaterialTheme.colorScheme.primary,
+                color = AdbTheme.colorScheme.primary,
             )
         }
 
@@ -708,7 +709,7 @@ private fun PackagesStatusBar(state: PackagesState) {
         if (state.isActionRunning) {
             StatusPill(
                 text = stringResource(Res.string.packages_status_operation_running),
-                color = MaterialTheme.colorScheme.primary,
+                color = AdbTheme.colorScheme.primary,
             )
         }
     }
