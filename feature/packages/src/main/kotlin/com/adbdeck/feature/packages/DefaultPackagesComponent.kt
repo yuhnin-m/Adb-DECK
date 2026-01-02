@@ -23,6 +23,7 @@ import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 
@@ -69,14 +71,26 @@ class DefaultPackagesComponent(
     /** Job загрузки деталей пакета. Отменяется при смене выбранного пакета. */
     private var detailJob: Job? = null
 
+    /** Job фоновой фильтрации списка пакетов. */
+    private var filterJob: Job? = null
+
+    /** Job debounce-пересчёта фильтрации при наборе поискового запроса. */
+    private var searchDebounceJob: Job? = null
+
     /** Job автоочистки [ActionFeedback]. Перезапускается при каждом новом feedback. */
     private var feedbackJob: Job? = null
+
+    /** Ревизия запроса фильтрации для защиты от гонок быстрых обновлений фильтров. */
+    private var filterRevision: Long = 0L
 
     /** Последний известный selected device, с которым синхронизировано состояние экрана. */
     private var activeDeviceId: String? = null
 
     /** Пакет, который нужно раскрыть при внешней навигации (например из System Monitor). */
     private var pendingRevealPackageName: String? = initialPackageToReveal?.trim()?.ifBlank { null }
+
+    /** Задержка debounce для поиска пакетов (мс). */
+    private val searchDebounceMillis = 160L
 
     init {
         // Подписываемся на изменение активного устройства
@@ -87,6 +101,9 @@ class DefaultPackagesComponent(
                     device == null || device.state != DeviceState.DEVICE -> {
                         loadJob?.cancel()
                         detailJob?.cancel()
+                        filterJob?.cancel()
+                        searchDebounceJob?.cancel()
+                        filterRevision++
                         activeDeviceId = null
                         pendingRevealPackageName = null
                         _state.update {
@@ -162,7 +179,7 @@ class DefaultPackagesComponent(
 
                         current.copy(
                             listState = PackagesListState.Success(packages),
-                            filteredPackages = applyFilters(packages, current),
+                            filteredPackages = emptyList(),
                             selectedPackage = if (selectedStillExists) current.selectedPackage else null,
                             detailState = if (selectedStillExists) {
                                 current.detailState
@@ -172,6 +189,7 @@ class DefaultPackagesComponent(
                             pendingAction = if (pendingActionStillExists) current.pendingAction else null,
                         )
                     }
+                    requestFilteredPackagesRecompute(sourcePackages = packages)
                     resolvePendingReveal(packages)
                 }
                 .onFailure { error ->
@@ -216,20 +234,14 @@ class DefaultPackagesComponent(
         pendingRevealPackageName = null
 
         _state.update { current ->
-            val nextState = current.copy(
-                searchQuery = target,
-                typeFilter = PackageTypeFilter.ALL,
-                showDisabledOnly = false,
-                showDebuggableOnly = false,
-            )
             current.copy(
                 searchQuery = target,
                 typeFilter = PackageTypeFilter.ALL,
                 showDisabledOnly = false,
                 showDebuggableOnly = false,
-                filteredPackages = applyFilters(packages, nextState),
             )
         }
+        requestFilteredPackagesRecompute(sourcePackages = packages)
 
         if (match != null) {
             onSelectPackage(match)
@@ -245,52 +257,88 @@ class DefaultPackagesComponent(
     // ── Фильтры и сортировка ───────────────────────────────────────────────────
 
     override fun onSearchChanged(query: String) {
-        _state.update { current ->
-            val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
-            current.copy(
-                searchQuery = query,
-                filteredPackages = applyFilters(packages, current.copy(searchQuery = query)),
-            )
-        }
+        if (_state.value.listState !is PackagesListState.Success) return
+        _state.update { current -> current.copy(searchQuery = query) }
+        requestFilteredPackagesRecompute(debounced = true)
     }
 
     override fun onTypeFilterChanged(filter: PackageTypeFilter) {
-        _state.update { current ->
-            val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
-            current.copy(
-                typeFilter = filter,
-                filteredPackages = applyFilters(packages, current.copy(typeFilter = filter)),
-            )
-        }
+        if (_state.value.listState !is PackagesListState.Success) return
+        _state.update { current -> current.copy(typeFilter = filter) }
+        requestFilteredPackagesRecompute()
     }
 
     override fun onDisabledFilterChanged(enabled: Boolean) {
-        _state.update { current ->
-            val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
-            current.copy(
-                showDisabledOnly = enabled,
-                filteredPackages = applyFilters(packages, current.copy(showDisabledOnly = enabled)),
-            )
-        }
+        if (_state.value.listState !is PackagesListState.Success) return
+        _state.update { current -> current.copy(showDisabledOnly = enabled) }
+        requestFilteredPackagesRecompute()
     }
 
     override fun onDebuggableFilterChanged(enabled: Boolean) {
-        _state.update { current ->
-            val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
-            current.copy(
-                showDebuggableOnly = enabled,
-                filteredPackages = applyFilters(packages, current.copy(showDebuggableOnly = enabled)),
-            )
-        }
+        if (_state.value.listState !is PackagesListState.Success) return
+        _state.update { current -> current.copy(showDebuggableOnly = enabled) }
+        requestFilteredPackagesRecompute()
     }
 
     override fun onSortOrderChanged(order: PackageSortOrder) {
-        _state.update { current ->
-            val packages = (current.listState as? PackagesListState.Success)?.packages ?: return
-            current.copy(
-                sortOrder = order,
-                filteredPackages = applyFilters(packages, current.copy(sortOrder = order)),
-            )
+        if (_state.value.listState !is PackagesListState.Success) return
+        _state.update { current -> current.copy(sortOrder = order) }
+        requestFilteredPackagesRecompute()
+    }
+
+    /**
+     * Унифицированный запуск пересчёта filtered-списка.
+     *
+     * При [debounced] = `true` вычисление откладывается на [searchDebounceMillis].
+     * Любой новый вызов отменяет предыдущий debounce.
+     */
+    private fun requestFilteredPackagesRecompute(
+        debounced: Boolean = false,
+        sourcePackages: List<AppPackage>? = null,
+    ) {
+        searchDebounceJob?.cancel()
+        if (!debounced) {
+            scheduleFilteredPackagesRecompute(sourcePackages = sourcePackages)
+            return
+        }
+
+        searchDebounceJob = scope.launch {
+            delay(searchDebounceMillis)
+            scheduleFilteredPackagesRecompute(sourcePackages = sourcePackages)
+        }
+    }
+
+    /**
+     * Запускает асинхронный пересчёт отфильтрованного списка на `Dispatchers.Default`.
+     *
+     * Старые вычисления отменяются: в состоянии остаётся только результат
+     * самой свежей ревизии фильтра.
+     *
+     * @param sourcePackages Опциональный список-источник. Если `null`, берётся из [PackagesState.listState].
+     */
+    private fun scheduleFilteredPackagesRecompute(sourcePackages: List<AppPackage>? = null) {
+        val currentState = _state.value
+        val allPackages = sourcePackages ?: (currentState.listState as? PackagesListState.Success)?.packages ?: run {
+            filterJob?.cancel()
+            filterRevision++
+            _state.update { it.copy(filteredPackages = emptyList()) }
+            return
+        }
+
+        val stateSnapshot = currentState
+        val revision = ++filterRevision
+        filterJob?.cancel()
+        filterJob = scope.launch {
+            val filtered = withContext(Dispatchers.Default) {
+                applyFilters(allPackages = allPackages, state = stateSnapshot)
+            }
+
+            _state.update { current ->
+                val latestPackages = (current.listState as? PackagesListState.Success)?.packages ?: return@update current
+                if (revision != filterRevision) return@update current
+                if (latestPackages !== allPackages && latestPackages != allPackages) return@update current
+                current.copy(filteredPackages = filtered)
+            }
         }
     }
 
@@ -500,16 +548,22 @@ class DefaultPackagesComponent(
                     )
                     // После удаления убрать пакет из списка без полной перезагрузки
                     if (result.isSuccess && isRequestStillValid(device)) {
+                        var updatedPackages: List<AppPackage>? = null
                         _state.update { current ->
                             val newPackages = (current.listState as? PackagesListState.Success)
                                 ?.packages?.filter { it.packageName != action.pkg.packageName }
                                 ?: return@update current
+                            updatedPackages = newPackages
                             current.copy(
                                 listState = PackagesListState.Success(newPackages),
-                                filteredPackages = applyFilters(newPackages, current),
+                                filteredPackages = current.filteredPackages
+                                    .filter { it.packageName != action.pkg.packageName },
                                 selectedPackage = if (current.selectedPackage?.packageName == action.pkg.packageName) null else current.selectedPackage,
                                 detailState = if (current.selectedPackage?.packageName == action.pkg.packageName) PackageDetailState.Idle else current.detailState,
                             )
+                        }
+                        updatedPackages?.let { packages ->
+                            requestFilteredPackagesRecompute(sourcePackages = packages)
                         }
                     }
                     result

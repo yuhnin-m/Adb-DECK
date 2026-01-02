@@ -7,8 +7,10 @@ import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.notifications.storage.NotificationsStorage
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,12 +77,14 @@ class DefaultNotificationsComponent(
         scope.launch {
             deviceManager.selectedDeviceFlow.collect { device ->
                 val msg = if (device != null) "Устройство: ${device.deviceId}" else "Активное устройство не выбрано"
+                // withDisplayed() не нужен — данные ещё не загружены,
+                // списки пусты или неизменны, пересчёт бессмысленен
                 _state.update { st ->
                     st.copy(
                         activeDeviceId = device?.deviceId,
                         deviceMessage  = msg,
                         listState      = if (device == null) NotificationsListState.NoDevice else st.listState,
-                    ).withDisplayed()
+                    )
                 }
                 if (device != null) onRefresh()
             }
@@ -93,7 +97,8 @@ class DefaultNotificationsComponent(
         val deviceId = _state.value.activeDeviceId ?: return
 
         refreshJob?.cancel()
-        _state.update { it.copy(isRefreshing = true, listState = NotificationsListState.Loading).withDisplayed() }
+        // withDisplayed() не нужен — пока listState = Loading список всё равно не отображается
+        _state.update { it.copy(isRefreshing = true, listState = NotificationsListState.Loading) }
 
         refreshJob = scope.launch {
             val adbPath = runCatching {
@@ -253,7 +258,7 @@ class DefaultNotificationsComponent(
                     }
                 }
                 val content = json.encodeToString(obj)
-                File(path).writeText(content)
+                withContext(Dispatchers.IO) { File(path).writeText(content) }
                 showFeedback("Экспортировано: $path")
             }.onFailure { e ->
                 showFeedback("Ошибка экспорта: ${e.message}", isError = true)
@@ -268,7 +273,6 @@ class DefaultNotificationsComponent(
     }
 
     override fun onOpenInDeepLinks(uri: String) {
-        copyToClipboard(uri)
         onOpenInDeepLinks.invoke(uri)
     }
 
