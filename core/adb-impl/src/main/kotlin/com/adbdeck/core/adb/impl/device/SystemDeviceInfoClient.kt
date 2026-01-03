@@ -55,6 +55,33 @@ class SystemDeviceInfoClient(
         )
     }
 
+    override suspend fun getSystemProperties(
+        deviceId: String,
+        adbPath: String,
+    ): Result<Map<String, String>> = runCatchingPreserveCancellation {
+        val result = processRunner.run(adbPath, "-s", deviceId, "shell", "getprop")
+        if (!result.isSuccess) {
+            error(result.stderr.ifBlank { "Не удалось выполнить adb shell getprop" })
+        }
+        parseProps(result.stdout)
+    }
+
+    override suspend fun runShellCommand(
+        deviceId: String,
+        command: List<String>,
+        adbPath: String,
+    ): Result<String> = runCatchingPreserveCancellation {
+        require(command.isNotEmpty()) { "Команда shell не может быть пустой" }
+
+        val result = processRunner.run(
+            listOf(adbPath, "-s", deviceId, "shell") + command,
+        )
+        if (!result.isSuccess) {
+            error(result.stderr.ifBlank { "Не удалось выполнить adb shell ${command.joinToString(" ")}" })
+        }
+        result.stdout
+    }
+
     // ── Вспомогательные функции ───────────────────────────────────────────────
 
     /**
@@ -63,15 +90,7 @@ class SystemDeviceInfoClient(
      * Формат строки: `[ro.product.model]: [Pixel 8]`
      */
     private suspend fun fetchProps(deviceId: String, adbPath: String): Map<String, String> {
-        val result = runCatchingPreserveCancellation {
-            processRunner.run(adbPath, "-s", deviceId, "shell", "getprop")
-        }.getOrNull() ?: return emptyMap()
-
-        if (!result.isSuccess) return emptyMap()
-
-        return result.stdout.lines()
-            .mapNotNull { line -> PROP_REGEX.matchEntire(line.trim()) }
-            .associate { match -> match.groupValues[1] to match.groupValues[2] }
+        return getSystemProperties(deviceId, adbPath).getOrDefault(emptyMap())
     }
 
     /**
@@ -142,5 +161,12 @@ class SystemDeviceInfoClient(
     companion object {
         /** Регулярка для разбора строк вывода `adb shell getprop`. */
         private val PROP_REGEX = Regex("""^\[(.+?)\]:\s*\[(.*)?\]$""")
+    }
+
+    /** Разбирает stdout `getprop` в карту `ключ -> значение`. */
+    private fun parseProps(output: String): Map<String, String> {
+        return output.lines()
+            .mapNotNull { line -> PROP_REGEX.matchEntire(line.trim()) }
+            .associate { match -> match.groupValues[1] to match.groupValues[2] }
     }
 }

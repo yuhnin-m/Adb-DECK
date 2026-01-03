@@ -1,0 +1,115 @@
+<resources>
+    <string name="device_info_toolbar_copy_all">Копировать всё</string>
+    <string name="device_info_toolbar_export_json">Экспорт JSON</string>
+    <string name="device_info_toolbar_last_updated">Обновлено: %1$s</string>
+    <string name="device_info_toolbar_never_updated">Ещё не обновлялось</string>
+    <string name="device_info_export_dialog_title">Экспорт Device Info JSON</string>
+    <string name="device_info_export_dialog_filter">JSON-файлы</string>
+
+    <string name="device_info_feedback_device_unavailable">Нет активного доступного устройства.</string>
+    <string name="device_info_feedback_export_success">JSON сохранён: %1$s</string>
+    <string name="device_info_feedback_export_failed">Ошибка экспорта: %1$s</string>
+
+    <string name="device_info_empty_no_device_title">Активное устройство не выбрано</string>
+    <string name="device_info_empty_no_device_subtitle">Выберите доступное устройство в верхней панели.</string>
+
+    <string name="device_info_nav_title">Разделы</string>
+    <string name="device_info_table_header_key">Ключ</string>
+    <string name="device_info_table_header_value">Значение</string>
+    <string name="device_info_section_loading">Загрузка раздела...</string>
+    <string name="device_info_section_error_unknown">Неизвестная ошибка</string>
+    <string name="device_info_section_no_data">Нет данных для highlights.</string>
+    <string name="device_info_section_manual_refresh_required">Нажмите «Обновить», чтобы загрузить раздел.</string>
+
+    <string name="device_info_context_copy_selected">Копировать выделенное</string>
+    <string name="device_info_context_copy_value">Копировать значение</string>
+    <string name="device_info_context_copy_key">Копировать ключ</string>
+    <string name="device_info_context_copy_section">Копировать раздел</string>
+    <string name="device_info_context_copy_all">Копировать всё</string>
+
+    <string name="device_info_section_overview">Обзор</string>
+    <string name="device_info_section_build">Сборка</string>
+    <string name="device_info_section_display">Экран</string>
+    <string name="device_info_section_cpu_ram">CPU / RAM</string>
+    <string name="device_info_section_battery">Батарея</string>
+    <string name="device_info_section_network">Сеть</string>
+    <string name="device_info_section_storage">Хранилище</string>
+    <string name="device_info_section_security">Безопасность</string>
+    <string name="device_info_section_system">Система</string>
+
+    <string name="device_info_row_device_id">Device ID</string>
+    <string name="device_info_row_model">Модель</string>
+    <string name="device_info_row_manufacturer">Производитель</string>
+    <string name="device_info_row_brand">Бренд</string>
+    <string name="device_info_row_android_version">Android</string>
+    <string name="device_info_row_security_patch">Патч безопасности</string>
+    <string name="device_info_row_fingerprint">Build fingerprint</string>
+    <string name="device_info_row_abi_list">Список ABI</string>
+
+    <string name="device_info_row_build_id">Build ID</string>
+    <string name="device_info_row_build_type">Тип сборки</string>
+    <string name="device_info_row_debuggable">Debuggable</string>
+    <string name="device_info_row_build_tags">Теги сборки</string>
+    <string name="device_info_row_timezone">Часовой пояс</string>
+    <string name="device_info_row_locale">Локаль</string>
+
+    <string name="device_info_row_wm_size">wm size</string>
+    <string name="device_info_row_wm_density">wm density</string>
+    <string name="device_info_row_display_base_info">Инфо дисплея</string>
+    <string name="device_info_row_display_state">Состояние дисплея</string>
+
+    <string name="device_info_row_kernel">Ядро</string>
+    <string name="device_info_row_cpu_model">Модель CPU</string>
+    <string name="device_info_row_cpu_cores">Ядра CPU</string>
+    <string name="device_info_row_cpu_features">Фичи CPU</string>
+    <string name="device_info_row_ram_total">RAM всего</string>
+    <string name="device_info_row_ram_used">RAM занято</string>
+    <string name="device_info_row_ram_free">RAM свободно</string>
+    <string name="device_info_row_ram_lost">RAM потеряно</string>
+
+    <string name="device_info_row_battery_level">Уровень батареи</string>
+    <string name="device_info_row_battery_status">Статус батареи</string>
+    <string name="device_info_row_battery_health">Состояние батареи</string>
+    <string name="device_info_row_battery_temp">Температура</string>
+    <string name="device_info_row_battery_voltage">Напряжение</string>
+    <string name="device_info_row_battery_technology">Технология</string>
+    <string name="device_info_row_battery_powered">Питание</string>
+
+    <string name="device_info_row_ip_addresses">IP-адреса</string>
+    <string name="device_info_row_default_route">Маршрут по умолчанию</string>
+    <string name="device_info_row_wifi_state">Состояние Wi-Fi</string>
+    <string name="device_info_row_wifi_ssid">Wi-Fi SSID</string>
+    <string name="device_info_row_wifi_bssid">Wi-Fi BSSID</string>
+    <string name="device_info_row_wifi_rssi">Wi-Fi RSSI</string>
+    <string name="device_info_row_connectivity">Connectivity</string>
+
+    <string name="device_info_row_storage_partitions_count">Захвачено разделов</string>
+    <string name="device_info_row_storage_most_used">Самый заполненный раздел</string>
+    <string name="device_info_row_storage_diskstats">Diskstats</string>
+
+    <string name="device_info_row_selinux">SELinux</string>
+    <string name="device_info_row_verified_boot">Verified boot</string>
+
+    <string name="device_info_row_top_resumed_activity">Top resumed activity</string>
+    <string name="device_info_row_current_focus">Текущий фокус</string>
+    <string name="device_info_row_focused_app">Focused app</string>
+
+    <string name="device_info_value_yes">Да</string>
+    <string name="device_info_value_no">Нет</string>
+    <string name="device_info_value_unknown">Неизвестно</string>
+
+    <string name="device_info_value_android_sdk_format">%1$s (SDK %2$d)</string>
+    <string name="device_info_value_percent_format">%1$d%%</string>
+    <string name="device_info_value_celsius_format">%1$.1f °C</string>
+    <string name="device_info_value_mv_format">%1$d mV</string>
+    <string name="device_info_value_ram_mb_format">%1$d МБ</string>
+    <string name="device_info_value_battery_powered_format">AC=%1$s, USB=%2$s, Wireless=%3$s</string>
+    <string name="device_info_value_storage_entry_format">%1$s / %2$s (%3$s)</string>
+    <string name="device_info_value_most_used_format">%1$s (%2$s)</string>
+
+    <string name="device_info_battery_status_unknown">Неизвестно</string>
+    <string name="device_info_battery_status_charging">Заряжается</string>
+    <string name="device_info_battery_status_discharging">Разряжается</string>
+    <string name="device_info_battery_status_not_charging">Не заряжается</string>
+    <string name="device_info_battery_status_full">Полностью заряжена</string>
+</resources>

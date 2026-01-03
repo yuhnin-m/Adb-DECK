@@ -16,6 +16,7 @@ import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.DefaultContactsComponent
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
 import com.adbdeck.feature.deeplinks.DefaultDeepLinksComponent
+import com.adbdeck.feature.deviceinfo.DefaultDeviceInfoComponent
 import com.adbdeck.feature.notifications.DefaultNotificationsComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.apkinstall.DefaultApkInstallComponent
@@ -31,6 +32,7 @@ import com.adbdeck.feature.settings.DefaultSettingsComponent
 import com.adbdeck.feature.fileexplorer.service.DefaultDeviceFileService
 import com.adbdeck.feature.fileexplorer.service.DefaultFileTransferService
 import com.adbdeck.feature.fileexplorer.service.DefaultLocalFileService
+import com.adbdeck.feature.deviceinfo.service.DefaultDeviceInfoService
 import com.adbdeck.feature.systemmonitor.DefaultSystemMonitorComponent
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
@@ -316,6 +318,15 @@ class DefaultRootComponent(
                 settingsRepository  = settingsRepository,
                 onOpenInPackages    = ::openPackageFromSystemMonitor,
                 onOpenInDeepLinks   = ::openDeepLinkFromNotifications,
+            )
+        )
+
+        is Screen.DeviceInfo -> RootComponent.Child.DeviceInfo(
+            DefaultDeviceInfoComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                settingsRepository = settingsRepository,
+                deviceInfoService = DefaultDeviceInfoService(deviceInfoClient),
             )
         )
     }

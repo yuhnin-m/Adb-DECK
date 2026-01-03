@@ -28,4 +28,36 @@ interface DeviceInfoClient {
         deviceId: String,
         adbPath: String = "adb",
     ): Result<DeviceInfo>
+
+    /**
+     * Получить карту системных свойств из `adb shell getprop`.
+     *
+     * Возвращает уже разобранную структуру `ключ -> значение`.
+     * Нужен для feature-экранов, где требуется выборка нескольких
+     * независимых разделов на основе `ro.*` и `persist.*` свойств.
+     *
+     * @param deviceId Серийный номер или адрес устройства (для `adb -s`).
+     * @param adbPath  Путь к исполняемому файлу `adb`.
+     */
+    suspend fun getSystemProperties(
+        deviceId: String,
+        adbPath: String = "adb",
+    ): Result<Map<String, String>>
+
+    /**
+     * Выполнить произвольную shell-команду на устройстве через `adb shell`.
+     *
+     * Пример:
+     * `runShellCommand(deviceId, listOf("dumpsys", "battery"), adbPath)`.
+     *
+     * @param deviceId Серийный номер или адрес устройства (для `adb -s`).
+     * @param command  Аргументы shell-команды (без префикса `adb shell`).
+     * @param adbPath  Путь к исполняемому файлу `adb`.
+     * @return [Result.success] с stdout команды.
+     */
+    suspend fun runShellCommand(
+        deviceId: String,
+        command: List<String>,
+        adbPath: String = "adb",
+    ): Result<String>
 }

@@ -47,6 +47,7 @@ dependencies {
     implementation(project(":feature:apk-install"))
     implementation(project(":feature:deep-links"))
     implementation(project(":feature:notifications"))
+    implementation(project(":feature:device-info"))
 }
 
 compose.desktop {

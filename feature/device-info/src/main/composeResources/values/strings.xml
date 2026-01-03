@@ -1,0 +1,115 @@
+<resources>
+    <string name="device_info_toolbar_copy_all">Copy all</string>
+    <string name="device_info_toolbar_export_json">Export JSON</string>
+    <string name="device_info_toolbar_last_updated">Updated: %1$s</string>
+    <string name="device_info_toolbar_never_updated">Never updated</string>
+    <string name="device_info_export_dialog_title">Export Device Info JSON</string>
+    <string name="device_info_export_dialog_filter">JSON files</string>
+
+    <string name="device_info_feedback_device_unavailable">No active available device.</string>
+    <string name="device_info_feedback_export_success">JSON exported: %1$s</string>
+    <string name="device_info_feedback_export_failed">Export failed: %1$s</string>
+
+    <string name="device_info_empty_no_device_title">No active device</string>
+    <string name="device_info_empty_no_device_subtitle">Select an online device in the top bar.</string>
+
+    <string name="device_info_nav_title">Sections</string>
+    <string name="device_info_table_header_key">Key</string>
+    <string name="device_info_table_header_value">Value</string>
+    <string name="device_info_section_loading">Loading section...</string>
+    <string name="device_info_section_error_unknown">Unknown error</string>
+    <string name="device_info_section_no_data">No highlight data.</string>
+    <string name="device_info_section_manual_refresh_required">Press Refresh to load section.</string>
+
+    <string name="device_info_context_copy_selected">Copy selected</string>
+    <string name="device_info_context_copy_value">Copy value</string>
+    <string name="device_info_context_copy_key">Copy key</string>
+    <string name="device_info_context_copy_section">Copy section</string>
+    <string name="device_info_context_copy_all">Copy all</string>
+
+    <string name="device_info_section_overview">Overview</string>
+    <string name="device_info_section_build">Build</string>
+    <string name="device_info_section_display">Display</string>
+    <string name="device_info_section_cpu_ram">CPU / RAM</string>
+    <string name="device_info_section_battery">Battery</string>
+    <string name="device_info_section_network">Network</string>
+    <string name="device_info_section_storage">Storage</string>
+    <string name="device_info_section_security">Security</string>
+    <string name="device_info_section_system">System</string>
+
+    <string name="device_info_row_device_id">Device ID</string>
+    <string name="device_info_row_model">Model</string>
+    <string name="device_info_row_manufacturer">Manufacturer</string>
+    <string name="device_info_row_brand">Brand</string>
+    <string name="device_info_row_android_version">Android</string>
+    <string name="device_info_row_security_patch">Security patch</string>
+    <string name="device_info_row_fingerprint">Build fingerprint</string>
+    <string name="device_info_row_abi_list">ABI list</string>
+
+    <string name="device_info_row_build_id">Build ID</string>
+    <string name="device_info_row_build_type">Build type</string>
+    <string name="device_info_row_debuggable">Debuggable</string>
+    <string name="device_info_row_build_tags">Build tags</string>
+    <string name="device_info_row_timezone">Timezone</string>
+    <string name="device_info_row_locale">Locale</string>
+
+    <string name="device_info_row_wm_size">wm size</string>
+    <string name="device_info_row_wm_density">wm density</string>
+    <string name="device_info_row_display_base_info">Display info</string>
+    <string name="device_info_row_display_state">Display state</string>
+
+    <string name="device_info_row_kernel">Kernel</string>
+    <string name="device_info_row_cpu_model">CPU model</string>
+    <string name="device_info_row_cpu_cores">CPU cores</string>
+    <string name="device_info_row_cpu_features">CPU features</string>
+    <string name="device_info_row_ram_total">RAM total</string>
+    <string name="device_info_row_ram_used">RAM used</string>
+    <string name="device_info_row_ram_free">RAM free</string>
+    <string name="device_info_row_ram_lost">RAM lost</string>
+
+    <string name="device_info_row_battery_level">Battery level</string>
+    <string name="device_info_row_battery_status">Battery status</string>
+    <string name="device_info_row_battery_health">Battery health</string>
+    <string name="device_info_row_battery_temp">Temperature</string>
+    <string name="device_info_row_battery_voltage">Voltage</string>
+    <string name="device_info_row_battery_technology">Technology</string>
+    <string name="device_info_row_battery_powered">Powered</string>
+
+    <string name="device_info_row_ip_addresses">IP addresses</string>
+    <string name="device_info_row_default_route">Default route</string>
+    <string name="device_info_row_wifi_state">Wi-Fi state</string>
+    <string name="device_info_row_wifi_ssid">Wi-Fi SSID</string>
+    <string name="device_info_row_wifi_bssid">Wi-Fi BSSID</string>
+    <string name="device_info_row_wifi_rssi">Wi-Fi RSSI</string>
+    <string name="device_info_row_connectivity">Connectivity</string>
+
+    <string name="device_info_row_storage_partitions_count">Partitions captured</string>
+    <string name="device_info_row_storage_most_used">Most used partition</string>
+    <string name="device_info_row_storage_diskstats">Diskstats</string>
+
+    <string name="device_info_row_selinux">SELinux</string>
+    <string name="device_info_row_verified_boot">Verified boot</string>
+
+    <string name="device_info_row_top_resumed_activity">Top resumed activity</string>
+    <string name="device_info_row_current_focus">Current focus</string>
+    <string name="device_info_row_focused_app">Focused app</string>
+
+    <string name="device_info_value_yes">Yes</string>
+    <string name="device_info_value_no">No</string>
+    <string name="device_info_value_unknown">Unknown</string>
+
+    <string name="device_info_value_android_sdk_format">%1$s (SDK %2$d)</string>
+    <string name="device_info_value_percent_format">%1$d%%</string>
+    <string name="device_info_value_celsius_format">%1$.1f °C</string>
+    <string name="device_info_value_mv_format">%1$d mV</string>
+    <string name="device_info_value_ram_mb_format">%1$d MB</string>
+    <string name="device_info_value_battery_powered_format">AC=%1$s, USB=%2$s, Wireless=%3$s</string>
+    <string name="device_info_value_storage_entry_format">%1$s / %2$s (%3$s)</string>
+    <string name="device_info_value_most_used_format">%1$s (%2$s)</string>
+
+    <string name="device_info_battery_status_unknown">Unknown</string>
+    <string name="device_info_battery_status_charging">Charging</string>
+    <string name="device_info_battery_status_discharging">Discharging</string>
+    <string name="device_info_battery_status_not_charging">Not charging</string>
+    <string name="device_info_battery_status_full">Full</string>
+</resources>

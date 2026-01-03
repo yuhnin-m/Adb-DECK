@@ -15,6 +15,7 @@ import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
 import com.adbdeck.feature.contacts.ui.ContactsScreen
 import com.adbdeck.feature.dashboard.ui.DashboardScreen
+import com.adbdeck.feature.deviceinfo.ui.DeviceInfoScreen
 import com.adbdeck.feature.devices.ui.DevicesScreen
 import com.adbdeck.feature.apkinstall.ui.ApkInstallScreen
 import com.adbdeck.feature.deeplinks.ui.DeepLinksScreen
@@ -102,6 +103,7 @@ fun AppContent(
         is RootComponent.Child.ApkInstall -> Screen.ApkInstall
         is RootComponent.Child.DeepLinks -> Screen.DeepLinks
         is RootComponent.Child.Notifications -> Screen.Notifications
+        is RootComponent.Child.DeviceInfo -> Screen.DeviceInfo
         else -> Screen.Dashboard
     }
 
@@ -147,6 +149,7 @@ fun AppContent(
                         is RootComponent.Child.ApkInstall -> ApkInstallScreen(instance.component)
                         is RootComponent.Child.DeepLinks -> DeepLinksScreen(instance.component)
                         is RootComponent.Child.Notifications -> NotificationsScreen(instance.component)
+                        is RootComponent.Child.DeviceInfo -> DeviceInfoScreen(instance.component)
                     }
                 }
 
@@ -172,4 +175,5 @@ private fun Screen.title(): String = when (this) {
     is Screen.ApkInstall -> "APK Install"
     is Screen.DeepLinks -> "Deep Links"
     is Screen.Notifications -> "Notifications"
+    is Screen.DeviceInfo -> "Device Info"
 }

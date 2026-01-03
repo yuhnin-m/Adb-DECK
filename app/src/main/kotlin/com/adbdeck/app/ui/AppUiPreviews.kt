@@ -35,6 +35,12 @@ import com.adbdeck.feature.deeplinks.DeepLinksState
 import com.adbdeck.feature.deeplinks.DeepLinksTab
 import com.adbdeck.feature.deeplinks.IntentTemplate
 import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
+import com.adbdeck.feature.deviceinfo.DeviceInfoComponent
+import com.adbdeck.feature.deviceinfo.DeviceInfoRow
+import com.adbdeck.feature.deviceinfo.DeviceInfoSection
+import com.adbdeck.feature.deviceinfo.DeviceInfoSectionKind
+import com.adbdeck.feature.deviceinfo.DeviceInfoSectionLoadState
+import com.adbdeck.feature.deviceinfo.DeviceInfoState
 import com.adbdeck.core.adb.api.intents.ExtraType
 import com.adbdeck.core.adb.api.intents.LaunchMode
 import com.adbdeck.feature.notifications.ui.PreviewNotificationsComponent
@@ -480,6 +486,89 @@ private class PreviewApkInstallComponent : ApkInstallComponent {
     override fun onDismissFeedback() = Unit
 }
 
+private class PreviewDeviceInfoComponent : DeviceInfoComponent {
+    override val state: StateFlow<DeviceInfoState> = MutableStateFlow(
+        DeviceInfoState(
+            activeDeviceId = previewDevices.first().deviceId,
+            sections = listOf(
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.OVERVIEW,
+                    state = DeviceInfoSectionLoadState.Success(
+                        listOf(
+                            DeviceInfoRow("overview:0", "Device ID", previewDevices.first().deviceId),
+                            DeviceInfoRow("overview:1", "Model", "Pixel 8 API 34"),
+                            DeviceInfoRow("overview:2", "Android", "14 (SDK 34)"),
+                        )
+                    ),
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.BUILD,
+                    state = DeviceInfoSectionLoadState.Success(
+                        listOf(
+                            DeviceInfoRow("build:0", "Build ID", "AP2A.240905.003"),
+                            DeviceInfoRow("build:1", "Debuggable", "Yes"),
+                        )
+                    ),
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.DISPLAY,
+                    state = DeviceInfoSectionLoadState.Loading,
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.CPU_RAM,
+                    state = DeviceInfoSectionLoadState.Error("meminfo command unavailable"),
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.BATTERY,
+                    state = DeviceInfoSectionLoadState.Success(
+                        listOf(
+                            DeviceInfoRow("battery:0", "Battery level", "83%"),
+                            DeviceInfoRow("battery:1", "Battery status", "Charging"),
+                        )
+                    ),
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.NETWORK,
+                    state = DeviceInfoSectionLoadState.Success(
+                        listOf(
+                            DeviceInfoRow("network:0", "IP addresses", "192.168.0.24/24"),
+                        )
+                    ),
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.STORAGE,
+                    state = DeviceInfoSectionLoadState.Success(
+                        listOf(
+                            DeviceInfoRow("storage:0", "/data", "18G / 64G (29%)"),
+                        )
+                    ),
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.SECURITY,
+                    state = DeviceInfoSectionLoadState.Success(
+                        listOf(
+                            DeviceInfoRow("security:0", "SELinux", "Enforcing"),
+                        )
+                    ),
+                ),
+                DeviceInfoSection(
+                    kind = DeviceInfoSectionKind.SYSTEM,
+                    state = DeviceInfoSectionLoadState.Success(
+                        listOf(
+                            DeviceInfoRow("system:0", "Current focus", "mCurrentFocus=Window{...}"),
+                        )
+                    ),
+                ),
+            ),
+            lastUpdatedAtMillis = System.currentTimeMillis(),
+        )
+    )
+
+    override fun onRefresh() = Unit
+    override fun onExportJson(path: String) = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -495,6 +584,7 @@ private class PreviewRootComponent(
     private val apkInstall = PreviewApkInstallComponent()
     private val deepLinks = PreviewDeepLinksComponent()
     private val notifications = PreviewNotificationsComponent()
+    private val deviceInfo = PreviewDeviceInfoComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -520,6 +610,7 @@ private class PreviewRootComponent(
         Screen.ApkInstall -> RootComponent.Child.ApkInstall(apkInstall)
         Screen.DeepLinks -> RootComponent.Child.DeepLinks(deepLinks)
         Screen.Notifications -> RootComponent.Child.Notifications(notifications)
+        Screen.DeviceInfo -> RootComponent.Child.DeviceInfo(deviceInfo)
     }
 }
 

@@ -44,4 +44,7 @@ sealed interface Screen {
 
     /** Экран просмотра и анализа уведомлений Android-устройства. */
     data object Notifications : Screen
+
+    /** Экран подробной информации об устройстве и системе. */
+    data object DeviceInfo : Screen
 }

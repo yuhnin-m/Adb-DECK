@@ -5,6 +5,7 @@ import com.adbdeck.feature.notifications.NotificationsComponent
 import com.adbdeck.feature.dashboard.DashboardComponent
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.apkinstall.ApkInstallComponent
+import com.adbdeck.feature.deviceinfo.DeviceInfoComponent
 import com.adbdeck.feature.fileexplorer.FileExplorerComponent
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.packages.PackagesComponent
@@ -75,5 +76,8 @@ interface RootComponent {
 
         /** Дочерний компонент Notifications. */
         class Notifications(val component: NotificationsComponent) : Child()
+
+        /** Дочерний компонент Device Info. */
+        class DeviceInfo(val component: DeviceInfoComponent) : Child()
     }
 }
