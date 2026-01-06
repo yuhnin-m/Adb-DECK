@@ -74,6 +74,32 @@ private val previewSections = listOf(
         ),
     ),
     DeviceInfoSection(
+        kind = DeviceInfoSectionKind.CELLULAR,
+        state = DeviceInfoSectionLoadState.Success(
+            listOf(
+                DeviceInfoRow(id = "cellular:0", key = "Operator", value = "MegaFon / MFON"),
+                DeviceInfoRow(id = "cellular:1", key = "Voice reg state", value = "IN_SERVICE"),
+            )
+        ),
+    ),
+    DeviceInfoSection(
+        kind = DeviceInfoSectionKind.MODEM,
+        state = DeviceInfoSectionLoadState.Success(
+            listOf(
+                DeviceInfoRow(id = "modem:0", key = "Baseband", value = "MOLY.LR12A.R3.MP.V110"),
+            )
+        ),
+    ),
+    DeviceInfoSection(
+        kind = DeviceInfoSectionKind.IMS_RCS,
+        state = DeviceInfoSectionLoadState.Success(
+            listOf(
+                DeviceInfoRow(id = "ims:0", key = "MMTEL state", value = "READY"),
+                DeviceInfoRow(id = "ims:1", key = "RCS state", value = "UNAVAILABLE"),
+            )
+        ),
+    ),
+    DeviceInfoSection(
         kind = DeviceInfoSectionKind.STORAGE,
         state = DeviceInfoSectionLoadState.Success(
             listOf(
