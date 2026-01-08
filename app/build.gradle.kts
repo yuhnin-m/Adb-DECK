@@ -48,6 +48,7 @@ dependencies {
     implementation(project(":feature:deep-links"))
     implementation(project(":feature:notifications"))
     implementation(project(":feature:device-info"))
+    implementation(project(":feature:quick-toggles"))
 }
 
 compose.desktop {

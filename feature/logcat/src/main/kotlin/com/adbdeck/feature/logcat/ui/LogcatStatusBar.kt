@@ -121,10 +121,12 @@ internal fun LogcatStatusBar(state: LogcatState) {
 }
 
 /**
- * Переводит [LogcatError] в локализованную строку для отображения в строке состояния.
+ * Переводит [LogcatError] в локализованную строку для отображения в UI.
+ *
+ * Доступна всем файлам модуля `feature/logcat`.
  */
 @Composable
-private fun localizeLogcatError(error: LogcatError?): String {
+internal fun localizeLogcatError(error: LogcatError?): String {
     if (error == null) return ""
 
     return when (error) {

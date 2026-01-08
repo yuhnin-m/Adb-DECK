@@ -23,6 +23,7 @@ import com.adbdeck.feature.notifications.ui.NotificationsScreen
 import com.adbdeck.feature.fileexplorer.ui.FileExplorerScreen
 import com.adbdeck.feature.logcat.ui.LogcatScreen
 import com.adbdeck.feature.packages.ui.PackagesScreen
+import com.adbdeck.feature.quicktoggles.ui.QuickTogglesScreen
 import com.adbdeck.feature.screentools.ui.ScreenToolsScreen
 import com.adbdeck.feature.settings.ui.SettingsScreen
 import com.adbdeck.feature.systemmonitor.ui.SystemMonitorScreen
@@ -104,6 +105,7 @@ fun AppContent(
         is RootComponent.Child.DeepLinks -> Screen.DeepLinks
         is RootComponent.Child.Notifications -> Screen.Notifications
         is RootComponent.Child.DeviceInfo -> Screen.DeviceInfo
+        is RootComponent.Child.QuickToggles -> Screen.QuickToggles
         else -> Screen.Dashboard
     }
 
@@ -150,6 +152,7 @@ fun AppContent(
                         is RootComponent.Child.DeepLinks -> DeepLinksScreen(instance.component)
                         is RootComponent.Child.Notifications -> NotificationsScreen(instance.component)
                         is RootComponent.Child.DeviceInfo -> DeviceInfoScreen(instance.component)
+                        is RootComponent.Child.QuickToggles -> QuickTogglesScreen(instance.component)
                     }
                 }
 
@@ -176,4 +179,5 @@ private fun Screen.title(): String = when (this) {
     is Screen.DeepLinks -> "Deep Links"
     is Screen.Notifications -> "Notifications"
     is Screen.DeviceInfo -> "Device Info"
+    is Screen.QuickToggles -> "Quick Toggles"
 }

@@ -1,0 +1,51 @@
+<resources>
+    <string name="quick_toggles_screen_title">Quick Toggles</string>
+
+    <string name="quick_toggles_empty_no_device_title">Активное устройство не выбрано</string>
+    <string name="quick_toggles_empty_no_device_subtitle">Выберите доступное устройство в верхней панели.</string>
+
+    <string name="quick_toggles_label_current_state">Текущее состояние: %1$s</string>
+    <string name="quick_toggles_action_open_settings">Открыть настройки</string>
+
+    <string name="quick_toggles_confirm_title">Подтверждение действия</string>
+    <string name="quick_toggles_confirm_message">Применить "%2$s" для "%1$s"?</string>
+
+    <string name="quick_toggles_feedback_device_unavailable">Нет активного доступного устройства.</string>
+    <string name="quick_toggles_feedback_refresh_success">Статусы обновлены.</string>
+    <string name="quick_toggles_feedback_refresh_failed">Не удалось прочитать статусы.</string>
+    <string name="quick_toggles_feedback_open_settings_success">Настройки открыты: %1$s</string>
+    <string name="quick_toggles_feedback_open_settings_failed">Не удалось открыть настройки для %1$s: %2$s</string>
+    <string name="quick_toggles_feedback_toggle_success">Применено %2$s для %1$s.</string>
+    <string name="quick_toggles_feedback_toggle_failed">Не удалось применить %1$s: %2$s</string>
+
+    <string name="quick_toggles_error_unknown">Неизвестная ошибка</string>
+    <string name="quick_toggles_error_not_applied">Состояние "%1$s" не применилось.</string>
+
+    <string name="quick_toggles_state_on">Вкл</string>
+    <string name="quick_toggles_state_off">Выкл</string>
+    <string name="quick_toggles_state_custom">Кастом</string>
+    <string name="quick_toggles_state_unknown">Неизвестно</string>
+
+    <string name="quick_toggles_animations_action_disable">Выключить (0x)</string>
+    <string name="quick_toggles_animations_action_enable">Включить (1x)</string>
+    <string name="quick_toggles_animations_action_refresh">Обновить</string>
+    <string name="quick_toggles_animations_action_set">Применить</string>
+    <string name="quick_toggles_animations_independent_title">Независимые параметры анимаций</string>
+    <string name="quick_toggles_animations_no_device_hint">Выберите доступное устройство, чтобы управлять шкалами анимаций.</string>
+    <string name="quick_toggles_animations_value_unavailable">Недоступно</string>
+    <string name="quick_toggles_animations_value_default_unset">По умолчанию (unset)</string>
+    <string name="quick_toggles_animations_current_value">Текущее: %1$s</string>
+    <string name="quick_toggles_animations_status_ok">OK</string>
+    <string name="quick_toggles_animations_status_error">ERROR</string>
+    <string name="quick_toggles_animations_status_loading">LOADING</string>
+    <string name="quick_toggles_animations_desc_window">Анимации окон при открытии и закрытии UI.</string>
+    <string name="quick_toggles_animations_desc_transition">Анимации переходов между экранами/активити.</string>
+    <string name="quick_toggles_animations_desc_animator">Масштаб длительности Property Animator в runtime.</string>
+
+    <string name="quick_toggles_toggle_wifi">Wi-Fi</string>
+    <string name="quick_toggles_toggle_mobile_data">Мобильные данные</string>
+    <string name="quick_toggles_toggle_bluetooth">Bluetooth</string>
+    <string name="quick_toggles_toggle_airplane_mode">Режим полета</string>
+    <string name="quick_toggles_toggle_animations">Анимации</string>
+    <string name="quick_toggles_toggle_stay_awake">Не гасить экран при зарядке</string>
+</resources>

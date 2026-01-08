@@ -121,6 +121,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.DeviceInfo) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.Tune,
+            label = "Quick Toggles",
+            isActive = activeScreen is Screen.QuickToggles,
+            onClick = { onNavigate(Screen.QuickToggles) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.Contacts,
             label = "Contacts",
             isActive = activeScreen is Screen.Contacts,

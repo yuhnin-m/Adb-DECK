@@ -13,6 +13,7 @@ import com.adbdeck.feature.deeplinks.DeepLinksComponent
 import com.adbdeck.feature.screentools.ScreenToolsComponent
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
+import com.adbdeck.feature.quicktoggles.QuickTogglesComponent
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
 
@@ -79,5 +80,8 @@ interface RootComponent {
 
         /** Дочерний компонент Device Info. */
         class DeviceInfo(val component: DeviceInfoComponent) : Child()
+
+        /** Дочерний компонент Quick Toggles. */
+        class QuickToggles(val component: QuickTogglesComponent) : Child()
     }
 }

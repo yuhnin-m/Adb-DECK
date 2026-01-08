@@ -79,6 +79,16 @@ import com.adbdeck.feature.systemmonitor.processes.ProcessesState
 import com.adbdeck.feature.systemmonitor.processes.ProcessSortField
 import com.adbdeck.feature.systemmonitor.storage.StorageComponent
 import com.adbdeck.feature.systemmonitor.storage.StorageState
+import com.adbdeck.feature.quicktoggles.ANIMATION_ANIMATOR_SCALE_KEY
+import com.adbdeck.feature.quicktoggles.ANIMATION_TRANSITION_SCALE_KEY
+import com.adbdeck.feature.quicktoggles.ANIMATION_WINDOW_SCALE_KEY
+import com.adbdeck.feature.quicktoggles.AnimationScaleControl
+import com.adbdeck.feature.quicktoggles.AnimationScaleStatus
+import com.adbdeck.feature.quicktoggles.QuickToggleId
+import com.adbdeck.feature.quicktoggles.QuickToggleState
+import com.adbdeck.feature.quicktoggles.QuickTogglesComponent
+import com.adbdeck.feature.quicktoggles.QuickTogglesState
+import com.adbdeck.feature.quicktoggles.ToggleItem
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.MutableValue
 import com.arkivanov.decompose.value.Value
@@ -569,6 +579,69 @@ private class PreviewDeviceInfoComponent : DeviceInfoComponent {
     override fun onDismissFeedback() = Unit
 }
 
+private class PreviewQuickTogglesComponent : QuickTogglesComponent {
+    override val state: StateFlow<QuickTogglesState> = MutableStateFlow(
+        QuickTogglesState(
+            activeDeviceId = previewDevices.first().deviceId,
+            items = listOf(
+                ToggleItem(
+                    id = QuickToggleId.WIFI,
+                    title = "Wi-Fi",
+                    state = QuickToggleState.ON,
+                ),
+                ToggleItem(
+                    id = QuickToggleId.MOBILE_DATA,
+                    title = "Mobile data",
+                    state = QuickToggleState.OFF,
+                ),
+                ToggleItem(
+                    id = QuickToggleId.BLUETOOTH,
+                    title = "Bluetooth",
+                    state = QuickToggleState.UNKNOWN,
+                    error = "Permission denied",
+                    showOpenSettings = true,
+                ),
+                ToggleItem(
+                    id = QuickToggleId.ANIMATIONS,
+                    title = "Animations",
+                    state = QuickToggleState.CUSTOM,
+                    animationControls = listOf(
+                        AnimationScaleControl(
+                            key = ANIMATION_WINDOW_SCALE_KEY,
+                            currentValue = null,
+                            draftValue = 1f,
+                            status = AnimationScaleStatus.OK,
+                        ),
+                        AnimationScaleControl(
+                            key = ANIMATION_TRANSITION_SCALE_KEY,
+                            currentValue = 0.5f,
+                            draftValue = 0.5f,
+                            status = AnimationScaleStatus.OK,
+                        ),
+                        AnimationScaleControl(
+                            key = ANIMATION_ANIMATOR_SCALE_KEY,
+                            currentValue = 1f,
+                            draftValue = 2f,
+                            status = AnimationScaleStatus.ERROR,
+                            error = "Unexpected value",
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+
+    override fun onRefresh() = Unit
+    override fun onRefreshToggle(toggleId: QuickToggleId) = Unit
+    override fun onRequestToggle(toggleId: QuickToggleId, targetState: QuickToggleState) = Unit
+    override fun onAnimationDraftChanged(key: String, value: Float) = Unit
+    override fun onSetAnimationScale(key: String) = Unit
+    override fun onConfirmToggle() = Unit
+    override fun onCancelToggle() = Unit
+    override fun onOpenSettings(toggleId: QuickToggleId) = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -585,6 +658,7 @@ private class PreviewRootComponent(
     private val deepLinks = PreviewDeepLinksComponent()
     private val notifications = PreviewNotificationsComponent()
     private val deviceInfo = PreviewDeviceInfoComponent()
+    private val quickToggles = PreviewQuickTogglesComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -611,6 +685,7 @@ private class PreviewRootComponent(
         Screen.DeepLinks -> RootComponent.Child.DeepLinks(deepLinks)
         Screen.Notifications -> RootComponent.Child.Notifications(notifications)
         Screen.DeviceInfo -> RootComponent.Child.DeviceInfo(deviceInfo)
+        Screen.QuickToggles -> RootComponent.Child.QuickToggles(quickToggles)
     }
 }
 

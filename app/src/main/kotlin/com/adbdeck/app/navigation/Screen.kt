@@ -47,4 +47,7 @@ sealed interface Screen {
 
     /** Экран подробной информации об устройстве и системе. */
     data object DeviceInfo : Screen
+
+    /** Экран быстрых QA-тумблеров (Wi-Fi/Data/Bluetooth и др.). */
+    data object QuickToggles : Screen
 }

@@ -1,0 +1,51 @@
+<resources>
+    <string name="quick_toggles_screen_title">Quick Toggles</string>
+
+    <string name="quick_toggles_empty_no_device_title">No active device</string>
+    <string name="quick_toggles_empty_no_device_subtitle">Select an online device in the top bar.</string>
+
+    <string name="quick_toggles_label_current_state">Current state: %1$s</string>
+    <string name="quick_toggles_action_open_settings">Open Settings</string>
+
+    <string name="quick_toggles_confirm_title">Confirm action</string>
+    <string name="quick_toggles_confirm_message">Apply "%2$s" for "%1$s"?</string>
+
+    <string name="quick_toggles_feedback_device_unavailable">No active available device.</string>
+    <string name="quick_toggles_feedback_refresh_success">Statuses updated.</string>
+    <string name="quick_toggles_feedback_refresh_failed">Failed to read statuses.</string>
+    <string name="quick_toggles_feedback_open_settings_success">Settings opened: %1$s</string>
+    <string name="quick_toggles_feedback_open_settings_failed">Failed to open settings for %1$s: %2$s</string>
+    <string name="quick_toggles_feedback_toggle_success">Applied %2$s for %1$s.</string>
+    <string name="quick_toggles_feedback_toggle_failed">Failed to apply %1$s: %2$s</string>
+
+    <string name="quick_toggles_error_unknown">Unknown error</string>
+    <string name="quick_toggles_error_not_applied">State "%1$s" was not applied.</string>
+
+    <string name="quick_toggles_state_on">On</string>
+    <string name="quick_toggles_state_off">Off</string>
+    <string name="quick_toggles_state_custom">Custom</string>
+    <string name="quick_toggles_state_unknown">Unknown</string>
+
+    <string name="quick_toggles_animations_action_disable">Disable (0x)</string>
+    <string name="quick_toggles_animations_action_enable">Enable (1x)</string>
+    <string name="quick_toggles_animations_action_refresh">Refresh</string>
+    <string name="quick_toggles_animations_action_set">Set</string>
+    <string name="quick_toggles_animations_independent_title">Independent animation scales</string>
+    <string name="quick_toggles_animations_no_device_hint">Select an online device to manage animation scales.</string>
+    <string name="quick_toggles_animations_value_unavailable">Unavailable</string>
+    <string name="quick_toggles_animations_value_default_unset">Default (unset)</string>
+    <string name="quick_toggles_animations_current_value">Current: %1$s</string>
+    <string name="quick_toggles_animations_status_ok">OK</string>
+    <string name="quick_toggles_animations_status_error">ERROR</string>
+    <string name="quick_toggles_animations_status_loading">LOADING</string>
+    <string name="quick_toggles_animations_desc_window">Window open/close and UI window animations.</string>
+    <string name="quick_toggles_animations_desc_transition">Transition animations between screens/activities.</string>
+    <string name="quick_toggles_animations_desc_animator">Property Animator duration scale for runtime animations.</string>
+
+    <string name="quick_toggles_toggle_wifi">Wi-Fi</string>
+    <string name="quick_toggles_toggle_mobile_data">Mobile data</string>
+    <string name="quick_toggles_toggle_bluetooth">Bluetooth</string>
+    <string name="quick_toggles_toggle_airplane_mode">Airplane mode</string>
+    <string name="quick_toggles_toggle_animations">Animations</string>
+    <string name="quick_toggles_toggle_stay_awake">Stay awake while charging</string>
+</resources>

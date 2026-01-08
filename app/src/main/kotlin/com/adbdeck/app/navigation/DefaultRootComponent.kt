@@ -24,6 +24,8 @@ import com.adbdeck.feature.apkinstall.service.DefaultApkInstallService
 import com.adbdeck.feature.fileexplorer.DefaultFileExplorerComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
+import com.adbdeck.feature.quicktoggles.DefaultQuickTogglesComponent
+import com.adbdeck.feature.quicktoggles.service.DefaultQuickTogglesService
 import com.adbdeck.feature.screentools.DefaultScreenToolsComponent
 import com.adbdeck.feature.screentools.service.DefaultHostFileService
 import com.adbdeck.feature.screentools.service.DefaultScreenrecordService
@@ -327,6 +329,15 @@ class DefaultRootComponent(
                 deviceManager = deviceManager,
                 settingsRepository = settingsRepository,
                 deviceInfoService = DefaultDeviceInfoService(deviceInfoClient),
+            )
+        )
+
+        is Screen.QuickToggles -> RootComponent.Child.QuickToggles(
+            DefaultQuickTogglesComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                settingsRepository = settingsRepository,
+                quickTogglesService = DefaultQuickTogglesService(deviceInfoClient),
             )
         )
     }
