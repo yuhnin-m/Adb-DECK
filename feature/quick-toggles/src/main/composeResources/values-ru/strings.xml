@@ -1,5 +1,6 @@
 <resources>
     <string name="quick_toggles_screen_title">Quick Toggles</string>
+    <string name="quick_toggles_group_primary_title">Быстрые переключатели</string>
 
     <string name="quick_toggles_empty_no_device_title">Активное устройство не выбрано</string>
     <string name="quick_toggles_empty_no_device_subtitle">Выберите доступное устройство в верхней панели.</string>
@@ -25,6 +26,7 @@
     <string name="quick_toggles_state_off">Выкл</string>
     <string name="quick_toggles_state_custom">Кастом</string>
     <string name="quick_toggles_state_unknown">Неизвестно</string>
+    <string name="quick_toggles_state_no_data">Нет данных</string>
 
     <string name="quick_toggles_animations_action_disable">Выключить (0x)</string>
     <string name="quick_toggles_animations_action_enable">Включить (1x)</string>
@@ -38,9 +40,9 @@
     <string name="quick_toggles_animations_status_ok">OK</string>
     <string name="quick_toggles_animations_status_error">ERROR</string>
     <string name="quick_toggles_animations_status_loading">LOADING</string>
-    <string name="quick_toggles_animations_desc_window">Анимации окон при открытии и закрытии UI.</string>
-    <string name="quick_toggles_animations_desc_transition">Анимации переходов между экранами/активити.</string>
-    <string name="quick_toggles_animations_desc_animator">Масштаб длительности Property Animator в runtime.</string>
+    <string name="quick_toggles_animations_desc_window">Отвечает за анимации окон: появление/исчезновение окон, диалоги и некоторые системные pop-up</string>
+    <string name="quick_toggles_animations_desc_transition">Отвечает за переходы между окнами/экранами: смена activity, системные переходы, анимации смены задач</string>
+    <string name="quick_toggles_animations_desc_animator">Отвечает за ValueAnimator / ObjectAnimator анимации, то есть “внутренние” анимации UI: большинство анимаций в приложениях (движение/прозрачность/масштаб), Material-анимации и вообще почти всё, что делается через Animator API.</string>
 
     <string name="quick_toggles_toggle_wifi">Wi-Fi</string>
     <string name="quick_toggles_toggle_mobile_data">Мобильные данные</string>

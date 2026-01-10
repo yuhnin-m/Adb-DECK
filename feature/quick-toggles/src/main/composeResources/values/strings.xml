@@ -1,5 +1,6 @@
 <resources>
     <string name="quick_toggles_screen_title">Quick Toggles</string>
+    <string name="quick_toggles_group_primary_title">Quick toggles</string>
 
     <string name="quick_toggles_empty_no_device_title">No active device</string>
     <string name="quick_toggles_empty_no_device_subtitle">Select an online device in the top bar.</string>
@@ -25,6 +26,7 @@
     <string name="quick_toggles_state_off">Off</string>
     <string name="quick_toggles_state_custom">Custom</string>
     <string name="quick_toggles_state_unknown">Unknown</string>
+    <string name="quick_toggles_state_no_data">No data</string>
 
     <string name="quick_toggles_animations_action_disable">Disable (0x)</string>
     <string name="quick_toggles_animations_action_enable">Enable (1x)</string>
@@ -38,9 +40,9 @@
     <string name="quick_toggles_animations_status_ok">OK</string>
     <string name="quick_toggles_animations_status_error">ERROR</string>
     <string name="quick_toggles_animations_status_loading">LOADING</string>
-    <string name="quick_toggles_animations_desc_window">Window open/close and UI window animations.</string>
-    <string name="quick_toggles_animations_desc_transition">Transition animations between screens/activities.</string>
-    <string name="quick_toggles_animations_desc_animator">Property Animator duration scale for runtime animations.</string>
+    <string name="quick_toggles_animations_desc_window">Controls window animations: window open/close, dialogs, and some system pop-ups.</string>
+    <string name="quick_toggles_animations_desc_transition">Controls transitions between screens/windows: activity switches, system transitions, and task switch animations.</string>
+    <string name="quick_toggles_animations_desc_animator">Controls ValueAnimator/ObjectAnimator animations (internal UI animations): most in-app animations (movement/opacity/scale), Material animations, and generally anything driven by the Animator API.</string>
 
     <string name="quick_toggles_toggle_wifi">Wi-Fi</string>
     <string name="quick_toggles_toggle_mobile_data">Mobile data</string>

@@ -78,81 +78,16 @@ class DefaultQuickTogglesComponent(
                         pendingAction = null,
                     )
                 }
+
+                if (!availableDeviceId.isNullOrBlank()) {
+                    refreshStatuses(showFeedback = false)
+                }
             }
         }
     }
 
     override fun onRefresh() {
-        val deviceId = _state.value.activeDeviceId
-        if (deviceId.isNullOrBlank()) {
-            showFeedbackResource(
-                messageRes = Res.string.quick_toggles_feedback_device_unavailable,
-                isError = true,
-            )
-            return
-        }
-
-        refreshJob?.cancel()
-        val refreshRevision = ++revision
-
-        refreshJob = scope.launch {
-            _state.update { current ->
-                current.copy(
-                    isRefreshing = true,
-                    items = current.items.map { item ->
-                        if (item.id == QuickToggleId.ANIMATIONS) {
-                            item.copy(
-                                error = null,
-                                showOpenSettings = false,
-                                animationControls = ensureAnimationControls(item).map { control ->
-                                    control.copy(
-                                        status = AnimationScaleStatus.LOADING,
-                                        error = null,
-                                    )
-                                },
-                            )
-                        } else {
-                            item.copy(
-                                error = null,
-                                showOpenSettings = false,
-                                isRunning = false,
-                            )
-                        }
-                    },
-                )
-            }
-
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
-            val snapshot = quickTogglesService.readStatuses(
-                deviceId = deviceId,
-                adbPath = adbPath,
-            )
-            if (!isRevisionValid(refreshRevision, deviceId)) return@launch
-
-            _state.update { current ->
-                current.copy(
-                    isRefreshing = false,
-                    items = applySnapshot(
-                        items = current.items,
-                        snapshot = snapshot,
-                        isDeviceAvailable = current.isDeviceAvailable,
-                    ),
-                )
-            }
-
-            val hasKnownStates = snapshot.states.values.any { it != QuickToggleState.UNKNOWN }
-            if (hasKnownStates) {
-                showFeedbackResource(
-                    messageRes = Res.string.quick_toggles_feedback_refresh_success,
-                    isError = false,
-                )
-            } else {
-                showFeedbackResource(
-                    messageRes = Res.string.quick_toggles_feedback_refresh_failed,
-                    isError = true,
-                )
-            }
-        }
+        refreshStatuses(showFeedback = true)
     }
 
     override fun onRefreshToggle(toggleId: QuickToggleId) {
@@ -410,6 +345,88 @@ class DefaultQuickTogglesComponent(
         feedbackJob?.cancel()
         feedbackJob = null
         _state.update { it.copy(feedback = null) }
+    }
+
+    /**
+     * Ручное или стартовое обновление всех статусов quick-toggle элементов.
+     *
+     * @param showFeedback Показывать итоговый banner с результатом чтения.
+     */
+    private fun refreshStatuses(showFeedback: Boolean) {
+        val deviceId = _state.value.activeDeviceId
+        if (deviceId.isNullOrBlank()) {
+            if (showFeedback) {
+                showFeedbackResource(
+                    messageRes = Res.string.quick_toggles_feedback_device_unavailable,
+                    isError = true,
+                )
+            }
+            return
+        }
+
+        refreshJob?.cancel()
+        val refreshRevision = ++revision
+
+        refreshJob = scope.launch {
+            _state.update { current ->
+                current.copy(
+                    isRefreshing = true,
+                    items = current.items.map { item ->
+                        if (item.id == QuickToggleId.ANIMATIONS) {
+                            item.copy(
+                                error = null,
+                                showOpenSettings = false,
+                                animationControls = ensureAnimationControls(item).map { control ->
+                                    control.copy(
+                                        status = AnimationScaleStatus.LOADING,
+                                        error = null,
+                                    )
+                                },
+                            )
+                        } else {
+                            item.copy(
+                                error = null,
+                                showOpenSettings = false,
+                                isRunning = false,
+                            )
+                        }
+                    },
+                )
+            }
+
+            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val snapshot = quickTogglesService.readStatuses(
+                deviceId = deviceId,
+                adbPath = adbPath,
+            )
+            if (!isRevisionValid(refreshRevision, deviceId)) return@launch
+
+            _state.update { current ->
+                current.copy(
+                    isRefreshing = false,
+                    items = applySnapshot(
+                        items = current.items,
+                        snapshot = snapshot,
+                        isDeviceAvailable = current.isDeviceAvailable,
+                    ),
+                )
+            }
+
+            if (!showFeedback) return@launch
+
+            val hasKnownStates = snapshot.states.values.any { it != QuickToggleState.UNKNOWN }
+            if (hasKnownStates) {
+                showFeedbackResource(
+                    messageRes = Res.string.quick_toggles_feedback_refresh_success,
+                    isError = false,
+                )
+            } else {
+                showFeedbackResource(
+                    messageRes = Res.string.quick_toggles_feedback_refresh_failed,
+                    isError = true,
+                )
+            }
+        }
     }
 
     private fun performToggle(

@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
@@ -19,15 +19,16 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.i18n.AdbCommonStringRes
@@ -38,9 +39,6 @@ import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.sectioncards.AdbSectionCard
-import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
-import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
-import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
 import com.adbdeck.feature.quicktoggles.ANIMATION_ANIMATOR_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.ANIMATION_TRANSITION_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.ANIMATION_WINDOW_SCALE_KEY
@@ -61,16 +59,21 @@ import org.jetbrains.compose.resources.stringResource
 fun QuickTogglesScreen(component: QuickTogglesComponent) {
     val state by component.state.collectAsState()
 
+    val primaryToggleIds = setOf(
+        QuickToggleId.WIFI,
+        QuickToggleId.MOBILE_DATA,
+        QuickToggleId.BLUETOOTH,
+        QuickToggleId.AIRPLANE_MODE,
+        QuickToggleId.STAY_AWAKE,
+    )
+    val primaryItems = state.items.filter { it.id in primaryToggleIds }
+    val animationsItem = state.items.firstOrNull { it.id == QuickToggleId.ANIMATIONS }
+    val extraItems = state.items.filterNot {
+        it.id in primaryToggleIds || it.id == QuickToggleId.ANIMATIONS
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            QuickTogglesToolbar(
-                isDeviceAvailable = state.isDeviceAvailable,
-                isRefreshing = state.isRefreshing,
-                onRefresh = component::onRefresh,
-            )
-
-            HorizontalDivider()
-
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
@@ -86,19 +89,47 @@ fun QuickTogglesScreen(component: QuickTogglesComponent) {
                     }
                 }
 
-                items(
-                    items = state.items,
-                    key = { it.id.name },
-                ) { item ->
-                    ToggleCard(
-                        item = item,
-                        isDeviceAvailable = state.isDeviceAvailable,
-                        onRequestToggle = component::onRequestToggle,
-                        onRefreshToggle = component::onRefreshToggle,
-                        onOpenSettings = component::onOpenSettings,
-                        onAnimationDraftChanged = component::onAnimationDraftChanged,
-                        onSetAnimationScale = component::onSetAnimationScale,
-                    )
+                if (primaryItems.isNotEmpty()) {
+                    item(key = "primary_toggles_block") {
+                        StandardTogglesGroupCard(
+                            title = stringResource(Res.string.quick_toggles_group_primary_title),
+                            items = primaryItems,
+                            isDeviceAvailable = state.isDeviceAvailable,
+                            refreshEnabled = state.isDeviceAvailable,
+                            isRefreshRunning = state.isRefreshing,
+                            onRefresh = component::onRefresh,
+                            onRequestToggle = component::onRequestToggle,
+                            onOpenSettings = component::onOpenSettings,
+                        )
+                    }
+                }
+
+                animationsItem?.let { item ->
+                    item(key = item.id.name) {
+                        AnimationsToggleCard(
+                            item = item,
+                            isDeviceAvailable = state.isDeviceAvailable,
+                            onRefreshToggle = component::onRefreshToggle,
+                            onOpenSettings = component::onOpenSettings,
+                            onAnimationDraftChanged = component::onAnimationDraftChanged,
+                            onSetAnimationScale = component::onSetAnimationScale,
+                        )
+                    }
+                }
+
+                extraItems.forEach { extraItem ->
+                    item(key = "extra_${extraItem.id.name}") {
+                        StandardTogglesGroupCard(
+                            title = toggleTitle(extraItem.id, fallback = extraItem.title),
+                            items = listOf(extraItem),
+                            isDeviceAvailable = state.isDeviceAvailable,
+                            refreshEnabled = state.isDeviceAvailable,
+                            isRefreshRunning = false,
+                            onRefresh = { component.onRefreshToggle(extraItem.id) },
+                            onRequestToggle = component::onRequestToggle,
+                            onOpenSettings = component::onOpenSettings,
+                        )
+                    }
                 }
             }
         }
@@ -125,134 +156,134 @@ fun QuickTogglesScreen(component: QuickTogglesComponent) {
     }
 }
 
+/**
+ * Групповой блок для стандартных тумблеров с внутренними строками.
+ */
 @Composable
-private fun QuickTogglesToolbar(
+private fun StandardTogglesGroupCard(
+    title: String,
+    items: List<ToggleItem>,
     isDeviceAvailable: Boolean,
-    isRefreshing: Boolean,
-    onRefresh: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingXSmall),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-    ) {
-        Text(
-            text = stringResource(Res.string.quick_toggles_screen_title),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f),
-        )
-
-        AdbOutlinedButton(
-            onClick = onRefresh,
-            enabled = isDeviceAvailable,
-            loading = isRefreshing,
-            text = stringResource(AdbCommonStringRes.actionRefresh),
-            leadingIcon = if (isRefreshing) null else Icons.Outlined.Refresh,
-            size = AdbButtonSize.SMALL,
-        )
-    }
-}
-
-@Composable
-private fun ToggleCard(
-    item: ToggleItem,
-    isDeviceAvailable: Boolean,
-    onRequestToggle: (QuickToggleId, QuickToggleState) -> Unit,
-    onRefreshToggle: (QuickToggleId) -> Unit,
-    onOpenSettings: (QuickToggleId) -> Unit,
-    onAnimationDraftChanged: (String, Float) -> Unit,
-    onSetAnimationScale: (String) -> Unit,
-) {
-    if (item.id == QuickToggleId.ANIMATIONS) {
-        AnimationsToggleCard(
-            item = item,
-            isDeviceAvailable = isDeviceAvailable,
-            onRefreshToggle = onRefreshToggle,
-            onOpenSettings = onOpenSettings,
-            onAnimationDraftChanged = onAnimationDraftChanged,
-            onSetAnimationScale = onSetAnimationScale,
-        )
-    } else {
-        StandardToggleCard(
-            item = item,
-            isDeviceAvailable = isDeviceAvailable,
-            onRequestToggle = onRequestToggle,
-            onOpenSettings = onOpenSettings,
-        )
-    }
-}
-
-@Composable
-private fun StandardToggleCard(
-    item: ToggleItem,
-    isDeviceAvailable: Boolean,
+    refreshEnabled: Boolean = false,
+    isRefreshRunning: Boolean = false,
+    onRefresh: (() -> Unit)? = null,
     onRequestToggle: (QuickToggleId, QuickToggleState) -> Unit,
     onOpenSettings: (QuickToggleId) -> Unit,
 ) {
-    val labelOn = stringResource(Res.string.quick_toggles_state_on)
-    val labelOff = stringResource(Res.string.quick_toggles_state_off)
-    val labelUnknown = stringResource(Res.string.quick_toggles_state_unknown)
-    val canToggle = isDeviceAvailable && item.canToggle && !item.isRunning
+    val headerTrailing: (@Composable RowScope.() -> Unit)? = onRefresh?.let { refreshAction ->
+        {
+            AdbOutlinedButton(
+                onClick = refreshAction,
+                enabled = refreshEnabled,
+                loading = isRefreshRunning,
+                text = stringResource(AdbCommonStringRes.actionRefresh),
+                leadingIcon = if (isRefreshRunning) null else Icons.Outlined.Refresh,
+                size = AdbButtonSize.SMALL,
+            )
+        }
+    }
 
     AdbSectionCard(
-        title = toggleTitle(item.id, fallback = item.title),
+        title = title,
         titleUppercase = false,
         containerColor = AdbTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
         border = BorderStroke(
             width = 1.dp,
             color = AdbTheme.colorScheme.outline.copy(alpha = 0.25f),
         ),
+        titleTextStyle = MaterialTheme.typography.titleMedium,
+        subtitleTextStyle = MaterialTheme.typography.bodyMedium,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal = Dimensions.paddingLarge,
+            vertical = Dimensions.paddingMedium,
+        ),
+        contentSpacing = Dimensions.paddingMedium,
+        headerTrailing = headerTrailing,
         modifier = Modifier.fillMaxWidth(),
+    ) {
+        items.forEachIndexed { index, toggleItem ->
+            StandardToggleRow(
+                item = toggleItem,
+                isDeviceAvailable = isDeviceAvailable,
+                onRequestToggle = onRequestToggle,
+                onOpenSettings = onOpenSettings,
+            )
+            if (index != items.lastIndex) {
+                HorizontalDivider(color = AdbTheme.colorScheme.outline.copy(alpha = 0.15f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StandardToggleRow(
+    item: ToggleItem,
+    isDeviceAvailable: Boolean,
+    onRequestToggle: (QuickToggleId, QuickToggleState) -> Unit,
+    onOpenSettings: (QuickToggleId) -> Unit,
+) {
+    val currentStateLabel = if (item.state == QuickToggleState.UNKNOWN) {
+        stringResource(Res.string.quick_toggles_state_no_data)
+    } else {
+        stateLabel(item.state)
+    }
+    val canToggle = isDeviceAvailable && item.canToggle && !item.isRunning
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(Res.string.quick_toggles_label_current_state, stateLabel(item.state)),
-                style = MaterialTheme.typography.bodySmall,
-                color = AdbTheme.colorScheme.onSurfaceVariant,
-            )
-            if (item.isRunning) {
-                CircularProgressIndicator(
-                    modifier = Modifier.padding(start = 8.dp),
-                    strokeWidth = 2.dp,
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                Text(
+                    text = toggleTitle(item.id, fallback = item.title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = AdbTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(
+                        Res.string.quick_toggles_label_current_state,
+                        currentStateLabel,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AdbTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (item.isRunning) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.padding(start = 8.dp),
+                        strokeWidth = 2.dp,
+                    )
+                }
+
+                Switch(
+                    checked = item.state == QuickToggleState.ON,
+                    onCheckedChange = { checked ->
+                        val targetState = if (checked) {
+                            QuickToggleState.ON
+                        } else {
+                            QuickToggleState.OFF
+                        }
+                        if (targetState != item.state) {
+                            onRequestToggle(item.id, targetState)
+                        }
+                    },
+                    enabled = canToggle,
                 )
             }
         }
-
-        AdbSingleSegmentedButtons(
-            options = listOf(
-                AdbSegmentedOption(
-                    value = QuickToggleState.ON,
-                    label = labelOn,
-                    enabled = canToggle,
-                ),
-                AdbSegmentedOption(
-                    value = QuickToggleState.OFF,
-                    label = labelOff,
-                    enabled = canToggle,
-                ),
-                AdbSegmentedOption(
-                    value = QuickToggleState.UNKNOWN,
-                    label = labelUnknown,
-                    enabled = false,
-                ),
-            ),
-            selectedValue = if (item.state == QuickToggleState.CUSTOM) QuickToggleState.UNKNOWN else item.state,
-            onValueSelected = { selectedState ->
-                if (selectedState == QuickToggleState.ON || selectedState == QuickToggleState.OFF) {
-                    if (selectedState != item.state) {
-                        onRequestToggle(item.id, selectedState)
-                    }
-                }
-            },
-            size = AdbSegmentedButtonSize.MEDIUM,
-            cornerRadius = AdbCornerRadius.MEDIUM,
-        )
 
         if (!item.error.isNullOrBlank()) {
             Text(
@@ -263,12 +294,17 @@ private fun StandardToggleCard(
         }
 
         if (item.showOpenSettings) {
-            AdbOutlinedButton(
-                onClick = { onOpenSettings(item.id) },
-                text = stringResource(Res.string.quick_toggles_action_open_settings),
-                type = AdbButtonType.NEUTRAL,
-                size = AdbButtonSize.SMALL,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                AdbOutlinedButton(
+                    onClick = { onOpenSettings(item.id) },
+                    text = stringResource(Res.string.quick_toggles_action_open_settings),
+                    type = AdbButtonType.NEUTRAL,
+                    size = AdbButtonSize.SMALL,
+                )
+            }
         }
     }
 }
@@ -289,24 +325,21 @@ private fun AnimationsToggleCard(
 
     AdbSectionCard(
         title = stringResource(Res.string.quick_toggles_toggle_animations),
+        subtitle = stringResource(Res.string.quick_toggles_animations_independent_title),
         titleUppercase = false,
         containerColor = AdbTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
+        titleTextStyle = MaterialTheme.typography.titleMedium,
+        subtitleTextStyle = MaterialTheme.typography.bodyMedium,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal = Dimensions.paddingLarge,
+            vertical = Dimensions.paddingMedium,
+        ),
+        contentSpacing = Dimensions.paddingMedium,
         border = BorderStroke(
             width = 1.dp,
             color = AdbTheme.colorScheme.outline.copy(alpha = 0.25f),
         ),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(Res.string.quick_toggles_animations_independent_title),
-                style = MaterialTheme.typography.bodyMedium,
-                color = AdbTheme.colorScheme.onSurface,
-            )
+        headerTrailing = {
             AdbOutlinedButton(
                 onClick = { onRefreshToggle(QuickToggleId.ANIMATIONS) },
                 text = stringResource(Res.string.quick_toggles_animations_action_refresh),
@@ -315,8 +348,9 @@ private fun AnimationsToggleCard(
                 size = AdbButtonSize.SMALL,
                 enabled = canToggle,
             )
-        }
-
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         if (!isDeviceAvailable) {
             Text(
                 text = stringResource(Res.string.quick_toggles_animations_no_device_hint),
@@ -325,13 +359,17 @@ private fun AnimationsToggleCard(
             )
         }
 
-        item.animationControls.forEach { control ->
+        item.animationControls.forEachIndexed { index, control ->
             AnimationScaleControlRow(
                 control = control,
                 enabled = canToggle,
                 onDraftChanged = onAnimationDraftChanged,
                 onSet = onSetAnimationScale,
             )
+
+            if (index != item.animationControls.lastIndex) {
+                HorizontalDivider(color = AdbTheme.colorScheme.outline.copy(alpha = 0.15f))
+            }
         }
 
         if (!item.error.isNullOrBlank()) {
@@ -378,16 +416,16 @@ private fun AnimationScaleControlRow(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
+        verticalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
         Text(
             text = control.key,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.titleSmall,
             color = AdbTheme.colorScheme.onSurface,
         )
         Text(
             text = animationDescription(control.key),
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = AdbTheme.colorScheme.onSurfaceVariant,
         )
 
@@ -416,7 +454,10 @@ private fun AnimationScaleControlRow(
             enabled = enabled && control.status != AnimationScaleStatus.LOADING,
             valueRange = 0f..10f,
             steps = 19,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Dimensions.paddingXSmall)
+                .graphicsLayer(scaleY = 0.9f),
         )
 
         Row(
@@ -459,8 +500,6 @@ private fun AnimationScaleControlRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-
-        HorizontalDivider(color = AdbTheme.colorScheme.outline.copy(alpha = 0.15f))
     }
 }
 
