@@ -92,6 +92,7 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
     var selectionModifiers by remember { mutableStateOf(DeviceInfoSelectionModifiers()) }
 
     val sectionTitles = rememberSectionTitles()
+    val selectedRowIdsBySection = remember(selectedRowIds) { groupSelectionBySection(selectedRowIds) }
     val selectableRows = remember(state.sections) { flattenSelectableRows(state.sections) }
     val exportDialogTitle = stringResource(Res.string.device_info_export_dialog_title)
     val exportDialogFilter = stringResource(Res.string.device_info_export_dialog_filter)
@@ -214,8 +215,11 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
 
             if (!state.isDeviceAvailable) {
                 EmptyView(
-                    message = stringResource(Res.string.device_info_empty_no_device_title) + "\n" +
+                    message = stringResource(
+                        Res.string.device_info_empty_no_device_message,
+                        stringResource(Res.string.device_info_empty_no_device_title),
                         stringResource(Res.string.device_info_empty_no_device_subtitle),
+                    ),
                 )
             } else {
                 val listState = rememberLazyListState()
@@ -288,7 +292,7 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
                                 DeviceInfoSectionTable(
                                     section = section,
                                     title = sectionTitles[section.kind].orEmpty(),
-                                    selectedRowIds = selectedRowIds,
+                                    selectedRowIds = selectedRowIdsBySection[section.kind].orEmpty(),
                                     hasAnySelection = selectedRowIds.isNotEmpty(),
                                     onRowClick = { rowId ->
                                         listFocusRequester.requestFocus()
@@ -445,63 +449,60 @@ private fun DeviceInfoMiniNavigation(
         )
 
         sections.forEachIndexed { index, section ->
-            val sectionTitle = sectionTitles[section.kind].orEmpty()
-            val sectionColor = when (section.state) {
-                DeviceInfoSectionLoadState.Loading -> AdbTheme.semanticColors.info
-                is DeviceInfoSectionLoadState.Success -> AdbTheme.semanticColors.success
-                is DeviceInfoSectionLoadState.Error -> AdbTheme.colorScheme.error
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = AdbTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        shape = RoundedCornerShape(AdbCornerRadius.MEDIUM.value),
-                    )
-                    .clickable(onClick = { onSectionClick(index) })
-                    .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingXSmall),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(6.dp)
-                        .height(18.dp)
-                        .background(
-                            color = sectionColor,
-                            shape = RoundedCornerShape(999.dp),
-                        )
-                )
-
-                Text(
-                    text = sectionTitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AdbTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = Dimensions.paddingSmall)
-                        .padding(vertical = 2.dp)
-                )
-            }
+            DeviceInfoMiniNavigationItem(
+                section = section,
+                title = sectionTitles[section.kind].orEmpty(),
+                onClick = { onSectionClick(index) },
+            )
         }
     }
 }
 
 @Composable
-private fun rememberSectionTitles(): Map<DeviceInfoSectionKind, String> = mapOf(
-    DeviceInfoSectionKind.OVERVIEW to stringResource(Res.string.device_info_section_overview),
-    DeviceInfoSectionKind.BUILD to stringResource(Res.string.device_info_section_build),
-    DeviceInfoSectionKind.DISPLAY to stringResource(Res.string.device_info_section_display),
-    DeviceInfoSectionKind.CPU_RAM to stringResource(Res.string.device_info_section_cpu_ram),
-    DeviceInfoSectionKind.BATTERY to stringResource(Res.string.device_info_section_battery),
-    DeviceInfoSectionKind.NETWORK to stringResource(Res.string.device_info_section_network),
-    DeviceInfoSectionKind.CELLULAR to stringResource(Res.string.device_info_section_cellular),
-    DeviceInfoSectionKind.MODEM to stringResource(Res.string.device_info_section_modem),
-    DeviceInfoSectionKind.IMS_RCS to stringResource(Res.string.device_info_section_ims_rcs),
-    DeviceInfoSectionKind.STORAGE to stringResource(Res.string.device_info_section_storage),
-    DeviceInfoSectionKind.SECURITY to stringResource(Res.string.device_info_section_security),
-    DeviceInfoSectionKind.SYSTEM to stringResource(Res.string.device_info_section_system),
-)
+private fun rememberSectionTitles(): Map<DeviceInfoSectionKind, String> {
+    val overviewTitle = stringResource(Res.string.device_info_section_overview)
+    val buildTitle = stringResource(Res.string.device_info_section_build)
+    val displayTitle = stringResource(Res.string.device_info_section_display)
+    val cpuRamTitle = stringResource(Res.string.device_info_section_cpu_ram)
+    val batteryTitle = stringResource(Res.string.device_info_section_battery)
+    val networkTitle = stringResource(Res.string.device_info_section_network)
+    val cellularTitle = stringResource(Res.string.device_info_section_cellular)
+    val modemTitle = stringResource(Res.string.device_info_section_modem)
+    val imsRcsTitle = stringResource(Res.string.device_info_section_ims_rcs)
+    val storageTitle = stringResource(Res.string.device_info_section_storage)
+    val securityTitle = stringResource(Res.string.device_info_section_security)
+    val systemTitle = stringResource(Res.string.device_info_section_system)
+
+    return remember(
+        overviewTitle,
+        buildTitle,
+        displayTitle,
+        cpuRamTitle,
+        batteryTitle,
+        networkTitle,
+        cellularTitle,
+        modemTitle,
+        imsRcsTitle,
+        storageTitle,
+        securityTitle,
+        systemTitle,
+    ) {
+        mapOf(
+            DeviceInfoSectionKind.OVERVIEW to overviewTitle,
+            DeviceInfoSectionKind.BUILD to buildTitle,
+            DeviceInfoSectionKind.DISPLAY to displayTitle,
+            DeviceInfoSectionKind.CPU_RAM to cpuRamTitle,
+            DeviceInfoSectionKind.BATTERY to batteryTitle,
+            DeviceInfoSectionKind.NETWORK to networkTitle,
+            DeviceInfoSectionKind.CELLULAR to cellularTitle,
+            DeviceInfoSectionKind.MODEM to modemTitle,
+            DeviceInfoSectionKind.IMS_RCS to imsRcsTitle,
+            DeviceInfoSectionKind.STORAGE to storageTitle,
+            DeviceInfoSectionKind.SECURITY to securityTitle,
+            DeviceInfoSectionKind.SYSTEM to systemTitle,
+        )
+    }
+}
 
 private fun flattenSelectableRows(sections: List<DeviceInfoSection>): List<SelectableRow> {
     return sections.flatMap { section ->
@@ -539,11 +540,10 @@ private fun formatSectionForCopy(
 }
 
 private fun formatTimestamp(epochMillis: Long): String {
-    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     return Instant.ofEpochMilli(epochMillis)
         .atZone(ZoneId.systemDefault())
         .toLocalDateTime()
-        .format(formatter)
+        .format(TIMESTAMP_FORMATTER)
 }
 
 private fun showSaveJsonDialog(
@@ -573,3 +573,65 @@ private data class DeviceInfoSelectionModifiers(
     val shiftPressed: Boolean = false,
     val additivePressed: Boolean = false,
 )
+
+@Composable
+private fun DeviceInfoMiniNavigationItem(
+    section: DeviceInfoSection,
+    title: String,
+    onClick: () -> Unit,
+) {
+    val sectionColor = when (section.state) {
+        DeviceInfoSectionLoadState.Loading -> AdbTheme.semanticColors.info
+        is DeviceInfoSectionLoadState.Success -> AdbTheme.semanticColors.success
+        is DeviceInfoSectionLoadState.Error -> AdbTheme.colorScheme.error
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = AdbTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                shape = RoundedCornerShape(AdbCornerRadius.MEDIUM.value),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingXSmall),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(6.dp)
+                .height(18.dp)
+                .background(
+                    color = sectionColor,
+                    shape = RoundedCornerShape(999.dp),
+                )
+        )
+
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodySmall,
+            color = AdbTheme.colorScheme.onSurface,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = Dimensions.paddingSmall)
+                .padding(vertical = 2.dp)
+        )
+    }
+}
+
+private fun groupSelectionBySection(selectedRowIds: Set<String>): Map<DeviceInfoSectionKind, Set<String>> {
+    if (selectedRowIds.isEmpty()) return emptyMap()
+
+    val bySectionId = DeviceInfoSectionKind.entries.associateBy { it.id }
+    val grouped = mutableMapOf<DeviceInfoSectionKind, MutableSet<String>>()
+
+    selectedRowIds.forEach { rowId ->
+        val sectionId = rowId.substringBefore(':', missingDelimiterValue = "")
+        val sectionKind = bySectionId[sectionId] ?: return@forEach
+        grouped.getOrPut(sectionKind) { mutableSetOf() } += rowId
+    }
+
+    return grouped.mapValues { (_, value) -> value.toSet() }
+}
+
+private val TIMESTAMP_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")

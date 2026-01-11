@@ -12,6 +12,7 @@
 
     <string name="device_info_empty_no_device_title">No active device</string>
     <string name="device_info_empty_no_device_subtitle">Select an online device in the top bar.</string>
+    <string name="device_info_empty_no_device_message">%1$s\n%2$s</string>
 
     <string name="device_info_nav_title">Sections</string>
     <string name="device_info_table_header_key">Key</string>

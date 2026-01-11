@@ -27,11 +27,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
@@ -89,17 +94,66 @@ internal fun DeviceInfoSectionTable(
             }
 
             is DeviceInfoSectionLoadState.Success -> {
+                var contextMenuState by remember(section.kind) {
+                    mutableStateOf<DeviceInfoContextMenuState?>(null)
+                }
+
                 loadState.rows.forEach { row ->
                     DeviceInfoRowItem(
                         row = row,
                         isSelected = row.id in selectedRowIds,
-                        hasAnySelection = hasAnySelection,
                         onClick = { onRowClick(row.id) },
-                        onCopySelected = onCopySelected,
-                        onCopyAll = onCopyAll,
-                        onCopySection = onCopySection,
-                        onCopyKey = { onCopyKey(row.key) },
-                        onCopyValue = { onCopyValue(row.value) },
+                        onContextMenuRequested = { offset ->
+                            contextMenuState = DeviceInfoContextMenuState(
+                                row = row,
+                                offset = offset,
+                            )
+                        },
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = contextMenuState != null,
+                    onDismissRequest = { contextMenuState = null },
+                    offset = contextMenuState?.offset ?: DpOffset(0.dp, 0.dp),
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.device_info_context_copy_selected)) },
+                        enabled = hasAnySelection,
+                        onClick = {
+                            contextMenuState = null
+                            onCopySelected()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.device_info_context_copy_value)) },
+                        onClick = {
+                            val row = contextMenuState?.row ?: return@DropdownMenuItem
+                            contextMenuState = null
+                            onCopyValue(row.value)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.device_info_context_copy_key)) },
+                        onClick = {
+                            val row = contextMenuState?.row ?: return@DropdownMenuItem
+                            contextMenuState = null
+                            onCopyKey(row.key)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.device_info_context_copy_section)) },
+                        onClick = {
+                            contextMenuState = null
+                            onCopySection()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(Res.string.device_info_context_copy_all)) },
+                        onClick = {
+                            contextMenuState = null
+                            onCopyAll()
+                        },
                     )
                 }
             }
@@ -112,19 +166,19 @@ internal fun DeviceInfoSectionTable(
 private fun DeviceInfoRowItem(
     row: DeviceInfoRow,
     isSelected: Boolean,
-    hasAnySelection: Boolean,
     onClick: () -> Unit,
-    onCopySelected: () -> Unit,
-    onCopyAll: () -> Unit,
-    onCopySection: () -> Unit,
-    onCopyKey: () -> Unit,
-    onCopyValue: () -> Unit,
+    onContextMenuRequested: (DpOffset) -> Unit,
 ) {
-    var isContextMenuExpanded by remember(row.id) { mutableStateOf(false) }
-    val selectionColor = if (isSelected) {
-        AdbTheme.colorScheme.primary.copy(alpha = 0.13f)
-    } else {
-        Color.Transparent
+    val density = LocalDensity.current
+    var rowOffsetInParent by remember(row.id) { mutableStateOf(Offset.Zero) }
+    val primaryColor = AdbTheme.colorScheme.primary
+    val selectedColor = remember(primaryColor) {
+        primaryColor.copy(alpha = 0.13f)
+    }
+    val selectionColor = if (isSelected) selectedColor else Color.Transparent
+
+    fun Offset.toMenuOffset(): DpOffset = with(density) {
+        DpOffset(x.toDp(), y.toDp())
     }
 
     Column {
@@ -132,18 +186,22 @@ private fun DeviceInfoRowItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(selectionColor)
+                .onGloballyPositioned { coordinates ->
+                    rowOffsetInParent = coordinates.positionInParent()
+                }
                 .onPointerEvent(PointerEventType.Press) { event ->
                     if (event.buttons.isSecondaryPressed) {
                         onClick()
-                        isContextMenuExpanded = true
+                        val position = event.changes.firstOrNull()?.position ?: Offset.Zero
+                        onContextMenuRequested((rowOffsetInParent + position).toMenuOffset())
                     }
                 }
                 .pointerInput(row.id) {
                     detectTapGestures(
                         onTap = { onClick() },
-                        onLongPress = {
+                        onLongPress = { pressOffset ->
                             onClick()
-                            isContextMenuExpanded = true
+                            onContextMenuRequested((rowOffsetInParent + pressOffset).toMenuOffset())
                         },
                     )
                 }
@@ -163,50 +221,13 @@ private fun DeviceInfoRowItem(
                 color = AdbTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(0.64f),
             )
-
-            DropdownMenu(
-                expanded = isContextMenuExpanded,
-                onDismissRequest = { isContextMenuExpanded = false },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.device_info_context_copy_selected)) },
-                    enabled = hasAnySelection,
-                    onClick = {
-                        isContextMenuExpanded = false
-                        onCopySelected()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.device_info_context_copy_value)) },
-                    onClick = {
-                        isContextMenuExpanded = false
-                        onCopyValue()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.device_info_context_copy_key)) },
-                    onClick = {
-                        isContextMenuExpanded = false
-                        onCopyKey()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.device_info_context_copy_section)) },
-                    onClick = {
-                        isContextMenuExpanded = false
-                        onCopySection()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(Res.string.device_info_context_copy_all)) },
-                    onClick = {
-                        isContextMenuExpanded = false
-                        onCopyAll()
-                    },
-                )
-            }
         }
 
         HorizontalDivider(color = AdbTheme.colorScheme.outline.copy(alpha = 0.12f))
     }
 }
+
+private data class DeviceInfoContextMenuState(
+    val row: DeviceInfoRow,
+    val offset: DpOffset,
+)

@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -58,6 +60,7 @@ class DefaultDeviceInfoComponent(
 
     private var refreshJob: Job? = null
     private var feedbackJob: Job? = null
+    private val feedbackMutex = Mutex()
 
     private var refreshRevision: Long = 0L
     private var lastObservedDeviceId: String? = null
@@ -101,10 +104,12 @@ class DefaultDeviceInfoComponent(
     override fun onRefresh() {
         val deviceId = _state.value.activeDeviceId
         if (deviceId.isNullOrBlank()) {
-            showFeedbackResource(
-                messageRes = Res.string.device_info_feedback_device_unavailable,
-                isError = true,
-            )
+            scope.launch {
+                showFeedbackResource(
+                    messageRes = Res.string.device_info_feedback_device_unavailable,
+                    isError = true,
+                )
+            }
             return
         }
 
@@ -167,18 +172,27 @@ class DefaultDeviceInfoComponent(
         val snapshot = _state.value
         val deviceId = snapshot.activeDeviceId
         if (deviceId.isNullOrBlank()) {
-            showFeedbackResource(
-                messageRes = Res.string.device_info_feedback_device_unavailable,
-                isError = true,
-            )
+            scope.launch {
+                showFeedbackResource(
+                    messageRes = Res.string.device_info_feedback_device_unavailable,
+                    isError = true,
+                )
+            }
             return
         }
 
-        if (snapshot.isExportingJson) return
+        var alreadyExporting = false
+        _state.update { current ->
+            if (current.isExportingJson) {
+                alreadyExporting = true
+                current
+            } else {
+                current.copy(isExportingJson = true)
+            }
+        }
+        if (alreadyExporting) return
 
         scope.launch {
-            _state.update { it.copy(isExportingJson = true) }
-
             val result = runCatchingNonCancellation {
                 val finalPath = ensureJsonPath(normalizedPath)
                 val payload = buildExportJson(
@@ -337,12 +351,12 @@ class DefaultDeviceInfoComponent(
         }
     }
 
-    private fun showFeedbackResource(
+    private suspend fun showFeedbackResource(
         messageRes: StringResource,
         isError: Boolean,
         vararg args: Any,
     ) {
-        scope.launch {
+        feedbackMutex.withLock {
             val message = getString(messageRes, *args)
             showFeedback(message = message, isError = isError)
         }

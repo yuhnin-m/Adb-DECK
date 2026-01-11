@@ -12,6 +12,7 @@
 
     <string name="device_info_empty_no_device_title">Активное устройство не выбрано</string>
     <string name="device_info_empty_no_device_subtitle">Выберите доступное устройство в верхней панели.</string>
+    <string name="device_info_empty_no_device_message">%1$s\n%2$s</string>
 
     <string name="device_info_nav_title">Разделы</string>
     <string name="device_info_table_header_key">Ключ</string>

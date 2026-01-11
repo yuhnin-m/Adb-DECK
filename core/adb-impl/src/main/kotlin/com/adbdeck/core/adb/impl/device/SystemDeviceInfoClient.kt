@@ -49,8 +49,8 @@ class SystemDeviceInfoClient(
                 ?: props["ro.product.cpu.abi"] ?: "",
             screenResolution = resolution,
             screenDensity = props["ro.sf.lcd_density"]?.toIntOrNull() ?: 0,
-            batteryLevel = battery.first,
-            batteryCharging = battery.second,
+            batteryLevel = battery.level,
+            batteryCharging = battery.isCharging,
             transportType = transport,
         )
     }
@@ -61,7 +61,7 @@ class SystemDeviceInfoClient(
     ): Result<Map<String, String>> = runCatchingPreserveCancellation {
         val result = processRunner.run(adbPath, "-s", deviceId, "shell", "getprop")
         if (!result.isSuccess) {
-            error(result.stderr.ifBlank { "Не удалось выполнить adb shell getprop" })
+            error(result.stderr.ifBlank { "Failed to run adb shell getprop" })
         }
         parseProps(result.stdout)
     }
@@ -71,13 +71,13 @@ class SystemDeviceInfoClient(
         command: List<String>,
         adbPath: String,
     ): Result<String> = runCatchingPreserveCancellation {
-        require(command.isNotEmpty()) { "Команда shell не может быть пустой" }
+        require(command.isNotEmpty()) { "Shell command must not be empty" }
 
         val result = processRunner.run(
             listOf(adbPath, "-s", deviceId, "shell") + command,
         )
         if (!result.isSuccess) {
-            error(result.stderr.ifBlank { "Не удалось выполнить adb shell ${command.joinToString(" ")}" })
+            error(result.stderr.ifBlank { "Failed to run adb shell ${command.joinToString(" ")}" })
         }
         result.stdout
     }
@@ -121,13 +121,13 @@ class SystemDeviceInfoClient(
      * - `level: 85` → уровень заряда
      * - `status: 2` → 2 = CHARGING, 1 = UNKNOWN, 3 = DISCHARGING, 4 = NOT_CHARGING, 5 = FULL
      *
-     * @return Pair(уровень 0–100 или -1, isCharging)
+     * @return Быстрые данные батареи: уровень 0–100 (или -1) и флаг зарядки.
      */
-    private suspend fun fetchBattery(deviceId: String, adbPath: String): Pair<Int, Boolean> {
+    private suspend fun fetchBattery(deviceId: String, adbPath: String): BatteryQuickInfo {
         val result = runCatchingPreserveCancellation {
             processRunner.run(adbPath, "-s", deviceId, "shell", "dumpsys", "battery")
-        }.getOrNull() ?: return Pair(-1, false)
-        if (!result.isSuccess) return Pair(-1, false)
+        }.getOrNull() ?: return BatteryQuickInfo(level = -1, isCharging = false)
+        if (!result.isSuccess) return BatteryQuickInfo(level = -1, isCharging = false)
 
         var level = -1
         var charging = false
@@ -143,7 +143,7 @@ class SystemDeviceInfoClient(
                 }
             }
         }
-        return Pair(level, charging)
+        return BatteryQuickInfo(level = level, isCharging = charging)
     }
 
     /**
@@ -162,6 +162,11 @@ class SystemDeviceInfoClient(
         /** Регулярка для разбора строк вывода `adb shell getprop`. */
         private val PROP_REGEX = Regex("""^\[(.+?)\]:\s*\[(.*)?\]$""")
     }
+
+    private data class BatteryQuickInfo(
+        val level: Int,
+        val isCharging: Boolean,
+    )
 
     /** Разбирает stdout `getprop` в карту `ключ -> значение`. */
     private fun parseProps(output: String): Map<String, String> {
