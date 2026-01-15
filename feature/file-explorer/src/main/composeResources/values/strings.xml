@@ -1,0 +1,87 @@
+<resources>
+    <string name="file_explorer_panel_local_title">Local File System</string>
+    <string name="file_explorer_panel_device_title">Device File System</string>
+
+    <string name="file_explorer_action_ok">OK</string>
+    <string name="file_explorer_action_up">Up</string>
+    <string name="file_explorer_action_refresh">Refresh</string>
+    <string name="file_explorer_action_open">Open</string>
+    <string name="file_explorer_action_copy_path">Copy path</string>
+    <string name="file_explorer_action_new_folder">New folder</string>
+    <string name="file_explorer_action_rename">Rename</string>
+    <string name="file_explorer_action_delete">Delete</string>
+    <string name="file_explorer_action_copy">Copy</string>
+    <string name="file_explorer_action_push">Push -&gt;</string>
+    <string name="file_explorer_action_pull">&lt;- Pull</string>
+    <string name="file_explorer_action_cancel">Cancel</string>
+    <string name="file_explorer_action_create">Create</string>
+    <string name="file_explorer_action_save">Save</string>
+    <string name="file_explorer_action_overwrite">Overwrite</string>
+
+    <string name="file_explorer_empty_directory">Folder is empty</string>
+
+    <string name="file_explorer_header_name">Name</string>
+    <string name="file_explorer_header_type">Type</string>
+    <string name="file_explorer_header_size">Size</string>
+    <string name="file_explorer_header_modified">Modified</string>
+
+    <string name="file_explorer_device_root_label">Section:</string>
+    <string name="file_explorer_device_root_select">Select section</string>
+
+    <string name="file_explorer_transfer_title">Transfer</string>
+    <string name="file_explorer_transfer_direction_push">Push (host -&gt; device)</string>
+    <string name="file_explorer_transfer_direction_pull">Pull (device -&gt; host)</string>
+    <string name="file_explorer_transfer_source">Source: %1$s</string>
+    <string name="file_explorer_transfer_target">Target: %1$s</string>
+
+    <string name="file_explorer_dialog_delete_title">Delete item?</string>
+    <string name="file_explorer_dialog_delete_message">Will be deleted: %1$s</string>
+    <string name="file_explorer_dialog_create_dir_title">New directory</string>
+    <string name="file_explorer_dialog_path">Path: %1$s</string>
+    <string name="file_explorer_dialog_dir_name">Directory name</string>
+    <string name="file_explorer_dialog_rename_title">Rename</string>
+    <string name="file_explorer_dialog_current_path">Current path: %1$s</string>
+    <string name="file_explorer_dialog_new_name">New name</string>
+    <string name="file_explorer_dialog_conflict_title">File already exists</string>
+    <string name="file_explorer_dialog_conflict_push_message">Device already contains an item with this name.</string>
+    <string name="file_explorer_dialog_conflict_pull_message">Host already contains an item with this name.</string>
+    <string name="file_explorer_dialog_conflict_question">Overwrite existing item?</string>
+
+    <string name="file_explorer_type_directory">Dir</string>
+    <string name="file_explorer_type_file">File</string>
+    <string name="file_explorer_type_link">Link</string>
+    <string name="file_explorer_type_other">Other</string>
+
+    <string name="file_explorer_no_device_select_active">Select an active device</string>
+    <string name="file_explorer_no_device_not_selected">No active device selected</string>
+    <string name="file_explorer_no_device_unavailable">Device unavailable: %1$s</string>
+
+    <string name="file_explorer_error_select_item_for_delete">Select an item to delete</string>
+    <string name="file_explorer_error_select_item_for_rename">Select an item to rename</string>
+    <string name="file_explorer_error_enter_directory_name">Enter a directory name</string>
+    <string name="file_explorer_error_enter_new_name">Enter a new name</string>
+    <string name="file_explorer_error_wait_transfer_completion">Wait for the current transfer to finish</string>
+    <string name="file_explorer_error_select_local_for_push">Select a local file or directory for push</string>
+    <string name="file_explorer_error_select_device_for_pull">Select a file or directory on device for pull</string>
+    <string name="file_explorer_error_device_context_lost_retry">Device context was lost. Retry the action</string>
+    <string name="file_explorer_error_device_context_unavailable">Device context is unavailable</string>
+    <string name="file_explorer_error_read_local_directory">Failed to read local directory</string>
+    <string name="file_explorer_error_read_device_directory">Failed to read device directory</string>
+    <string name="file_explorer_error_no_accessible_directories">No directories available for ADB shell user</string>
+    <string name="file_explorer_error_transfer_generic">Transfer failed</string>
+    <string name="file_explorer_error_operation_failed">Operation failed</string>
+    <string name="file_explorer_error_active_device_unavailable">Active device is not selected or unavailable</string>
+    <string name="file_explorer_error_active_device_changed">Active device changed. Retry the action for the current device</string>
+
+    <string name="file_explorer_feedback_deleted">Deleted: %1$s</string>
+    <string name="file_explorer_feedback_directory_created">Directory created: %1$s</string>
+    <string name="file_explorer_feedback_renamed">Renamed: %1$s -&gt; %2$s</string>
+    <string name="file_explorer_feedback_transfer_cancelled">Transfer cancelled</string>
+    <string name="file_explorer_feedback_copied">Copied: %1$s</string>
+    <string name="file_explorer_feedback_push_completed">Push completed</string>
+    <string name="file_explorer_feedback_pull_completed">Pull completed</string>
+
+    <string name="file_explorer_transfer_status_push_running">Running push to device...</string>
+    <string name="file_explorer_transfer_status_pull_running">Running pull from device...</string>
+    <string name="file_explorer_transfer_status_refreshing_lists">Refreshing lists...</string>
+</resources>

@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 
@@ -39,6 +41,8 @@ class DefaultQuickTogglesComponent(
     private var feedbackJob: Job? = null
     private val toggleJobs = linkedMapOf<QuickToggleId, Job>()
     private val animationJobs = linkedMapOf<String, Job>()
+    private val settingsJobs = linkedMapOf<QuickToggleId, Job>()
+    private val feedbackMutex = Mutex()
 
     private var revision: Long = 0L
     private var lastObservedDeviceId: String? = null
@@ -58,8 +62,10 @@ class DefaultQuickTogglesComponent(
                 refreshJob?.cancel()
                 toggleJobs.values.forEach(Job::cancel)
                 animationJobs.values.forEach(Job::cancel)
+                settingsJobs.values.forEach(Job::cancel)
                 toggleJobs.clear()
                 animationJobs.clear()
+                settingsJobs.clear()
 
                 _state.update { current ->
                     current.copy(
@@ -106,7 +112,6 @@ class DefaultQuickTogglesComponent(
         }
 
         toggleJobs[toggleId]?.cancel()
-        val actionRevision = ++revision
         setItemRunning(toggleId = toggleId, running = true, clearError = true)
 
         val job = scope.launch {
@@ -116,7 +121,7 @@ class DefaultQuickTogglesComponent(
                 adbPath = adbPath,
                 toggleId = toggleId,
             )
-            if (!isRevisionValid(actionRevision, deviceId)) return@launch
+            if (_state.value.activeDeviceId != deviceId) return@launch
 
             _state.update { current ->
                 current.copy(
@@ -195,6 +200,7 @@ class DefaultQuickTogglesComponent(
         }
 
         animationJobs[key]?.cancel()
+        val draftValue = currentAnimationControl(key)?.draftValue ?: 1f
 
         _state.update { current ->
             current.copy(
@@ -220,7 +226,6 @@ class DefaultQuickTogglesComponent(
 
         val job = scope.launch {
             val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
-            val draftValue = currentAnimationControl(key)?.draftValue ?: 1f
             val setResult = quickTogglesService.setAnimationScale(
                 deviceId = deviceId,
                 adbPath = adbPath,
@@ -308,8 +313,9 @@ class DefaultQuickTogglesComponent(
             return
         }
 
+        settingsJobs[toggleId]?.cancel()
         setItemRunning(toggleId = toggleId, running = true)
-        scope.launch {
+        val job = scope.launch {
             val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
             val result = quickTogglesService.openSettings(
                 deviceId = deviceId,
@@ -339,6 +345,7 @@ class DefaultQuickTogglesComponent(
                 },
             )
         }
+        settingsJobs[toggleId] = job
     }
 
     override fun onDismissFeedback() {
@@ -437,7 +444,6 @@ class DefaultQuickTogglesComponent(
         val previous = toggleJobs[toggleId]
         previous?.cancel()
 
-        val actionRevision = ++revision
         setItemRunning(toggleId = toggleId, running = true, clearError = true)
 
         val job = scope.launch {
@@ -448,19 +454,20 @@ class DefaultQuickTogglesComponent(
                 toggleId = toggleId,
                 targetState = targetState,
             )
-            val snapshot = quickTogglesService.readStatuses(
+            val readResult = quickTogglesService.readStatus(
                 deviceId = deviceId,
                 adbPath = adbPath,
+                toggleId = toggleId,
             )
-            if (!isRevisionValid(actionRevision, deviceId)) return@launch
+            if (_state.value.activeDeviceId != deviceId) return@launch
 
-            val actualState = snapshot.states[toggleId] ?: QuickToggleState.UNKNOWN
+            val actualState = readResult.state
             val isApplied = actualState == targetState
             val fallbackReason = if (isApplied) {
                 null
             } else {
                 val toggleError = toggleResult.exceptionOrNull()?.message?.trim().orEmpty()
-                val readError = snapshot.readErrors[toggleId].orEmpty()
+                val readError = readResult.error.orEmpty()
                 when {
                     toggleError.isNotEmpty() -> toggleError
                     readError.isNotEmpty() -> readError
@@ -472,18 +479,30 @@ class DefaultQuickTogglesComponent(
             }
 
             _state.update { current ->
-                val snapshotApplied = applySnapshot(
-                    items = current.items,
-                    snapshot = snapshot,
-                    isDeviceAvailable = current.isDeviceAvailable,
-                )
-
                 current.copy(
-                    items = snapshotApplied.map { item ->
+                    items = current.items.map { item ->
                         if (item.id != toggleId) {
                             item
+                        } else if (item.id == QuickToggleId.ANIMATIONS) {
+                            val mergedControls = mergeAnimationControls(
+                                existing = ensureAnimationControls(item),
+                                values = readResult.animationValues,
+                            )
+                            val firstError = mergedControls
+                                .firstOrNull { it.status == AnimationScaleStatus.ERROR }
+                                ?.error
+                            item.copy(
+                                state = deriveAnimationState(mergedControls),
+                                canToggle = current.isDeviceAvailable,
+                                isRunning = false,
+                                error = fallbackReason ?: firstError,
+                                showOpenSettings = !isApplied,
+                                animationControls = mergedControls,
+                            )
                         } else {
                             item.copy(
+                                state = actualState,
+                                canToggle = current.isDeviceAvailable,
                                 isRunning = false,
                                 error = fallbackReason,
                                 showOpenSettings = !isApplied,
@@ -699,10 +718,6 @@ class DefaultQuickTogglesComponent(
         return revision == expectedRevision && _state.value.activeDeviceId == expectedDeviceId
     }
 
-    private fun Float.approxEquals(value: Float): Boolean {
-        return kotlin.math.abs(this - value) < 0.0001f
-    }
-
     private fun QuickToggleId.requiresConfirmation(): Boolean {
         return this == QuickToggleId.WIFI || this == QuickToggleId.AIRPLANE_MODE
     }
@@ -774,8 +789,10 @@ class DefaultQuickTogglesComponent(
         vararg args: Any,
     ) {
         scope.launch {
-            val message = getString(messageRes, *args)
-            showFeedback(message = message, isError = isError)
+            feedbackMutex.withLock {
+                val message = getString(messageRes, *args)
+                showFeedback(message = message, isError = isError)
+            }
         }
     }
 }

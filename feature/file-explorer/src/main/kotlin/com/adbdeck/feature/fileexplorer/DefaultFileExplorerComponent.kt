@@ -1,5 +1,7 @@
 package com.adbdeck.feature.fileexplorer
 
+import adbdeck.feature.file_explorer.generated.resources.Res
+import adbdeck.feature.file_explorer.generated.resources.*
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
@@ -17,6 +19,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 
 /**
  * Реализация [FileExplorerComponent].
@@ -47,7 +51,7 @@ class DefaultFileExplorerComponent(
             ),
             devicePanel = ExplorerPanelState(
                 currentPath = deviceFileService.defaultPath(),
-                listState = ExplorerListState.NoDevice("Выберите активное устройство"),
+                listState = ExplorerListState.NoDevice(""),
             ),
             deviceRoots = defaultDeviceRoots(),
         )
@@ -151,7 +155,10 @@ class DefaultFileExplorerComponent(
     override fun onRequestDelete(side: ExplorerSide) {
         val selected = selectedItem(side)
         if (selected == null) {
-            showFeedback("Выберите элемент для удаления", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_select_item_for_delete,
+                isError = true,
+            )
             return
         }
 
@@ -176,7 +183,10 @@ class DefaultFileExplorerComponent(
         val deviceId = when (dialog.side) {
             ExplorerSide.LOCAL -> null
             ExplorerSide.DEVICE -> dialog.deviceId ?: run {
-                showFeedback("Контекст устройства потерян. Повторите действие", isError = true)
+                showFeedbackResource(
+                    messageRes = Res.string.file_explorer_error_device_context_lost_retry,
+                    isError = true,
+                )
                 return
             }
         }
@@ -190,7 +200,9 @@ class DefaultFileExplorerComponent(
                     ExplorerSide.DEVICE -> {
                         if (deviceId == null) {
                             return@runAction Result.failure(
-                                IllegalStateException("Контекст устройства недоступен")
+                                IllegalStateException(
+                                    getString(Res.string.file_explorer_error_device_context_unavailable)
+                                )
                             )
                         }
                         deviceFileService.delete(deviceId, dialog.item.fullPath, adbPath())
@@ -198,7 +210,11 @@ class DefaultFileExplorerComponent(
                 }
             },
             onSuccess = {
-                showFeedback("Удалено: ${dialog.item.name}", isError = false)
+                showFeedbackResource(
+                    messageRes = Res.string.file_explorer_feedback_deleted,
+                    isError = false,
+                    dialog.item.name,
+                )
                 refreshSide(dialog.side)
             },
         )
@@ -240,7 +256,10 @@ class DefaultFileExplorerComponent(
         val dialog = _state.value.createDirectoryDialog ?: return
         val normalizedName = dialog.name.trim()
         if (normalizedName.isEmpty()) {
-            showFeedback("Введите имя директории", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_enter_directory_name,
+                isError = true,
+            )
             return
         }
 
@@ -249,7 +268,10 @@ class DefaultFileExplorerComponent(
         val deviceId = when (dialog.side) {
             ExplorerSide.LOCAL -> null
             ExplorerSide.DEVICE -> dialog.deviceId ?: run {
-                showFeedback("Контекст устройства потерян. Повторите действие", isError = true)
+                showFeedbackResource(
+                    messageRes = Res.string.file_explorer_error_device_context_lost_retry,
+                    isError = true,
+                )
                 return
             }
         }
@@ -267,7 +289,9 @@ class DefaultFileExplorerComponent(
                     ExplorerSide.DEVICE -> {
                         if (deviceId == null) {
                             return@runAction Result.failure(
-                                IllegalStateException("Контекст устройства недоступен")
+                                IllegalStateException(
+                                    getString(Res.string.file_explorer_error_device_context_unavailable)
+                                )
                             )
                         }
                         val targetPath = deviceFileService.resolveChildPath(dialog.parentPath, normalizedName)
@@ -276,7 +300,11 @@ class DefaultFileExplorerComponent(
                 }
             },
             onSuccess = {
-                showFeedback("Директория создана: $normalizedName", isError = false)
+                showFeedbackResource(
+                    messageRes = Res.string.file_explorer_feedback_directory_created,
+                    isError = false,
+                    normalizedName,
+                )
                 refreshSide(dialog.side)
             },
         )
@@ -289,7 +317,10 @@ class DefaultFileExplorerComponent(
     override fun onRequestRename(side: ExplorerSide) {
         val selected = selectedItem(side)
         if (selected == null) {
-            showFeedback("Выберите элемент для переименования", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_select_item_for_rename,
+                isError = true,
+            )
             return
         }
 
@@ -320,7 +351,10 @@ class DefaultFileExplorerComponent(
         val newName = dialog.newName.trim()
 
         if (newName.isEmpty()) {
-            showFeedback("Введите новое имя", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_enter_new_name,
+                isError = true,
+            )
             return
         }
 
@@ -334,7 +368,10 @@ class DefaultFileExplorerComponent(
         val deviceId = when (dialog.side) {
             ExplorerSide.LOCAL -> null
             ExplorerSide.DEVICE -> dialog.deviceId ?: run {
-                showFeedback("Контекст устройства потерян. Повторите действие", isError = true)
+                showFeedbackResource(
+                    messageRes = Res.string.file_explorer_error_device_context_lost_retry,
+                    isError = true,
+                )
                 return
             }
         }
@@ -349,7 +386,9 @@ class DefaultFileExplorerComponent(
                     ExplorerSide.DEVICE -> {
                         if (deviceId == null) {
                             return@runAction Result.failure(
-                                IllegalStateException("Контекст устройства недоступен")
+                                IllegalStateException(
+                                    getString(Res.string.file_explorer_error_device_context_unavailable)
+                                )
                             )
                         }
                         deviceFileService.rename(deviceId, dialog.item.fullPath, newName, adbPath()).map { Unit }
@@ -357,7 +396,12 @@ class DefaultFileExplorerComponent(
                 }
             },
             onSuccess = {
-                showFeedback("Переименовано: ${dialog.item.name} → $newName", isError = false)
+                showFeedbackResource(
+                    messageRes = Res.string.file_explorer_feedback_renamed,
+                    isError = false,
+                    dialog.item.name,
+                    newName,
+                )
                 refreshSide(dialog.side)
             },
         )
@@ -371,13 +415,19 @@ class DefaultFileExplorerComponent(
 
     override fun onPushSelected() {
         if (_state.value.transferState != null) {
-            showFeedback("Дождитесь завершения текущего переноса", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_wait_transfer_completion,
+                isError = true,
+            )
             return
         }
 
         val source = selectedItem(ExplorerSide.LOCAL)
         if (source == null) {
-            showFeedback("Выберите локальный файл или директорию для push", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_select_local_for_push,
+                isError = true,
+            )
             return
         }
 
@@ -394,13 +444,19 @@ class DefaultFileExplorerComponent(
 
     override fun onPullSelected() {
         if (_state.value.transferState != null) {
-            showFeedback("Дождитесь завершения текущего переноса", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_wait_transfer_completion,
+                isError = true,
+            )
             return
         }
 
         val source = selectedItem(ExplorerSide.DEVICE)
         if (source == null) {
-            showFeedback("Выберите файл или директорию на устройстве для pull", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_select_device_for_pull,
+                isError = true,
+            )
             return
         }
 
@@ -437,13 +493,20 @@ class DefaultFileExplorerComponent(
         transferJob?.cancel()
         transferJob = null
         _state.update { it.copy(transferState = null) }
-        showFeedback("Перенос отменён", isError = false)
+        showFeedbackResource(
+            messageRes = Res.string.file_explorer_feedback_transfer_cancelled,
+            isError = false,
+        )
     }
 
     // ── UI feedback ───────────────────────────────────────────────────────────
 
     override fun onPathCopied(path: String) {
-        showFeedback("Скопировано: $path", isError = false)
+        showFeedbackResource(
+            messageRes = Res.string.file_explorer_feedback_copied,
+            isError = false,
+            path,
+        )
     }
 
     override fun onDismissFeedback() {
@@ -454,11 +517,12 @@ class DefaultFileExplorerComponent(
 
     // ── Внутренняя логика загрузки панелей ───────────────────────────────────
 
-    private fun handleDeviceChange(device: AdbDevice?) {
+    private suspend fun handleDeviceChange(device: AdbDevice?) {
         when {
             device == null -> {
                 cancelDeviceOperations()
                 val defaultRoots = defaultDeviceRoots()
+                val noDeviceMessage = getString(Res.string.file_explorer_no_device_not_selected)
                 _state.update { current ->
                     clearDeviceScopedTransientState(
                         current.copy(
@@ -466,7 +530,7 @@ class DefaultFileExplorerComponent(
                             deviceRoots = defaultRoots,
                             devicePanel = current.devicePanel.copy(
                                 currentPath = preferredDeviceStartPath(defaultRoots),
-                                listState = ExplorerListState.NoDevice("Активное устройство не выбрано"),
+                                listState = ExplorerListState.NoDevice(noDeviceMessage),
                                 selectedPath = null,
                             ),
                             transferState = null,
@@ -478,6 +542,10 @@ class DefaultFileExplorerComponent(
             device.state != DeviceState.DEVICE -> {
                 cancelDeviceOperations()
                 val defaultRoots = defaultDeviceRoots()
+                val unavailableMessage = getString(
+                    Res.string.file_explorer_no_device_unavailable,
+                    device.state.rawValue,
+                )
                 _state.update { current ->
                     clearDeviceScopedTransientState(
                         current.copy(
@@ -485,9 +553,7 @@ class DefaultFileExplorerComponent(
                             deviceRoots = defaultRoots,
                             devicePanel = current.devicePanel.copy(
                                 currentPath = preferredDeviceStartPath(defaultRoots),
-                                listState = ExplorerListState.NoDevice(
-                                    "Устройство недоступно: ${device.state.rawValue}"
-                                ),
+                                listState = ExplorerListState.NoDevice(unavailableMessage),
                                 selectedPath = null,
                             ),
                             transferState = null,
@@ -544,34 +610,33 @@ class DefaultFileExplorerComponent(
             val result = localFileService.listDirectory(path)
             if (requestId != localLoadRequestId) return@launch
 
-            result.fold(
-                onSuccess = { items ->
-                    val listState = if (items.isEmpty()) ExplorerListState.Empty else ExplorerListState.Success(items)
-                    val selected = items.firstOrNull { it.fullPath == selectedPathToRestore }?.fullPath
-                    _state.update { current ->
-                        current.copy(
-                            localPanel = current.localPanel.copy(
-                                currentPath = path,
-                                listState = listState,
-                                selectedPath = selected,
-                            )
+            if (result.isSuccess) {
+                val items = result.getOrDefault(emptyList())
+                val listState = if (items.isEmpty()) ExplorerListState.Empty else ExplorerListState.Success(items)
+                val selected = items.firstOrNull { it.fullPath == selectedPathToRestore }?.fullPath
+                _state.update { current ->
+                    current.copy(
+                        localPanel = current.localPanel.copy(
+                            currentPath = path,
+                            listState = listState,
+                            selectedPath = selected,
                         )
-                    }
-                },
-                onFailure = { e ->
-                    _state.update { current ->
-                        current.copy(
-                            localPanel = current.localPanel.copy(
-                                currentPath = path,
-                                listState = ExplorerListState.Error(
-                                    e.message ?: "Ошибка чтения локальной директории",
-                                ),
-                                selectedPath = null,
-                            )
-                        )
-                    }
-                },
-            )
+                    )
+                }
+                return@launch
+            }
+
+            val errorMessage = result.exceptionOrNull()?.message
+                ?: getString(Res.string.file_explorer_error_read_local_directory)
+            _state.update { current ->
+                current.copy(
+                    localPanel = current.localPanel.copy(
+                        currentPath = path,
+                        listState = ExplorerListState.Error(errorMessage),
+                        selectedPath = null,
+                    )
+                )
+            }
         }
     }
 
@@ -631,39 +696,38 @@ class DefaultFileExplorerComponent(
         }
     }
 
-    private fun applyDeviceDirectoryResult(
+    private suspend fun applyDeviceDirectoryResult(
         path: String,
         selectedPathToRestore: String?,
         result: Result<List<ExplorerFileItem>>,
     ) {
-        result.fold(
-            onSuccess = { items ->
-                val listState = if (items.isEmpty()) ExplorerListState.Empty else ExplorerListState.Success(items)
-                val selected = items.firstOrNull { it.fullPath == selectedPathToRestore }?.fullPath
-                _state.update { current ->
-                    current.copy(
-                        devicePanel = current.devicePanel.copy(
-                            currentPath = path,
-                            listState = listState,
-                            selectedPath = selected,
-                        )
+        if (result.isSuccess) {
+            val items = result.getOrDefault(emptyList())
+            val listState = if (items.isEmpty()) ExplorerListState.Empty else ExplorerListState.Success(items)
+            val selected = items.firstOrNull { it.fullPath == selectedPathToRestore }?.fullPath
+            _state.update { current ->
+                current.copy(
+                    devicePanel = current.devicePanel.copy(
+                        currentPath = path,
+                        listState = listState,
+                        selectedPath = selected,
                     )
-                }
-            },
-            onFailure = { e ->
-                _state.update { current ->
-                    current.copy(
-                        devicePanel = current.devicePanel.copy(
-                            currentPath = path,
-                            listState = ExplorerListState.Error(
-                                e.message ?: "Ошибка чтения директории устройства",
-                            ),
-                            selectedPath = null,
-                        )
-                    )
-                }
-            },
-        )
+                )
+            }
+            return
+        }
+
+        val errorMessage = result.exceptionOrNull()?.message
+            ?: getString(Res.string.file_explorer_error_read_device_directory)
+        _state.update { current ->
+            current.copy(
+                devicePanel = current.devicePanel.copy(
+                    currentPath = path,
+                    listState = ExplorerListState.Error(errorMessage),
+                    selectedPath = null,
+                )
+            )
+        }
     }
 
     /** Загружает список корневых разделов устройства из System Monitor (df). */
@@ -731,8 +795,8 @@ class DefaultFileExplorerComponent(
             }
 
             if (finalRoots.isEmpty()) {
-                showFeedback(
-                    message = "Нет доступных директорий для shell-пользователя ADB",
+                showFeedbackResource(
+                    messageRes = Res.string.file_explorer_error_no_accessible_directories,
                     isError = true,
                 )
             }
@@ -823,23 +887,24 @@ class DefaultFileExplorerComponent(
         if (!ensureActiveDeviceMatches(deviceId)) return
 
         transferJob?.cancel()
-        _state.update {
-            it.copy(
-                transferState = TransferState(
-                    direction = direction,
-                    sourcePath = sourcePath,
-                    targetPath = targetPath,
-                    status = when (direction) {
-                        TransferDirection.PUSH -> "Выполняется push на устройство…"
-                        TransferDirection.PULL -> "Выполняется pull с устройства…"
-                    },
-                    progress = null,
-                )
-            )
-        }
-
         transferJob = scope.launch {
             try {
+                val runningStatus = when (direction) {
+                    TransferDirection.PUSH -> getString(Res.string.file_explorer_transfer_status_push_running)
+                    TransferDirection.PULL -> getString(Res.string.file_explorer_transfer_status_pull_running)
+                }
+                _state.update {
+                    it.copy(
+                        transferState = TransferState(
+                            direction = direction,
+                            sourcePath = sourcePath,
+                            targetPath = targetPath,
+                            status = runningStatus,
+                            progress = null,
+                        )
+                    )
+                }
+
                 val result = when (direction) {
                     TransferDirection.PUSH -> fileTransferService.push(
                         deviceId = deviceId,
@@ -862,10 +927,11 @@ class DefaultFileExplorerComponent(
 
                 result
                     .onSuccess {
+                        val refreshStatus = getString(Res.string.file_explorer_transfer_status_refreshing_lists)
                         _state.update { current ->
                             current.copy(
                                 transferState = current.transferState?.copy(
-                                    status = "Обновление списков…",
+                                    status = refreshStatus,
                                 )
                             )
                         }
@@ -873,17 +939,17 @@ class DefaultFileExplorerComponent(
                         onRefreshLocal()
                         onRefreshDevice()
 
-                        showFeedback(
-                            message = when (direction) {
-                                TransferDirection.PUSH -> "Push завершён"
-                                TransferDirection.PULL -> "Pull завершён"
+                        showFeedbackResource(
+                            messageRes = when (direction) {
+                                TransferDirection.PUSH -> Res.string.file_explorer_feedback_push_completed
+                                TransferDirection.PULL -> Res.string.file_explorer_feedback_pull_completed
                             },
                             isError = false,
                         )
                     }
                     .onFailure { e ->
                         showFeedback(
-                            message = e.message ?: "Ошибка переноса",
+                            message = e.message ?: getString(Res.string.file_explorer_error_transfer_generic),
                             isError = true,
                         )
                     }
@@ -923,9 +989,12 @@ class DefaultFileExplorerComponent(
         actionJob = scope.launch {
             try {
                 val result = block()
-                result.onSuccess { onSuccess() }
-                result.onFailure { e ->
-                    showFeedback(e.message ?: "Операция завершилась с ошибкой", isError = true)
+                if (result.isSuccess) {
+                    onSuccess()
+                } else {
+                    val message = result.exceptionOrNull()?.message
+                        ?: getString(Res.string.file_explorer_error_operation_failed)
+                    showFeedback(message, isError = true)
                 }
             } finally {
                 _state.update { it.copy(isActionRunning = false) }
@@ -968,7 +1037,10 @@ class DefaultFileExplorerComponent(
     private fun requireActiveDeviceIdForUi(): String? {
         val device = deviceManager.selectedDeviceFlow.value
         if (device == null || device.state != DeviceState.DEVICE) {
-            showFeedback("Активное устройство не выбрано или недоступно", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.file_explorer_error_active_device_unavailable,
+                isError = true,
+            )
             return null
         }
         return device.deviceId
@@ -982,8 +1054,8 @@ class DefaultFileExplorerComponent(
      */
     private fun ensureActiveDeviceMatches(expectedDeviceId: String): Boolean {
         if (isActiveDevice(expectedDeviceId)) return true
-        showFeedback(
-            message = "Активное устройство изменилось. Повторите действие для текущего устройства",
+        showFeedbackResource(
+            messageRes = Res.string.file_explorer_error_active_device_changed,
             isError = true,
         )
         return false
@@ -1093,6 +1165,17 @@ class DefaultFileExplorerComponent(
                     current
                 }
             }
+        }
+    }
+
+    private fun showFeedbackResource(
+        messageRes: StringResource,
+        isError: Boolean,
+        vararg args: Any,
+    ) {
+        scope.launch {
+            val message = getString(messageRes, *args)
+            showFeedback(message = message, isError = isError)
         }
     }
 }

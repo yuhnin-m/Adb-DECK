@@ -1,0 +1,87 @@
+<resources>
+    <string name="file_explorer_panel_local_title">Локальная файловая система</string>
+    <string name="file_explorer_panel_device_title">Файловая система устройства</string>
+
+    <string name="file_explorer_action_ok">OK</string>
+    <string name="file_explorer_action_up">Вверх</string>
+    <string name="file_explorer_action_refresh">Обновить</string>
+    <string name="file_explorer_action_open">Открыть</string>
+    <string name="file_explorer_action_copy_path">Копировать путь</string>
+    <string name="file_explorer_action_new_folder">Новая папка</string>
+    <string name="file_explorer_action_rename">Переименовать</string>
+    <string name="file_explorer_action_delete">Удалить</string>
+    <string name="file_explorer_action_copy">Скопировать</string>
+    <string name="file_explorer_action_push">Push -&gt;</string>
+    <string name="file_explorer_action_pull">&lt;- Pull</string>
+    <string name="file_explorer_action_cancel">Отмена</string>
+    <string name="file_explorer_action_create">Создать</string>
+    <string name="file_explorer_action_save">Сохранить</string>
+    <string name="file_explorer_action_overwrite">Перезаписать</string>
+
+    <string name="file_explorer_empty_directory">Папка пуста</string>
+
+    <string name="file_explorer_header_name">Имя</string>
+    <string name="file_explorer_header_type">Тип</string>
+    <string name="file_explorer_header_size">Размер</string>
+    <string name="file_explorer_header_modified">Изменён</string>
+
+    <string name="file_explorer_device_root_label">Раздел:</string>
+    <string name="file_explorer_device_root_select">Выбрать раздел</string>
+
+    <string name="file_explorer_transfer_title">Transfer</string>
+    <string name="file_explorer_transfer_direction_push">Push (host -&gt; device)</string>
+    <string name="file_explorer_transfer_direction_pull">Pull (device -&gt; host)</string>
+    <string name="file_explorer_transfer_source">Источник: %1$s</string>
+    <string name="file_explorer_transfer_target">Назначение: %1$s</string>
+
+    <string name="file_explorer_dialog_delete_title">Удалить элемент?</string>
+    <string name="file_explorer_dialog_delete_message">Будет удалён: %1$s</string>
+    <string name="file_explorer_dialog_create_dir_title">Новая директория</string>
+    <string name="file_explorer_dialog_path">Путь: %1$s</string>
+    <string name="file_explorer_dialog_dir_name">Имя директории</string>
+    <string name="file_explorer_dialog_rename_title">Переименовать</string>
+    <string name="file_explorer_dialog_current_path">Текущий путь: %1$s</string>
+    <string name="file_explorer_dialog_new_name">Новое имя</string>
+    <string name="file_explorer_dialog_conflict_title">Файл уже существует</string>
+    <string name="file_explorer_dialog_conflict_push_message">На устройстве уже есть элемент с таким именем.</string>
+    <string name="file_explorer_dialog_conflict_pull_message">На хосте уже есть элемент с таким именем.</string>
+    <string name="file_explorer_dialog_conflict_question">Перезаписать существующий элемент?</string>
+
+    <string name="file_explorer_type_directory">Dir</string>
+    <string name="file_explorer_type_file">File</string>
+    <string name="file_explorer_type_link">Link</string>
+    <string name="file_explorer_type_other">Other</string>
+
+    <string name="file_explorer_no_device_select_active">Выберите активное устройство</string>
+    <string name="file_explorer_no_device_not_selected">Активное устройство не выбрано</string>
+    <string name="file_explorer_no_device_unavailable">Устройство недоступно: %1$s</string>
+
+    <string name="file_explorer_error_select_item_for_delete">Выберите элемент для удаления</string>
+    <string name="file_explorer_error_select_item_for_rename">Выберите элемент для переименования</string>
+    <string name="file_explorer_error_enter_directory_name">Введите имя директории</string>
+    <string name="file_explorer_error_enter_new_name">Введите новое имя</string>
+    <string name="file_explorer_error_wait_transfer_completion">Дождитесь завершения текущего переноса</string>
+    <string name="file_explorer_error_select_local_for_push">Выберите локальный файл или директорию для push</string>
+    <string name="file_explorer_error_select_device_for_pull">Выберите файл или директорию на устройстве для pull</string>
+    <string name="file_explorer_error_device_context_lost_retry">Контекст устройства потерян. Повторите действие</string>
+    <string name="file_explorer_error_device_context_unavailable">Контекст устройства недоступен</string>
+    <string name="file_explorer_error_read_local_directory">Ошибка чтения локальной директории</string>
+    <string name="file_explorer_error_read_device_directory">Ошибка чтения директории устройства</string>
+    <string name="file_explorer_error_no_accessible_directories">Нет доступных директорий для shell-пользователя ADB</string>
+    <string name="file_explorer_error_transfer_generic">Ошибка переноса</string>
+    <string name="file_explorer_error_operation_failed">Операция завершилась с ошибкой</string>
+    <string name="file_explorer_error_active_device_unavailable">Активное устройство не выбрано или недоступно</string>
+    <string name="file_explorer_error_active_device_changed">Активное устройство изменилось. Повторите действие для текущего устройства</string>
+
+    <string name="file_explorer_feedback_deleted">Удалено: %1$s</string>
+    <string name="file_explorer_feedback_directory_created">Директория создана: %1$s</string>
+    <string name="file_explorer_feedback_renamed">Переименовано: %1$s -&gt; %2$s</string>
+    <string name="file_explorer_feedback_transfer_cancelled">Перенос отменён</string>
+    <string name="file_explorer_feedback_copied">Скопировано: %1$s</string>
+    <string name="file_explorer_feedback_push_completed">Push завершён</string>
+    <string name="file_explorer_feedback_pull_completed">Pull завершён</string>
+
+    <string name="file_explorer_transfer_status_push_running">Выполняется push на устройство…</string>
+    <string name="file_explorer_transfer_status_pull_running">Выполняется pull с устройства…</string>
+    <string name="file_explorer_transfer_status_refreshing_lists">Обновление списков…</string>
+</resources>

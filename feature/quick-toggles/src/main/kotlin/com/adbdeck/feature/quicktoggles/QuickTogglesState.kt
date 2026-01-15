@@ -121,16 +121,16 @@ data class QuickTogglesState(
  */
 fun defaultQuickToggleItems(): List<ToggleItem> {
     return listOf(
-        ToggleItem(id = QuickToggleId.WIFI, title = "Wi-Fi"),
-        ToggleItem(id = QuickToggleId.MOBILE_DATA, title = "Mobile data"),
-        ToggleItem(id = QuickToggleId.BLUETOOTH, title = "Bluetooth"),
-        ToggleItem(id = QuickToggleId.AIRPLANE_MODE, title = "Airplane mode"),
+        ToggleItem(id = QuickToggleId.WIFI, title = ""),
+        ToggleItem(id = QuickToggleId.MOBILE_DATA, title = ""),
+        ToggleItem(id = QuickToggleId.BLUETOOTH, title = ""),
+        ToggleItem(id = QuickToggleId.AIRPLANE_MODE, title = ""),
         ToggleItem(
             id = QuickToggleId.ANIMATIONS,
-            title = "Animations",
+            title = "",
             animationControls = defaultAnimationScaleControls(),
         ),
-        ToggleItem(id = QuickToggleId.STAY_AWAKE, title = "Stay awake while charging"),
+        ToggleItem(id = QuickToggleId.STAY_AWAKE, title = ""),
     )
 }
 

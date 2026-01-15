@@ -6,9 +6,12 @@ import com.adbdeck.feature.quicktoggles.ANIMATION_TRANSITION_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.ANIMATION_WINDOW_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.QuickToggleId
 import com.adbdeck.feature.quicktoggles.QuickToggleState
+import com.adbdeck.feature.quicktoggles.approxEquals
 import java.util.Locale
-import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 /**
  * Реализация [QuickTogglesService] поверх [DeviceInfoClient.runShellCommand].
@@ -25,12 +28,21 @@ class DefaultQuickTogglesService(
         val errors = linkedMapOf<QuickToggleId, String>()
         val animationValues = linkedMapOf<QuickToggleId, List<AnimationScaleValue>>()
 
-        QuickToggleId.entries.forEach { toggleId ->
-            val result = readStatus(
-                deviceId = deviceId,
-                adbPath = adbPath,
-                toggleId = toggleId,
-            )
+        val results = coroutineScope {
+            QuickToggleId.entries
+                .map { toggleId ->
+                    async {
+                        toggleId to readStatus(
+                            deviceId = deviceId,
+                            adbPath = adbPath,
+                            toggleId = toggleId,
+                        )
+                    }
+                }
+                .awaitAll()
+        }
+
+        results.forEach { (toggleId, result) ->
             states[toggleId] = result.state
             result.error?.takeIf { it.isNotBlank() }?.let { errors[toggleId] = it }
             if (result.animationValues.isNotEmpty()) {
@@ -459,10 +471,6 @@ class DefaultQuickTogglesService(
         }
     }
 
-    private fun Float.approxEquals(value: Float): Boolean {
-        return abs(this - value) < 0.0001f
-    }
-
     private suspend fun runShellRequireSuccess(
         deviceId: String,
         adbPath: String,
@@ -508,13 +516,13 @@ class DefaultQuickTogglesService(
         return when {
             normalized.contains("wi-fi is enabled") ||
                 normalized.contains("wifi is enabled") ||
-                Regex("""mwifienabled\s*[:=]\s*true""", RegexOption.IGNORE_CASE).containsMatchIn(raw) -> {
+                WIFI_ENABLED_RE.containsMatchIn(raw) -> {
                 QuickToggleState.ON
             }
 
             normalized.contains("wi-fi is disabled") ||
                 normalized.contains("wifi is disabled") ||
-                Regex("""mwifienabled\s*[:=]\s*false""", RegexOption.IGNORE_CASE).containsMatchIn(raw) -> {
+                WIFI_DISABLED_RE.containsMatchIn(raw) -> {
                 QuickToggleState.OFF
             }
 
@@ -523,7 +531,7 @@ class DefaultQuickTogglesService(
     }
 
     private fun parseMobileDataStateFromConnectivity(raw: String): QuickToggleState? {
-        Regex("""(?:mobile|cellular)\s+data\s+(?:enabled|state)\s*[:=]\s*(true|false|on|off|connected|disconnected)""", RegexOption.IGNORE_CASE)
+        MOBILE_DATA_ENABLED_STATE_RE
             .find(raw)
             ?.groupValues
             ?.getOrNull(1)
@@ -536,7 +544,7 @@ class DefaultQuickTogglesService(
                 }
             }
 
-        Regex("""\bmdataenabled\s*[:=]\s*(true|false)\b""", RegexOption.IGNORE_CASE)
+        MOBILE_DATA_MDATA_ENABLED_RE
             .find(raw)
             ?.groupValues
             ?.getOrNull(1)
@@ -550,8 +558,8 @@ class DefaultQuickTogglesService(
 
         val normalized = raw.lowercase()
         return when {
-            Regex("""mobile data state\s*[:=]\s*connected""", RegexOption.IGNORE_CASE).containsMatchIn(raw) ||
-                Regex("""data connection state\s*[:=]\s*connected""", RegexOption.IGNORE_CASE).containsMatchIn(raw) -> {
+            MOBILE_DATA_STATE_CONNECTED_RE.containsMatchIn(raw) ||
+                DATA_CONNECTION_STATE_CONNECTED_RE.containsMatchIn(raw) -> {
                 QuickToggleState.ON
             }
 
@@ -571,7 +579,7 @@ class DefaultQuickTogglesService(
     private fun parseBluetoothState(raw: String): QuickToggleState? {
         val normalized = raw.lowercase()
 
-        Regex("""\benabled\s*[:=]\s*(true|false)\b""", RegexOption.IGNORE_CASE)
+        BLUETOOTH_ENABLED_RE
             .find(raw)
             ?.groupValues
             ?.getOrNull(1)
@@ -583,7 +591,7 @@ class DefaultQuickTogglesService(
                 }
             }
 
-        Regex("""\bstate\s*[:=]\s*(on|off|turning_on|turning_off)\b""", RegexOption.IGNORE_CASE)
+        BLUETOOTH_STATE_RE
             .find(raw)
             ?.groupValues
             ?.getOrNull(1)
@@ -611,5 +619,21 @@ class DefaultQuickTogglesService(
         if (normalized.contains("permission denied")) return true
         if (normalized.contains("security exception")) return true
         return false
+    }
+
+    private companion object {
+        private val WIFI_ENABLED_RE = Regex("""mwifienabled\s*[:=]\s*true""", RegexOption.IGNORE_CASE)
+        private val WIFI_DISABLED_RE = Regex("""mwifienabled\s*[:=]\s*false""", RegexOption.IGNORE_CASE)
+
+        private val MOBILE_DATA_ENABLED_STATE_RE = Regex(
+            """(?:mobile|cellular)\s+data\s+(?:enabled|state)\s*[:=]\s*(true|false|on|off|connected|disconnected)""",
+            RegexOption.IGNORE_CASE,
+        )
+        private val MOBILE_DATA_MDATA_ENABLED_RE = Regex("""\bmdataenabled\s*[:=]\s*(true|false)\b""", RegexOption.IGNORE_CASE)
+        private val MOBILE_DATA_STATE_CONNECTED_RE = Regex("""mobile data state\s*[:=]\s*connected""", RegexOption.IGNORE_CASE)
+        private val DATA_CONNECTION_STATE_CONNECTED_RE = Regex("""data connection state\s*[:=]\s*connected""", RegexOption.IGNORE_CASE)
+
+        private val BLUETOOTH_ENABLED_RE = Regex("""\benabled\s*[:=]\s*(true|false)\b""", RegexOption.IGNORE_CASE)
+        private val BLUETOOTH_STATE_RE = Regex("""\bstate\s*[:=]\s*(on|off|turning_on|turning_off)\b""", RegexOption.IGNORE_CASE)
     }
 }

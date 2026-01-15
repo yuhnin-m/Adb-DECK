@@ -6,6 +6,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -59,17 +61,10 @@ import org.jetbrains.compose.resources.stringResource
 fun QuickTogglesScreen(component: QuickTogglesComponent) {
     val state by component.state.collectAsState()
 
-    val primaryToggleIds = setOf(
-        QuickToggleId.WIFI,
-        QuickToggleId.MOBILE_DATA,
-        QuickToggleId.BLUETOOTH,
-        QuickToggleId.AIRPLANE_MODE,
-        QuickToggleId.STAY_AWAKE,
-    )
-    val primaryItems = state.items.filter { it.id in primaryToggleIds }
+    val primaryItems = state.items.filter { it.id in PRIMARY_TOGGLE_IDS }
     val animationsItem = state.items.firstOrNull { it.id == QuickToggleId.ANIMATIONS }
     val extraItems = state.items.filterNot {
-        it.id in primaryToggleIds || it.id == QuickToggleId.ANIMATIONS
+        it.id in PRIMARY_TOGGLE_IDS || it.id == QuickToggleId.ANIMATIONS
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -170,16 +165,22 @@ private fun StandardTogglesGroupCard(
     onRequestToggle: (QuickToggleId, QuickToggleState) -> Unit,
     onOpenSettings: (QuickToggleId) -> Unit,
 ) {
-    val headerTrailing: (@Composable RowScope.() -> Unit)? = onRefresh?.let { refreshAction ->
-        {
-            AdbOutlinedButton(
-                onClick = refreshAction,
-                enabled = refreshEnabled,
-                loading = isRefreshRunning,
-                text = stringResource(AdbCommonStringRes.actionRefresh),
-                leadingIcon = if (isRefreshRunning) null else Icons.Outlined.Refresh,
-                size = AdbButtonSize.SMALL,
-            )
+    val headerTrailing: (@Composable RowScope.() -> Unit)? = remember(
+        onRefresh,
+        refreshEnabled,
+        isRefreshRunning,
+    ) {
+        onRefresh?.let { refreshAction ->
+            {
+                AdbOutlinedButton(
+                    onClick = refreshAction,
+                    enabled = refreshEnabled,
+                    loading = isRefreshRunning,
+                    text = stringResource(AdbCommonStringRes.actionRefresh),
+                    leadingIcon = if (isRefreshRunning) null else Icons.Outlined.Refresh,
+                    size = AdbButtonSize.SMALL,
+                )
+            }
         }
     }
 
@@ -193,10 +194,7 @@ private fun StandardTogglesGroupCard(
         ),
         titleTextStyle = MaterialTheme.typography.titleMedium,
         subtitleTextStyle = MaterialTheme.typography.bodyMedium,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            horizontal = Dimensions.paddingLarge,
-            vertical = Dimensions.paddingMedium,
-        ),
+        contentPadding = TOGGLES_CONTENT_PADDING,
         contentSpacing = Dimensions.paddingMedium,
         headerTrailing = headerTrailing,
         modifier = Modifier.fillMaxWidth(),
@@ -330,10 +328,7 @@ private fun AnimationsToggleCard(
         containerColor = AdbTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f),
         titleTextStyle = MaterialTheme.typography.titleMedium,
         subtitleTextStyle = MaterialTheme.typography.bodyMedium,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            horizontal = Dimensions.paddingLarge,
-            vertical = Dimensions.paddingMedium,
-        ),
+        contentPadding = TOGGLES_CONTENT_PADDING,
         contentSpacing = Dimensions.paddingMedium,
         border = BorderStroke(
             width = 1.dp,
@@ -465,7 +460,7 @@ private fun AnimationScaleControlRow(
             horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            quickPresets().forEach { preset ->
+            QUICK_PRESETS.forEach { preset ->
                 AdbOutlinedButton(
                     onClick = { onDraftChanged(control.key, preset) },
                     text = presetLabel(preset),
@@ -576,8 +571,6 @@ private fun animationDescription(key: String): String {
     }
 }
 
-private fun quickPresets(): List<Float> = listOf(0f, 0.5f, 1f, 2f, 5f, 10f)
-
 private fun presetLabel(value: Float): String = "${formatScaleValue(value)}x"
 
 private fun snapScaleValue(value: Float): Float {
@@ -588,3 +581,18 @@ private fun snapScaleValue(value: Float): Float {
 private fun formatScaleValue(value: Float): String {
     return String.format(Locale.US, "%.1f", value)
 }
+
+private val PRIMARY_TOGGLE_IDS = setOf(
+    QuickToggleId.WIFI,
+    QuickToggleId.MOBILE_DATA,
+    QuickToggleId.BLUETOOTH,
+    QuickToggleId.AIRPLANE_MODE,
+    QuickToggleId.STAY_AWAKE,
+)
+
+private val QUICK_PRESETS = listOf(0f, 0.5f, 1f, 2f, 5f, 10f)
+
+private val TOGGLES_CONTENT_PADDING = PaddingValues(
+    horizontal = Dimensions.paddingLarge,
+    vertical = Dimensions.paddingMedium,
+)
