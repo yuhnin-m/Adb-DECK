@@ -3,15 +3,16 @@ package com.adbdeck.feature.fileexplorer.ui
 import adbdeck.feature.file_explorer.generated.resources.Res
 import adbdeck.feature.file_explorer.generated.resources.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,11 +30,9 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.VerticalAlignTop
 import androidx.compose.material.icons.outlined.Warning
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,21 +41,44 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.segmentedbuttons.AdbMultiSegmentedButtons
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
 import com.adbdeck.core.utils.formatBytes
 import com.adbdeck.feature.fileexplorer.ExplorerFileItem
 import com.adbdeck.feature.fileexplorer.ExplorerFileType
 import com.adbdeck.feature.fileexplorer.ExplorerListState
 import com.adbdeck.feature.fileexplorer.ExplorerPanelState
 import org.jetbrains.compose.resources.stringResource
+
+private enum class ExplorerToolbarAction {
+    REFRESH,
+    UP,
+    PATH,
+    NEW_FOLDER,
+    RENAME,
+    DELETE,
+}
 
 @Composable
 internal fun ExplorerPanel(
@@ -77,6 +99,7 @@ internal fun ExplorerPanel(
     modifier: Modifier = Modifier,
 ) {
     val selected = selectedItem(state)
+    val focusRequester = remember { FocusRequester() }
 
     Column(modifier = modifier.fillMaxHeight()) {
         Row(
@@ -100,48 +123,67 @@ internal fun ExplorerPanel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ToolbarActionButton(
-                label = stringResource(Res.string.file_explorer_action_up),
-                enabled = !isBusy,
-                onClick = onUp,
-                icon = { Icon(Icons.Outlined.VerticalAlignTop, contentDescription = null, modifier = Modifier.size(16.dp)) },
+            ActionSegmentGroup(
+                options = listOf(
+                    AdbSegmentedOption(
+                        value = ExplorerToolbarAction.REFRESH,
+                        label = "",
+                        leadingIcon = Icons.Outlined.Refresh,
+                        enabled = !isBusy,
+                        contentDescription = stringResource(Res.string.file_explorer_action_refresh),
+                    ),
+                    AdbSegmentedOption(
+                        value = ExplorerToolbarAction.UP,
+                        label = stringResource(Res.string.file_explorer_action_up),
+                        leadingIcon = Icons.Outlined.VerticalAlignTop,
+                        enabled = !isBusy,
+                    ),
+                ),
+                onAction = { action ->
+                    when (action) {
+                        ExplorerToolbarAction.REFRESH -> onRefresh()
+                        ExplorerToolbarAction.UP -> onUp()
+                        else -> Unit
+                    }
+                },
             )
-            ToolbarActionButton(
-                label = stringResource(Res.string.file_explorer_action_refresh),
-                enabled = !isBusy,
-                onClick = onRefresh,
-                icon = { Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            )
-            ToolbarActionButton(
-                label = stringResource(Res.string.file_explorer_action_open),
-                enabled = !isBusy && selected?.isDirectory == true,
-                onClick = { selected?.takeIf { it.isDirectory }?.let { onOpenDirectory(it.fullPath) } },
-                icon = { Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            )
-            ToolbarActionButton(
-                label = stringResource(Res.string.file_explorer_action_copy_path),
-                enabled = selected != null,
-                onClick = { selected?.let { onCopyPath(it.fullPath) } },
-                icon = { Icon(Icons.Outlined.FileCopy, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            )
-            ToolbarActionButton(
-                label = stringResource(Res.string.file_explorer_action_new_folder),
-                enabled = !isBusy,
-                onClick = onRequestCreateDirectory,
-                icon = { Icon(Icons.Outlined.CreateNewFolder, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            )
-            ToolbarActionButton(
-                label = stringResource(Res.string.file_explorer_action_rename),
-                enabled = !isBusy && selected != null,
-                onClick = onRequestRename,
-                icon = { Icon(Icons.AutoMirrored.Outlined.TextSnippet, contentDescription = null, modifier = Modifier.size(16.dp)) },
-            )
-            ToolbarActionButton(
-                label = stringResource(Res.string.file_explorer_action_delete),
-                enabled = !isBusy && selected != null,
-                onClick = onRequestDelete,
-                icon = { Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                danger = true,
+            ActionSegmentGroup(
+                options = listOf(
+                    AdbSegmentedOption(
+                        value = ExplorerToolbarAction.PATH,
+                        label = stringResource(Res.string.file_explorer_action_copy_path),
+                        leadingIcon = Icons.Outlined.FileCopy,
+                        enabled = selected != null,
+                    ),
+                    AdbSegmentedOption(
+                        value = ExplorerToolbarAction.NEW_FOLDER,
+                        label = stringResource(Res.string.file_explorer_action_new_folder),
+                        leadingIcon = Icons.Outlined.CreateNewFolder,
+                        enabled = !isBusy,
+                    ),
+                    AdbSegmentedOption(
+                        value = ExplorerToolbarAction.RENAME,
+                        label = stringResource(Res.string.file_explorer_action_rename),
+                        leadingIcon = Icons.AutoMirrored.Outlined.TextSnippet,
+                        enabled = !isBusy && selected != null,
+                    ),
+                    AdbSegmentedOption(
+                        value = ExplorerToolbarAction.DELETE,
+                        label = "",
+                        leadingIcon = Icons.Outlined.Delete,
+                        enabled = !isBusy && selected != null,
+                        contentDescription = stringResource(Res.string.file_explorer_action_delete),
+                    ),
+                ),
+                onAction = { action ->
+                    when (action) {
+                        ExplorerToolbarAction.PATH -> selected?.let { onCopyPath(it.fullPath) }
+                        ExplorerToolbarAction.NEW_FOLDER -> onRequestCreateDirectory()
+                        ExplorerToolbarAction.RENAME -> onRequestRename()
+                        ExplorerToolbarAction.DELETE -> onRequestDelete()
+                        else -> Unit
+                    }
+                },
             )
         }
 
@@ -168,13 +210,37 @@ internal fun ExplorerPanel(
             HorizontalDivider()
         }
 
-        FileListContent(
-            state = state,
-            onOpenDirectory = onOpenDirectory,
-            onSelect = onSelect,
-            onCopyError = onCopyError,
-            modifier = Modifier.weight(1f),
-        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .focusRequester(focusRequester)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    val isEnterPressed =
+                        event.type == KeyEventType.KeyDown &&
+                            (event.key == Key.Enter || event.key == Key.NumPadEnter)
+                    if (!isEnterPressed || isBusy) {
+                        return@onPreviewKeyEvent false
+                    }
+                    val selectedDirectory = selected?.takeIf { it.isDirectory } ?: return@onPreviewKeyEvent false
+                    onOpenDirectory(selectedDirectory.fullPath)
+                    true
+                },
+        ) {
+            FileListContent(
+                state = state,
+                onOpenDirectory = { path ->
+                    focusRequester.requestFocus()
+                    onOpenDirectory(path)
+                },
+                onSelect = { path ->
+                    focusRequester.requestFocus()
+                    onSelect(path)
+                },
+                onCopyError = onCopyError,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -253,9 +319,11 @@ private fun FileErrorView(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            OutlinedButton(onClick = onCopy) {
-                Text(stringResource(Res.string.file_explorer_action_copy))
-            }
+            AdbOutlinedButton(
+                onClick = onCopy,
+                text = stringResource(Res.string.file_explorer_action_copy),
+                size = AdbButtonSize.MEDIUM,
+            )
         }
     }
 }
@@ -369,27 +437,17 @@ private fun FileRow(
 }
 
 @Composable
-private fun ToolbarActionButton(
-    label: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-    icon: @Composable () -> Unit,
-    danger: Boolean = false,
+private fun ActionSegmentGroup(
+    options: List<AdbSegmentedOption<ExplorerToolbarAction>>,
+    onAction: (ExplorerToolbarAction) -> Unit,
 ) {
-    OutlinedButton(
-        onClick = onClick,
-        enabled = enabled,
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-        colors = if (danger) {
-            ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-        } else {
-            ButtonDefaults.outlinedButtonColors()
-        },
-    ) {
-        icon()
-        Spacer(Modifier.width(6.dp))
-        Text(text = label, style = MaterialTheme.typography.labelMedium)
-    }
+    AdbMultiSegmentedButtons(
+        options = options,
+        selectedValues = emptySet(),
+        onValueToggle = { action, _ -> onAction(action) },
+        size = AdbSegmentedButtonSize.MEDIUM,
+        cornerRadius = AdbCornerRadius.MEDIUM,
+    )
 }
 
 @Composable
@@ -415,19 +473,14 @@ private fun DeviceRootsSelector(
         Spacer(Modifier.width(8.dp))
 
         Box(modifier = Modifier.weight(1f)) {
-            OutlinedButton(
+            AdbOutlinedButton(
                 onClick = { expandedState.value = true },
+                text = selectedRoot ?: stringResource(Res.string.file_explorer_device_root_select),
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text = selectedRoot ?: stringResource(Res.string.file_explorer_device_root_select),
-                    style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                fullWidth = true,
+                size = AdbButtonSize.MEDIUM,
+                type = AdbButtonType.NEUTRAL,
+            )
 
             androidx.compose.material3.DropdownMenu(
                 expanded = expandedState.value,

@@ -4,6 +4,7 @@ import adbdeck.feature.file_explorer.generated.resources.Res
 import adbdeck.feature.file_explorer.generated.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -12,17 +13,22 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
+import com.adbdeck.core.ui.textfields.AdbTextFieldSize
+import com.adbdeck.core.ui.textfields.AdbTextFieldType
 import com.adbdeck.feature.fileexplorer.CreateDirectoryDialogState
 import com.adbdeck.feature.fileexplorer.DeleteDialogState
 import com.adbdeck.feature.fileexplorer.RenameDialogState
@@ -45,18 +51,23 @@ internal fun DeleteDialog(
         },
         confirmButton = {
             if (isRunning) {
-                CircularProgressIndicator(modifier = androidx.compose.ui.Modifier.size(22.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
             } else {
-                Button(onClick = onConfirm) {
-                    Text(stringResource(Res.string.file_explorer_action_delete))
-                }
+                AdbFilledButton(
+                    onClick = onConfirm,
+                    text = stringResource(Res.string.file_explorer_action_delete),
+                    size = AdbButtonSize.MEDIUM,
+                    type = AdbButtonType.DANGER,
+                )
             }
         },
         dismissButton = {
             if (!isRunning) {
-                OutlinedButton(onClick = onCancel) {
-                    Text(stringResource(Res.string.file_explorer_action_cancel))
-                }
+                AdbOutlinedButton(
+                    onClick = onCancel,
+                    text = stringResource(Res.string.file_explorer_action_cancel),
+                    size = AdbButtonSize.MEDIUM,
+                )
             }
         },
     )
@@ -79,30 +90,37 @@ internal fun CreateDirectoryDialog(
                     stringResource(Res.string.file_explorer_dialog_path, state.parentPath),
                     style = MaterialTheme.typography.bodySmall,
                 )
-                OutlinedTextField(
+                AdbOutlinedTextField(
                     value = state.name,
                     onValueChange = onNameChanged,
                     singleLine = true,
                     enabled = !isRunning,
-                    label = { Text(stringResource(Res.string.file_explorer_dialog_dir_name)) },
+                    placeholder = stringResource(Res.string.file_explorer_dialog_dir_name),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
+                    modifier = Modifier.fillMaxWidth(),
+                    size = AdbTextFieldSize.MEDIUM,
+                    type = AdbTextFieldType.NEUTRAL,
                 )
             }
         },
         confirmButton = {
             if (isRunning) {
-                CircularProgressIndicator(modifier = androidx.compose.ui.Modifier.size(22.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
             } else {
-                Button(onClick = onConfirm) {
-                    Text(stringResource(Res.string.file_explorer_action_create))
-                }
+                AdbFilledButton(
+                    onClick = onConfirm,
+                    text = stringResource(Res.string.file_explorer_action_create),
+                    size = AdbButtonSize.MEDIUM,
+                )
             }
         },
         dismissButton = {
             if (!isRunning) {
-                OutlinedButton(onClick = onCancel) {
-                    Text(stringResource(Res.string.file_explorer_action_cancel))
-                }
+                AdbOutlinedButton(
+                    onClick = onCancel,
+                    text = stringResource(Res.string.file_explorer_action_cancel),
+                    size = AdbButtonSize.MEDIUM,
+                )
             }
         },
     )
@@ -125,30 +143,37 @@ internal fun RenameDialog(
                     stringResource(Res.string.file_explorer_dialog_current_path, state.item.fullPath),
                     style = MaterialTheme.typography.bodySmall,
                 )
-                OutlinedTextField(
+                AdbOutlinedTextField(
                     value = state.newName,
                     onValueChange = onNameChanged,
                     singleLine = true,
                     enabled = !isRunning,
-                    label = { Text(stringResource(Res.string.file_explorer_dialog_new_name)) },
+                    placeholder = stringResource(Res.string.file_explorer_dialog_new_name),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None),
+                    modifier = Modifier.fillMaxWidth(),
+                    size = AdbTextFieldSize.MEDIUM,
+                    type = AdbTextFieldType.NEUTRAL,
                 )
             }
         },
         confirmButton = {
             if (isRunning) {
-                CircularProgressIndicator(modifier = androidx.compose.ui.Modifier.size(22.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
             } else {
-                Button(onClick = onConfirm) {
-                    Text(stringResource(Res.string.file_explorer_action_save))
-                }
+                AdbFilledButton(
+                    onClick = onConfirm,
+                    text = stringResource(Res.string.file_explorer_action_save),
+                    size = AdbButtonSize.MEDIUM,
+                )
             }
         },
         dismissButton = {
             if (!isRunning) {
-                OutlinedButton(onClick = onCancel) {
-                    Text(stringResource(Res.string.file_explorer_action_cancel))
-                }
+                AdbOutlinedButton(
+                    onClick = onCancel,
+                    text = stringResource(Res.string.file_explorer_action_cancel),
+                    size = AdbButtonSize.MEDIUM,
+                )
             }
         },
     )
@@ -194,18 +219,23 @@ internal fun TransferConflictDialog(
         },
         confirmButton = {
             if (isRunning) {
-                CircularProgressIndicator(modifier = androidx.compose.ui.Modifier.size(22.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
             } else {
-                Button(onClick = onConfirm) {
-                    Text(stringResource(Res.string.file_explorer_action_overwrite))
-                }
+                AdbFilledButton(
+                    onClick = onConfirm,
+                    text = stringResource(Res.string.file_explorer_action_overwrite),
+                    size = AdbButtonSize.MEDIUM,
+                    type = AdbButtonType.DANGER,
+                )
             }
         },
         dismissButton = {
             if (!isRunning) {
-                OutlinedButton(onClick = onCancel) {
-                    Text(stringResource(Res.string.file_explorer_action_cancel))
-                }
+                AdbOutlinedButton(
+                    onClick = onCancel,
+                    text = stringResource(Res.string.file_explorer_action_cancel),
+                    size = AdbButtonSize.MEDIUM,
+                )
             }
         },
     )

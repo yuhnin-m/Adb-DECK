@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -72,6 +74,7 @@ fun <T> AdbSingleSegmentedButtons(
                 label = option.label,
                 selected = option.value == selectedValue,
                 enabled = option.enabled,
+                leadingIcon = option.leadingIcon,
                 indicatorColor = option.indicatorColor,
                 contentDescription = option.contentDescription ?: option.label,
                 onClick = { onValueSelected(option.value) },
@@ -124,6 +127,7 @@ fun <T> AdbMultiSegmentedButtons(
                 label = option.label,
                 selected = selected,
                 enabled = option.enabled,
+                leadingIcon = option.leadingIcon,
                 indicatorColor = option.indicatorColor,
                 contentDescription = option.contentDescription ?: option.label,
                 onClick = { onValueToggle(option.value, !selected) },
@@ -144,6 +148,7 @@ private fun SegmentedItem(
     label: String,
     selected: Boolean,
     enabled: Boolean,
+    leadingIcon: ImageVector?,
     indicatorColor: androidx.compose.ui.graphics.Color?,
     contentDescription: String,
     onClick: () -> Unit,
@@ -157,6 +162,8 @@ private fun SegmentedItem(
         selected -> colors.activeContentColor
         else -> colors.inactiveContentColor
     }
+
+    val hasText = label.isNotBlank()
 
     Surface(
         shape = shape,
@@ -182,17 +189,27 @@ private fun SegmentedItem(
                     Box(
                         modifier = Modifier
                             .size(size.indicatorSize)
-                            .background(color = color, shape = CircleShape),
+                        .background(color = color, shape = CircleShape),
                     )
                 }
 
-                Text(
-                    text = label,
-                    style = segmentedTextStyle(size = size),
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                leadingIcon?.let { icon ->
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(size.indicatorSize + 10.dp),
+                    )
+                }
+
+                if (hasText) {
+                    Text(
+                        text = label,
+                        style = segmentedTextStyle(size = size),
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

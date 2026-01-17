@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -57,6 +58,7 @@ enum class AdbSegmentedButtonSize(
  *
  * @param value Бизнес-значение опции.
  * @param label Текст сегмента.
+ * @param leadingIcon Иконка сегмента (опционально).
  * @param enabled Доступность опции.
  * @param indicatorColor Опциональный цвет точки слева от подписи.
  * @param contentDescription Текст для accessibility. Если `null`, используется [label].
@@ -65,6 +67,7 @@ enum class AdbSegmentedButtonSize(
 data class AdbSegmentedOption<T>(
     val value: T,
     val label: String,
+    val leadingIcon: ImageVector? = null,
     val enabled: Boolean = true,
     val indicatorColor: Color? = null,
     val contentDescription: String? = null,

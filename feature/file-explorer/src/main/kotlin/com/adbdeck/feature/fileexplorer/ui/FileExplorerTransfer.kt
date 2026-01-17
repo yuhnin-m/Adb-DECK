@@ -4,7 +4,6 @@ import adbdeck.feature.file_explorer.generated.resources.Res
 import adbdeck.feature.file_explorer.generated.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,20 +14,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.buttons.AdbPlainButton
 import com.adbdeck.feature.fileexplorer.FileExplorerState
 import com.adbdeck.feature.fileexplorer.TransferDirection
 import com.adbdeck.feature.fileexplorer.TransferState
@@ -58,35 +58,29 @@ internal fun TransferActions(
         )
         Spacer(Modifier.weight(1f))
 
-        Button(
+        AdbFilledButton(
             onClick = onPush,
             enabled = canPush,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowForward, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(Res.string.file_explorer_action_push))
-        }
+            text = stringResource(Res.string.file_explorer_action_push),
+            leadingIcon = Icons.AutoMirrored.Outlined.ArrowForward,
+            size = AdbButtonSize.MEDIUM,
+        )
 
-        Button(
+        AdbFilledButton(
             onClick = onPull,
             enabled = canPull,
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(Res.string.file_explorer_action_pull))
-        }
+            text = stringResource(Res.string.file_explorer_action_pull),
+            leadingIcon = Icons.AutoMirrored.Outlined.ArrowBack,
+            size = AdbButtonSize.MEDIUM,
+        )
 
         if (state.transferState != null) {
-            OutlinedButton(
+            AdbOutlinedButton(
                 onClick = onCancelTransfer,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error,
-                ),
-            ) {
-                Text(stringResource(Res.string.file_explorer_action_cancel))
-            }
+                text = stringResource(Res.string.file_explorer_action_cancel),
+                type = AdbButtonType.DANGER,
+                size = AdbButtonSize.MEDIUM,
+            )
         }
     }
 }
@@ -113,9 +107,12 @@ internal fun TransferStatus(
                     style = MaterialTheme.typography.labelLarge,
                 )
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onCancelTransfer) {
-                    Text(stringResource(Res.string.file_explorer_action_cancel))
-                }
+                AdbPlainButton(
+                    onClick = onCancelTransfer,
+                    text = stringResource(Res.string.file_explorer_action_cancel),
+                    size = AdbButtonSize.MEDIUM,
+                    type = AdbButtonType.DANGER,
+                )
             }
 
             Text(
