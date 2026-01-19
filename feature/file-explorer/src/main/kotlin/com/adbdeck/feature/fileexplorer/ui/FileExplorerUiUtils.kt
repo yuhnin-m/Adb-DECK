@@ -13,12 +13,17 @@ internal fun selectedItem(panel: ExplorerPanelState): ExplorerFileItem? {
 }
 
 internal fun currentRootForPath(roots: List<String>, currentPath: String): String? {
-    val normalizedPath = currentPath.trimEnd('/').ifBlank { "/" }
-    return roots
-        .map { it.trimEnd('/').ifBlank { "/" } }
-        .filter { root -> normalizedPath == root || normalizedPath.startsWith("$root/") }
-        .maxByOrNull { it.length }
-        ?: roots.firstOrNull()
+    val normalizedPath = normalizePathForCompare(currentPath)
+    var bestMatch: String? = null
+    for (root in roots) {
+        val normalizedRoot = normalizePathForCompare(root)
+        if (normalizedPath == normalizedRoot || normalizedPath.startsWith("$normalizedRoot/")) {
+            if (bestMatch == null || normalizedRoot.length > bestMatch.length) {
+                bestMatch = normalizedRoot
+            }
+        }
+    }
+    return bestMatch ?: roots.firstOrNull()
 }
 
 private val dateFormatter: DateTimeFormatter =
@@ -26,3 +31,6 @@ private val dateFormatter: DateTimeFormatter =
 
 internal fun formatEpochMillis(epochMillis: Long): String =
     dateFormatter.format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
+
+private fun normalizePathForCompare(path: String): String =
+    path.trimEnd('/').ifBlank { "/" }

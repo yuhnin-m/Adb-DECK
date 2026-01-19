@@ -25,18 +25,17 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.DriveFileMove
 import androidx.compose.material.icons.automirrored.outlined.TextSnippet
+import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.VerticalAlignTop
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -54,8 +53,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.designsystem.AdbCornerRadius
+import com.adbdeck.core.designsystem.AdbTheme
+import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.core.ui.buttons.AdbButtonSize
@@ -75,6 +77,7 @@ private enum class ExplorerToolbarAction {
     REFRESH,
     UP,
     PATH,
+    TRANSFER,
     NEW_FOLDER,
     RENAME,
     DELETE,
@@ -96,17 +99,23 @@ internal fun ExplorerPanel(
     onRequestDelete: () -> Unit,
     onCopyPath: (String) -> Unit,
     onCopyError: (String) -> Unit,
+    transferButtonText: String? = null,
+    transferButtonIcon: ImageVector? = null,
+    transferActionEnabled: Boolean = false,
+    onTransferAction: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    val selected = selectedItem(state)
+    val selected = remember(state.listState, state.selectedPath) {
+        selectedItem(state)
+    }
     val focusRequester = remember { FocusRequester() }
 
     Column(modifier = modifier.fillMaxHeight()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(38.dp)
-                .padding(horizontal = 8.dp),
+                .height(Dimensions.topBarHeight)
+                .padding(horizontal = Dimensions.paddingSmall),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -119,9 +128,12 @@ internal fun ExplorerPanel(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(
+                    horizontal = Dimensions.paddingSmall,
+                    vertical = Dimensions.paddingXSmall,
+                ),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
         ) {
             ActionSegmentGroup(
                 options = listOf(
@@ -134,9 +146,10 @@ internal fun ExplorerPanel(
                     ),
                     AdbSegmentedOption(
                         value = ExplorerToolbarAction.UP,
-                        label = stringResource(Res.string.file_explorer_action_up),
-                        leadingIcon = Icons.Outlined.VerticalAlignTop,
+                        label = "",
+                        leadingIcon = Icons.Outlined.ArrowUpward,
                         enabled = !isBusy,
+                        contentDescription = stringResource(Res.string.file_explorer_action_up),
                     ),
                 ),
                 onAction = { action ->
@@ -147,37 +160,59 @@ internal fun ExplorerPanel(
                     }
                 },
             )
-            ActionSegmentGroup(
-                options = listOf(
+            val actionOptions = buildList {
+                add(
                     AdbSegmentedOption(
                         value = ExplorerToolbarAction.PATH,
                         label = stringResource(Res.string.file_explorer_action_copy_path),
                         leadingIcon = Icons.Outlined.FileCopy,
                         enabled = selected != null,
                     ),
+                )
+                if (onTransferAction != null && !transferButtonText.isNullOrBlank()) {
+                    add(
+                        AdbSegmentedOption(
+                            value = ExplorerToolbarAction.TRANSFER,
+                            label = transferButtonText,
+                            leadingIcon = transferButtonIcon,
+                            enabled = transferActionEnabled && !isBusy && selected != null,
+                            contentColor = AdbTheme.colorScheme.primary,
+                        ),
+                    )
+                }
+                add(
                     AdbSegmentedOption(
                         value = ExplorerToolbarAction.NEW_FOLDER,
                         label = stringResource(Res.string.file_explorer_action_new_folder),
                         leadingIcon = Icons.Outlined.CreateNewFolder,
                         enabled = !isBusy,
                     ),
+                )
+                add(
                     AdbSegmentedOption(
                         value = ExplorerToolbarAction.RENAME,
                         label = stringResource(Res.string.file_explorer_action_rename),
                         leadingIcon = Icons.AutoMirrored.Outlined.TextSnippet,
                         enabled = !isBusy && selected != null,
                     ),
+                )
+                add(
                     AdbSegmentedOption(
                         value = ExplorerToolbarAction.DELETE,
                         label = "",
                         leadingIcon = Icons.Outlined.Delete,
                         enabled = !isBusy && selected != null,
+                        contentColor = AdbTheme.colorScheme.error,
                         contentDescription = stringResource(Res.string.file_explorer_action_delete),
                     ),
-                ),
+                )
+            }
+            ActionSegmentGroup(
+                options = actionOptions,
                 onAction = { action ->
                     when (action) {
                         ExplorerToolbarAction.PATH -> selected?.let { onCopyPath(it.fullPath) }
+                        ExplorerToolbarAction.TRANSFER -> onTransferAction?.invoke()
                         ExplorerToolbarAction.NEW_FOLDER -> onRequestCreateDirectory()
                         ExplorerToolbarAction.RENAME -> onRequestRename()
                         ExplorerToolbarAction.DELETE -> onRequestDelete()
@@ -195,7 +230,12 @@ internal fun ExplorerPanel(
                 style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = Dimensions.paddingMedium,
+                        vertical = Dimensions.paddingSmall,
+                    ),
             )
         }
 
@@ -304,19 +344,22 @@ private fun FileErrorView(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+            modifier = Modifier.padding(
+                horizontal = Dimensions.paddingDefault,
+                vertical = Dimensions.paddingMedium,
+            ),
         ) {
             Icon(
                 imageVector = Icons.Outlined.Warning,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(20.dp),
+                tint = AdbTheme.colorScheme.error,
+                modifier = Modifier.size(Dimensions.iconSizeNav),
             )
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AdbTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
             AdbOutlinedButton(
@@ -331,31 +374,36 @@ private fun FileErrorView(
 @Composable
 private fun FileListHeader() {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = Dimensions.paddingMedium,
+                vertical = Dimensions.paddingXSmall,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = stringResource(Res.string.file_explorer_header_name),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.48f),
         )
         Text(
             text = stringResource(Res.string.file_explorer_header_type),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.16f),
         )
         Text(
             text = stringResource(Res.string.file_explorer_header_size),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.16f),
         )
         Text(
             text = stringResource(Res.string.file_explorer_header_modified),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.20f),
         )
     }
@@ -369,10 +417,12 @@ private fun FileRow(
     onSelect: () -> Unit,
     onOpen: () -> Unit,
 ) {
+    val sizeText = remember(item.sizeBytes) { item.sizeBytes?.formatBytes() ?: "—" }
+    val modifiedText = remember(item.modifiedEpochMillis) { item.modifiedEpochMillis?.let(::formatEpochMillis) ?: "—" }
     val bg = if (isSelected) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        AdbTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
     } else {
-        MaterialTheme.colorScheme.surface
+        AdbTheme.colorScheme.surface
     }
 
     Row(
@@ -381,11 +431,19 @@ private fun FileRow(
             .background(bg)
             .pointerInput(item.fullPath) {
                 detectTapGestures(
-                    onTap = { onSelect() },
+                    // Выделяем строку сразу на первое нажатие, чтобы не ждать
+                    // таймаут распознавания double-tap (иначе клик ощущается "липким").
+                    onPress = {
+                        onSelect()
+                        tryAwaitRelease()
+                    },
                     onDoubleTap = { onOpen() },
                 )
             }
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(
+                horizontal = Dimensions.paddingMedium,
+                vertical = Dimensions.paddingSmall,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
@@ -395,10 +453,10 @@ private fun FileRow(
             Icon(
                 imageVector = iconForType(item.type),
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = if (item.isDirectory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(Dimensions.iconSizeSmall),
+                tint = if (item.isDirectory) AdbTheme.colorScheme.primary else AdbTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Dimensions.paddingSmall))
             Text(
                 text = item.name,
                 style = MaterialTheme.typography.bodySmall,
@@ -410,25 +468,25 @@ private fun FileRow(
         Text(
             text = labelForType(item.type),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.16f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
 
         Text(
-            text = item.sizeBytes?.formatBytes() ?: "—",
+            text = sizeText,
             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-            color = MaterialTheme.colorScheme.onSurface,
+            color = AdbTheme.colorScheme.onSurface,
             modifier = Modifier.weight(0.16f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
 
         Text(
-            text = item.modifiedEpochMillis?.let(::formatEpochMillis) ?: "—",
+            text = modifiedText,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(0.20f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -457,20 +515,25 @@ private fun DeviceRootsSelector(
     onSelectRoot: (String) -> Unit,
 ) {
     val expandedState = remember(roots) { mutableStateOf(false) }
-    val selectedRoot = currentRootForPath(roots = roots, currentPath = currentPath)
+    val selectedRoot = remember(roots, currentPath) {
+        currentRootForPath(roots = roots, currentPath = currentPath)
+    }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(
+                horizontal = Dimensions.paddingMedium,
+                vertical = Dimensions.paddingXSmall,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = stringResource(Res.string.file_explorer_device_root_label),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = AdbTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(Dimensions.paddingSmall))
 
         Box(modifier = Modifier.weight(1f)) {
             AdbOutlinedButton(

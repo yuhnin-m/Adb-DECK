@@ -60,6 +60,7 @@ enum class AdbSegmentedButtonSize(
  * @param label Текст сегмента.
  * @param leadingIcon Иконка сегмента (опционально).
  * @param enabled Доступность опции.
+ * @param contentColor Опциональный цвет контента (иконка/текст) для конкретной опции.
  * @param indicatorColor Опциональный цвет точки слева от подписи.
  * @param contentDescription Текст для accessibility. Если `null`, используется [label].
  */
@@ -69,6 +70,7 @@ data class AdbSegmentedOption<T>(
     val label: String,
     val leadingIcon: ImageVector? = null,
     val enabled: Boolean = true,
+    val contentColor: Color? = null,
     val indicatorColor: Color? = null,
     val contentDescription: String? = null,
 )

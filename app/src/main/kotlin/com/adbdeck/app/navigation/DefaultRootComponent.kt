@@ -21,7 +21,7 @@ import com.adbdeck.feature.notifications.DefaultNotificationsComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.apkinstall.DefaultApkInstallComponent
 import com.adbdeck.feature.apkinstall.service.DefaultApkInstallService
-import com.adbdeck.feature.fileexplorer.DefaultFileExplorerComponent
+import com.adbdeck.feature.fileexplorer.createFileExplorerComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
 import com.adbdeck.feature.quicktoggles.DefaultQuickTogglesComponent
@@ -31,9 +31,6 @@ import com.adbdeck.feature.screentools.service.DefaultHostFileService
 import com.adbdeck.feature.screentools.service.DefaultScreenrecordService
 import com.adbdeck.feature.screentools.service.DefaultScreenshotService
 import com.adbdeck.feature.settings.DefaultSettingsComponent
-import com.adbdeck.feature.fileexplorer.service.DefaultDeviceFileService
-import com.adbdeck.feature.fileexplorer.service.DefaultFileTransferService
-import com.adbdeck.feature.fileexplorer.service.DefaultLocalFileService
 import com.adbdeck.feature.deviceinfo.service.DefaultDeviceInfoService
 import com.adbdeck.feature.systemmonitor.DefaultSystemMonitorComponent
 import com.arkivanov.decompose.ComponentContext
@@ -241,24 +238,13 @@ class DefaultRootComponent(
         )
 
         is Screen.FileExplorer -> RootComponent.Child.FileExplorer(
-            run {
-                val localFileService = DefaultLocalFileService()
-                val deviceFileService = DefaultDeviceFileService(deviceFileClient)
-                val transferService = DefaultFileTransferService(
-                    localFileService = localFileService,
-                    deviceFileService = deviceFileService,
-                )
-
-                DefaultFileExplorerComponent(
-                    componentContext = componentContext,
-                    deviceManager = deviceManager,
-                    settingsRepository = settingsRepository,
-                    systemMonitorClient = systemMonitorClient,
-                    localFileService = localFileService,
-                    deviceFileService = deviceFileService,
-                    fileTransferService = transferService,
-                )
-            }
+            createFileExplorerComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                settingsRepository = settingsRepository,
+                systemMonitorClient = systemMonitorClient,
+                deviceFileClient = deviceFileClient,
+            )
         )
 
         is Screen.Contacts -> RootComponent.Child.Contacts(

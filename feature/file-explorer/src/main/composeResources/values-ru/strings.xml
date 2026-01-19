@@ -11,8 +11,8 @@
     <string name="file_explorer_action_rename">Переименовать</string>
     <string name="file_explorer_action_delete">Удалить</string>
     <string name="file_explorer_action_copy">Скопировать</string>
-    <string name="file_explorer_action_push">Push -&gt;</string>
-    <string name="file_explorer_action_pull">&lt;- Pull</string>
+    <string name="file_explorer_action_push">Push</string>
+    <string name="file_explorer_action_pull">Pull</string>
     <string name="file_explorer_action_cancel">Отмена</string>
     <string name="file_explorer_action_create">Создать</string>
     <string name="file_explorer_action_save">Сохранить</string>
@@ -67,6 +67,7 @@
     <string name="file_explorer_error_device_context_unavailable">Контекст устройства недоступен</string>
     <string name="file_explorer_error_read_local_directory">Ошибка чтения локальной директории</string>
     <string name="file_explorer_error_read_device_directory">Ошибка чтения директории устройства</string>
+    <string name="file_explorer_error_read_device_roots">Не удалось определить корневые директории устройства</string>
     <string name="file_explorer_error_no_accessible_directories">Нет доступных директорий для shell-пользователя ADB</string>
     <string name="file_explorer_error_transfer_generic">Ошибка переноса</string>
     <string name="file_explorer_error_operation_failed">Операция завершилась с ошибкой</string>

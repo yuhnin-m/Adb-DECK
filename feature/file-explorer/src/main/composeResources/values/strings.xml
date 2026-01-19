@@ -67,6 +67,7 @@
     <string name="file_explorer_error_device_context_unavailable">Device context is unavailable</string>
     <string name="file_explorer_error_read_local_directory">Failed to read local directory</string>
     <string name="file_explorer_error_read_device_directory">Failed to read device directory</string>
+    <string name="file_explorer_error_read_device_roots">Failed to resolve device root directories</string>
     <string name="file_explorer_error_no_accessible_directories">No directories available for ADB shell user</string>
     <string name="file_explorer_error_transfer_generic">Transfer failed</string>
     <string name="file_explorer_error_operation_failed">Operation failed</string>

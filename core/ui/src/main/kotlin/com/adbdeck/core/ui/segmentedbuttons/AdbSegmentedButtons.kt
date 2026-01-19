@@ -75,6 +75,7 @@ fun <T> AdbSingleSegmentedButtons(
                 selected = option.value == selectedValue,
                 enabled = option.enabled,
                 leadingIcon = option.leadingIcon,
+                optionContentColor = option.contentColor,
                 indicatorColor = option.indicatorColor,
                 contentDescription = option.contentDescription ?: option.label,
                 onClick = { onValueSelected(option.value) },
@@ -128,6 +129,7 @@ fun <T> AdbMultiSegmentedButtons(
                 selected = selected,
                 enabled = option.enabled,
                 leadingIcon = option.leadingIcon,
+                optionContentColor = option.contentColor,
                 indicatorColor = option.indicatorColor,
                 contentDescription = option.contentDescription ?: option.label,
                 onClick = { onValueToggle(option.value, !selected) },
@@ -149,6 +151,7 @@ private fun SegmentedItem(
     selected: Boolean,
     enabled: Boolean,
     leadingIcon: ImageVector?,
+    optionContentColor: androidx.compose.ui.graphics.Color?,
     indicatorColor: androidx.compose.ui.graphics.Color?,
     contentDescription: String,
     onClick: () -> Unit,
@@ -157,11 +160,12 @@ private fun SegmentedItem(
     colors: AdbSegmentedButtonColors,
 ) {
     val containerColor = if (selected) colors.activeContainerColor else colors.inactiveContainerColor
-    val contentColor = when {
+    val defaultContentColor = when {
         !enabled -> colors.disabledContentColor
         selected -> colors.activeContentColor
         else -> colors.inactiveContentColor
     }
+    val contentColor = if (enabled) optionContentColor ?: defaultContentColor else defaultContentColor
 
     val hasText = label.isNotBlank()
 

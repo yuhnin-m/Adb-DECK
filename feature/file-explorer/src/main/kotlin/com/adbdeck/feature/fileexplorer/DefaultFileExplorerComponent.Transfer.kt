@@ -96,34 +96,33 @@ internal fun DefaultFileExplorerComponent.startTransfer(
 
             if (!isActiveDevice(deviceId)) return@launch
 
-            result
-                .onSuccess {
-                    val refreshStatus = getString(Res.string.file_explorer_transfer_status_refreshing_lists)
-                    _state.update { current ->
-                        current.copy(
-                            transferState = current.transferState?.copy(
-                                status = refreshStatus,
-                            )
+            if (result.isSuccess) {
+                val refreshStatus = getString(Res.string.file_explorer_transfer_status_refreshing_lists)
+                _state.update { current ->
+                    current.copy(
+                        transferState = current.transferState?.copy(
+                            status = refreshStatus,
                         )
-                    }
-
-                    onRefreshLocal()
-                    onRefreshDevice()
-
-                    showFeedbackResource(
-                        messageRes = when (direction) {
-                            TransferDirection.PUSH -> Res.string.file_explorer_feedback_push_completed
-                            TransferDirection.PULL -> Res.string.file_explorer_feedback_pull_completed
-                        },
-                        isError = false,
                     )
                 }
-                .onFailure { e ->
-                    showFeedback(
-                        message = e.message ?: getString(Res.string.file_explorer_error_transfer_generic),
-                        isError = true,
-                    )
-                }
+
+                onRefreshLocal()
+                onRefreshDevice()
+
+                showFeedbackResource(
+                    messageRes = when (direction) {
+                        TransferDirection.PUSH -> Res.string.file_explorer_feedback_push_completed
+                        TransferDirection.PULL -> Res.string.file_explorer_feedback_pull_completed
+                    },
+                    isError = false,
+                )
+            } else {
+                val message = resolveErrorMessage(
+                    type = FileExplorerErrorType.TRANSFER_FAILED,
+                    cause = result.exceptionOrNull(),
+                )
+                showFeedback(message = message, isError = true)
+            }
         } finally {
             _state.update { current ->
                 val transfer = current.transferState

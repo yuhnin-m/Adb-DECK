@@ -1,10 +1,7 @@
 package com.adbdeck.feature.fileexplorer
 
-import adbdeck.feature.file_explorer.generated.resources.Res
-import adbdeck.feature.file_explorer.generated.resources.*
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.resources.getString
 
 /** Выполняет короткую action-операцию с флагом [FileExplorerState.isActionRunning]. */
 internal fun DefaultFileExplorerComponent.runAction(
@@ -24,8 +21,10 @@ internal fun DefaultFileExplorerComponent.runAction(
             if (result.isSuccess) {
                 onSuccess()
             } else {
-                val message = result.exceptionOrNull()?.message
-                    ?: getString(Res.string.file_explorer_error_operation_failed)
+                val message = resolveErrorMessage(
+                    type = FileExplorerErrorType.OPERATION_FAILED,
+                    cause = result.exceptionOrNull(),
+                )
                 showFeedback(message, isError = true)
             }
         } finally {

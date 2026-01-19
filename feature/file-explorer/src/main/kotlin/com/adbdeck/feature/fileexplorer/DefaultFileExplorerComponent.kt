@@ -3,7 +3,6 @@ package com.adbdeck.feature.fileexplorer
 import adbdeck.feature.file_explorer.generated.resources.Res
 import adbdeck.feature.file_explorer.generated.resources.*
 import com.adbdeck.core.adb.api.device.DeviceManager
-import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.fileexplorer.service.DeviceFileService
 import com.adbdeck.feature.fileexplorer.service.FileTransferService
@@ -31,7 +30,6 @@ class DefaultFileExplorerComponent(
     componentContext: ComponentContext,
     internal val deviceManager: DeviceManager,
     internal val settingsRepository: SettingsRepository,
-    internal val systemMonitorClient: SystemMonitorClient,
     internal val localFileService: LocalFileService,
     internal val deviceFileService: DeviceFileService,
     internal val fileTransferService: FileTransferService,
@@ -49,7 +47,7 @@ class DefaultFileExplorerComponent(
                 currentPath = deviceFileService.defaultPath(),
                 listState = ExplorerListState.NoDevice(""),
             ),
-            deviceRoots = defaultDeviceRoots(),
+            deviceRoots = deviceFileService.defaultRoots(),
         )
     )
     override val state: StateFlow<FileExplorerState> = _state.asStateFlow()
@@ -140,7 +138,7 @@ class DefaultFileExplorerComponent(
         val deviceId = requireActiveDeviceIdForUi() ?: return
         loadDeviceDirectory(
             deviceId = deviceId,
-            path = normalizeDevicePath(path),
+            path = deviceFileService.normalizePath(path),
             selectedPathToRestore = null,
             fallbackToRoot = false,
         )

@@ -10,6 +10,33 @@ interface DeviceFileService {
     /** Стартовый путь для device-панели. */
     fun defaultPath(): String
 
+    /**
+     * Базовый набор root-путей для устройства.
+     *
+     * Возвращается даже если авто-детект недоступен, чтобы UI всегда имел
+     * предсказуемую точку входа в файловую систему.
+     */
+    fun defaultRoots(): List<String>
+
+    /** Нормализовать device-путь в абсолютный формат без хвостового `/`. */
+    fun normalizePath(path: String): String
+
+    /** Выбрать предпочтительный стартовый путь из списка [roots]. */
+    fun preferredStartPath(roots: List<String>): String
+
+    /**
+     * Найти доступные root-пути для shell-пользователя на устройстве.
+     *
+     * Реализация использует best-effort стратегию:
+     * - пробует получить mount-point'ы из `df`/storage-источников;
+     * - применяет fallback-список корней;
+     * - проверяет доступ лёгким probe (`canAccessDirectory`).
+     */
+    suspend fun resolveAccessibleRoots(
+        deviceId: String,
+        adbPath: String,
+    ): Result<List<String>>
+
     /** Получить список элементов директории [path] на устройстве. */
     suspend fun listDirectory(
         deviceId: String,

@@ -23,6 +23,8 @@ import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.alertdialogs.AdbAlertDialog
+import com.adbdeck.core.ui.alertdialogs.AdbAlertDialogAction
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
@@ -52,7 +54,7 @@ import org.jetbrains.compose.resources.stringResource
  *     DeviceDetailsPanel(300.dp)
  *   }
  * }
- * AlertDialog (pendingAction)   // Подтверждение опасного действия
+ * AdbAlertDialog (pendingAction) // Подтверждение опасного действия
  * AdbBanner                     // Краткосрочное уведомление
  * ```
  *
@@ -150,36 +152,25 @@ fun DevicesScreen(component: DevicesComponent) {
         // ── Диалог подтверждения действия ─────────────────────────────────────
         val pending = state.pendingAction
         if (pending != null) {
-            AlertDialog(
-                onDismissRequest = { if (!state.isActionRunning) component.onCancelAction() },
-                title   = { Text(localizePendingActionTitle(pending)) },
-                text    = { Text(localizePendingActionMessage(pending)) },
-                confirmButton = {
-                    if (state.isActionRunning) {
-                        CircularProgressIndicator(
-                            modifier    = Modifier.size(24.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        AdbFilledButton(
-                            onClick = component::onConfirmAction,
-                            text = stringResource(AdbCommonStringRes.actionConfirm),
-                            type = AdbButtonType.DANGER,
-                            size = AdbButtonSize.MEDIUM,
-                        )
-                    }
-                },
-                dismissButton = {
-                    if (!state.isActionRunning) {
-                        AdbOutlinedButton(
-                            onClick = component::onCancelAction,
-                            text = stringResource(AdbCommonStringRes.actionCancel),
-                            type = AdbButtonType.NEUTRAL,
-                            size = AdbButtonSize.MEDIUM,
-                        )
-                    }
-                },
-            )
+            AdbAlertDialog(
+                onDismissRequest = component::onCancelAction,
+                title = localizePendingActionTitle(pending),
+                confirmAction = AdbAlertDialogAction(
+                    text = stringResource(AdbCommonStringRes.actionConfirm),
+                    onClick = component::onConfirmAction,
+                    type = AdbButtonType.DANGER,
+                    size = AdbButtonSize.MEDIUM,
+                    loading = state.isActionRunning,
+                ),
+                dismissAction = AdbAlertDialogAction(
+                    text = stringResource(AdbCommonStringRes.actionCancel),
+                    onClick = component::onCancelAction,
+                    type = AdbButtonType.NEUTRAL,
+                    size = AdbButtonSize.MEDIUM,
+                ),
+            ) {
+                Text(localizePendingActionMessage(pending))
+            }
         }
 
         // ── Баннер обратной связи ──────────────────────────────────────────────

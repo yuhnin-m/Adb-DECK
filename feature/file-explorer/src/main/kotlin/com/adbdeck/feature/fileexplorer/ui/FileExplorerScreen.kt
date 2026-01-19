@@ -2,6 +2,8 @@ package com.adbdeck.feature.fileexplorer.ui
 
 import adbdeck.feature.file_explorer.generated.resources.Res
 import adbdeck.feature.file_explorer.generated.resources.file_explorer_action_ok
+import adbdeck.feature.file_explorer.generated.resources.file_explorer_action_pull
+import adbdeck.feature.file_explorer.generated.resources.file_explorer_action_push
 import adbdeck.feature.file_explorer.generated.resources.file_explorer_panel_device_title
 import adbdeck.feature.file_explorer.generated.resources.file_explorer_panel_local_title
 import androidx.compose.foundation.layout.Column
@@ -11,13 +13,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.unit.dp
+import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.AdbBanner
 import com.adbdeck.core.ui.AdbBannerDismissStyle
 import com.adbdeck.core.ui.AdbBannerType
@@ -54,6 +59,10 @@ fun FileExplorerScreen(component: FileExplorerComponent) {
                     clipboard.setText(AnnotatedString(error))
                     component.onPathCopied(error)
                 },
+                transferButtonText = stringResource(Res.string.file_explorer_action_push),
+                transferButtonIcon = Icons.AutoMirrored.Outlined.ArrowForward,
+                transferActionEnabled = state.activeDeviceId != null,
+                onTransferAction = component::onPushSelected,
                 modifier = Modifier.weight(1f),
             )
 
@@ -80,18 +89,13 @@ fun FileExplorerScreen(component: FileExplorerComponent) {
                     clipboard.setText(AnnotatedString(error))
                     component.onPathCopied(error)
                 },
+                transferButtonText = stringResource(Res.string.file_explorer_action_pull),
+                transferButtonIcon = Icons.AutoMirrored.Outlined.ArrowBack,
+                transferActionEnabled = state.activeDeviceId != null,
+                onTransferAction = component::onPullSelected,
                 modifier = Modifier.weight(1f),
             )
         }
-
-        HorizontalDivider()
-        TransferActions(
-            state = state,
-            onPush = component::onPushSelected,
-            onPull = component::onPullSelected,
-            onCancelTransfer = component::onCancelTransfer,
-            modifier = Modifier.fillMaxWidth(),
-        )
 
         state.transferState?.let { transfer ->
             HorizontalDivider()
@@ -112,7 +116,10 @@ fun FileExplorerScreen(component: FileExplorerComponent) {
                 dismissText = stringResource(Res.string.file_explorer_action_ok),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .padding(
+                        horizontal = Dimensions.paddingMedium,
+                        vertical = Dimensions.paddingSmall,
+                    ),
             )
         }
     }

@@ -64,7 +64,6 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Stop
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -92,6 +91,8 @@ import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.alertdialogs.AdbAlertDialog
+import com.adbdeck.core.ui.alertdialogs.AdbAlertDialogAction
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
@@ -736,24 +737,21 @@ private fun ConfirmationDialog(
         )
     }
 
-    AlertDialog(
+    AdbAlertDialog(
         onDismissRequest = component::onCancelAction,
-        title = { Text(title) },
-        text = { Text(text, style = MaterialTheme.typography.bodyMedium) },
-        confirmButton = {
-            AdbFilledButton(
-                onClick = component::onConfirmAction,
-                text = stringResource(Res.string.packages_dialog_confirm),
-                type = AdbButtonType.DANGER,
-                size = AdbButtonSize.MEDIUM,
-            )
-        },
-        dismissButton = {
-            AdbOutlinedButton(
-                onClick = component::onCancelAction,
-                text = stringResource(Res.string.packages_dialog_cancel),
-                size = AdbButtonSize.MEDIUM,
-            )
-        },
-    )
+        title = title,
+        confirmAction = AdbAlertDialogAction(
+            text = stringResource(Res.string.packages_dialog_confirm),
+            onClick = component::onConfirmAction,
+            type = AdbButtonType.DANGER,
+            size = AdbButtonSize.MEDIUM,
+        ),
+        dismissAction = AdbAlertDialogAction(
+            text = stringResource(Res.string.packages_dialog_cancel),
+            onClick = component::onCancelAction,
+            size = AdbButtonSize.MEDIUM,
+        ),
+    ) {
+        Text(text, style = MaterialTheme.typography.bodyMedium)
+    }
 }

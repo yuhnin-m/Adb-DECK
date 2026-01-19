@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +35,8 @@ import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.i18n.AdbCommonStringRes
 import com.adbdeck.core.ui.AdbBanner
 import com.adbdeck.core.ui.AdbBannerType
+import com.adbdeck.core.ui.alertdialogs.AdbAlertDialog
+import com.adbdeck.core.ui.alertdialogs.AdbAlertDialogAction
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
@@ -505,35 +506,30 @@ private fun QuickToggleConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    AdbAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.quick_toggles_confirm_title)) },
-        text = {
-            Text(
-                text = stringResource(
-                    Res.string.quick_toggles_confirm_message,
-                    toggleTitle(toggleId, fallback = toggleId.name),
-                    stateLabel(targetState),
-                )
+        title = stringResource(Res.string.quick_toggles_confirm_title),
+        confirmAction = AdbAlertDialogAction(
+            text = stringResource(AdbCommonStringRes.actionConfirm),
+            onClick = onConfirm,
+            type = AdbButtonType.DANGER,
+            size = AdbButtonSize.MEDIUM,
+        ),
+        dismissAction = AdbAlertDialogAction(
+            text = stringResource(AdbCommonStringRes.actionCancel),
+            onClick = onDismiss,
+            type = AdbButtonType.NEUTRAL,
+            size = AdbButtonSize.MEDIUM,
+        ),
+    ) {
+        Text(
+            text = stringResource(
+                Res.string.quick_toggles_confirm_message,
+                toggleTitle(toggleId, fallback = toggleId.name),
+                stateLabel(targetState),
             )
-        },
-        confirmButton = {
-            AdbFilledButton(
-                onClick = onConfirm,
-                text = stringResource(AdbCommonStringRes.actionConfirm),
-                type = AdbButtonType.DANGER,
-                size = AdbButtonSize.MEDIUM,
-            )
-        },
-        dismissButton = {
-            AdbOutlinedButton(
-                onClick = onDismiss,
-                text = stringResource(AdbCommonStringRes.actionCancel),
-                type = AdbButtonType.NEUTRAL,
-                size = AdbButtonSize.MEDIUM,
-            )
-        },
-    )
+        )
+    }
 }
 
 @Composable

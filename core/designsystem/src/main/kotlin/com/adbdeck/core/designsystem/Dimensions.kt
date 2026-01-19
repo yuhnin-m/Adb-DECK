@@ -49,6 +49,9 @@ object Dimensions {
     val buttonCornerRadius = AdbCornerRadius.MEDIUM.value
 
     // ── Иконки ────────────────────────────────────────────────
+    /** Компактные иконки (например, в строках таблиц/списков). */
+    val iconSizeSmall = 16.dp
+
     /** Стандартный размер иконок в навигации. */
     val iconSizeNav = 20.dp
 

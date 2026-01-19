@@ -12,7 +12,7 @@ internal suspend fun DefaultFileExplorerComponent.handleDeviceChange(device: Adb
     when {
         device == null -> {
             cancelDeviceOperations()
-            val defaultRoots = defaultDeviceRoots()
+            val defaultRoots = deviceFileService.defaultRoots()
             val noDeviceMessage = getString(Res.string.file_explorer_no_device_not_selected)
             _state.update { current ->
                 clearDeviceScopedTransientState(
@@ -20,7 +20,7 @@ internal suspend fun DefaultFileExplorerComponent.handleDeviceChange(device: Adb
                         activeDeviceId = null,
                         deviceRoots = defaultRoots,
                         devicePanel = current.devicePanel.copy(
-                            currentPath = preferredDeviceStartPath(defaultRoots),
+                            currentPath = deviceFileService.preferredStartPath(defaultRoots),
                             listState = ExplorerListState.NoDevice(noDeviceMessage),
                             selectedPath = null,
                         ),
@@ -32,7 +32,7 @@ internal suspend fun DefaultFileExplorerComponent.handleDeviceChange(device: Adb
 
         device.state != DeviceState.DEVICE -> {
             cancelDeviceOperations()
-            val defaultRoots = defaultDeviceRoots()
+            val defaultRoots = deviceFileService.defaultRoots()
             val unavailableMessage = getString(
                 Res.string.file_explorer_no_device_unavailable,
                 device.state.rawValue,
@@ -43,7 +43,7 @@ internal suspend fun DefaultFileExplorerComponent.handleDeviceChange(device: Adb
                         activeDeviceId = null,
                         deviceRoots = defaultRoots,
                         devicePanel = current.devicePanel.copy(
-                            currentPath = preferredDeviceStartPath(defaultRoots),
+                            currentPath = deviceFileService.preferredStartPath(defaultRoots),
                             listState = ExplorerListState.NoDevice(unavailableMessage),
                             selectedPath = null,
                         ),
@@ -58,8 +58,16 @@ internal suspend fun DefaultFileExplorerComponent.handleDeviceChange(device: Adb
             if (isChanged) {
                 cancelDeviceOperations()
             }
-            val roots = if (isChanged) defaultDeviceRoots() else _state.value.deviceRoots.ifEmpty { defaultDeviceRoots() }
-            val path = if (isChanged) preferredDeviceStartPath(roots) else _state.value.devicePanel.currentPath
+            val roots = if (isChanged) {
+                deviceFileService.defaultRoots()
+            } else {
+                _state.value.deviceRoots.ifEmpty { deviceFileService.defaultRoots() }
+            }
+            val path = if (isChanged) {
+                deviceFileService.preferredStartPath(roots)
+            } else {
+                _state.value.devicePanel.currentPath
+            }
             _state.update { current ->
                 val updated = current.copy(
                     activeDeviceId = device.deviceId,
@@ -117,8 +125,10 @@ internal fun DefaultFileExplorerComponent.loadLocalDirectory(
             return@launch
         }
 
-        val errorMessage = result.exceptionOrNull()?.message
-            ?: getString(Res.string.file_explorer_error_read_local_directory)
+        val errorMessage = resolveErrorMessage(
+            type = FileExplorerErrorType.READ_LOCAL_DIRECTORY,
+            cause = result.exceptionOrNull(),
+        )
         _state.update { current ->
             current.copy(
                 localPanel = current.localPanel.copy(
@@ -139,11 +149,12 @@ internal fun DefaultFileExplorerComponent.loadDeviceDirectory(
 ) {
     deviceLoadJob?.cancel()
     val requestId = ++deviceLoadRequestId
+    val normalizedPath = deviceFileService.normalizePath(path)
 
     _state.update {
         it.copy(
             devicePanel = it.devicePanel.copy(
-                currentPath = path,
+                currentPath = normalizedPath,
                 listState = ExplorerListState.Loading,
                 selectedPath = selectedPathToRestore,
             )
@@ -153,11 +164,11 @@ internal fun DefaultFileExplorerComponent.loadDeviceDirectory(
     deviceLoadJob = scope.launch {
         if (!isDeviceRequestValid(deviceId, requestId)) return@launch
 
-        val firstResult = deviceFileService.listDirectory(deviceId, path, adbPath())
+        val firstResult = deviceFileService.listDirectory(deviceId, normalizedPath, adbPath())
         if (!isDeviceRequestValid(deviceId, requestId)) return@launch
 
-        val fallbackPath = preferredDeviceStartPath(_state.value.deviceRoots)
-        if (firstResult.isFailure && fallbackToRoot && path != fallbackPath) {
+        val fallbackPath = deviceFileService.preferredStartPath(_state.value.deviceRoots)
+        if (firstResult.isFailure && fallbackToRoot && normalizedPath != fallbackPath) {
             _state.update {
                 it.copy(
                     devicePanel = it.devicePanel.copy(
@@ -180,7 +191,7 @@ internal fun DefaultFileExplorerComponent.loadDeviceDirectory(
         }
 
         applyDeviceDirectoryResult(
-            path = path,
+            path = normalizedPath,
             selectedPathToRestore = selectedPathToRestore,
             result = firstResult,
         )
@@ -208,8 +219,10 @@ internal suspend fun DefaultFileExplorerComponent.applyDeviceDirectoryResult(
         return
     }
 
-    val errorMessage = result.exceptionOrNull()?.message
-        ?: getString(Res.string.file_explorer_error_read_device_directory)
+    val errorMessage = resolveErrorMessage(
+        type = FileExplorerErrorType.READ_DEVICE_DIRECTORY,
+        cause = result.exceptionOrNull(),
+    )
     _state.update { current ->
         current.copy(
             devicePanel = current.devicePanel.copy(
@@ -221,60 +234,44 @@ internal suspend fun DefaultFileExplorerComponent.applyDeviceDirectoryResult(
     }
 }
 
-/** Загружает список корневых разделов устройства из System Monitor (df). */
+/** Загружает список доступных root-разделов устройства через сервисный слой. */
 internal fun DefaultFileExplorerComponent.loadDeviceRoots(deviceId: String) {
     rootsLoadJob?.cancel()
     rootsLoadJob = scope.launch {
-        val result = systemMonitorClient.getStorageInfo(deviceId = deviceId, adbPath = adbPath())
+        val rootsResult = deviceFileService.resolveAccessibleRoots(
+            deviceId = deviceId,
+            adbPath = adbPath(),
+        )
         if (!isActiveDevice(deviceId)) return@launch
 
-        val rootsFromStorage = result
-            .getOrNull()
-            .orEmpty()
-            .asSequence()
-            .filter { it.isRelevant }
-            .flatMap { partition ->
-                toBrowsablePaths(partition.mountPoint).asSequence()
-            }
-            .distinct()
-            .toList()
-
-        val mergedRoots = (rootsFromStorage + defaultDeviceRoots())
-            .map(::normalizeDevicePath)
-            .distinct()
-
-        val accessibleRoots = resolveAccessibleRoots(deviceId, mergedRoots)
-        if (!isActiveDevice(deviceId)) return@launch
-
-        val fallbackAccessibleRoots = if (accessibleRoots.isEmpty()) {
-            resolveAccessibleRoots(
-                deviceId = deviceId,
-                roots = listOf("/sdcard", "/storage/self/primary", "/storage/emulated/0", "/data/local/tmp", "/"),
+        rootsResult.exceptionOrNull()?.let { error ->
+            showFeedback(
+                message = resolveErrorMessage(
+                    type = FileExplorerErrorType.READ_DEVICE_ROOTS,
+                    cause = error,
+                ),
+                isError = true,
             )
-        } else {
-            emptyList()
         }
-        if (!isActiveDevice(deviceId)) return@launch
 
-        val finalRoots = (accessibleRoots + fallbackAccessibleRoots)
-            .map(::normalizeDevicePath)
-            .distinct()
+        val finalRoots = rootsResult.getOrElse { deviceFileService.defaultRoots() }
+        if (!isActiveDevice(deviceId)) return@launch
 
         _state.update { it.copy(deviceRoots = finalRoots) }
 
         // Если есть валидные корни и текущий путь нерабочий/неподходящий — переходим на лучший.
+        val normalizedCurrentPath = deviceFileService.normalizePath(_state.value.devicePanel.currentPath)
         val shouldSwitchPath =
             finalRoots.isNotEmpty() && (
-                _state.value.devicePanel.currentPath == "/" ||
+                normalizedCurrentPath == "/" ||
                     _state.value.devicePanel.listState is ExplorerListState.Error ||
                     finalRoots.none { root ->
-                        val current = normalizeDevicePath(_state.value.devicePanel.currentPath)
-                        current == root || current.startsWith("$root/")
+                        normalizedCurrentPath == root || normalizedCurrentPath.startsWith("$root/")
                     }
                 )
 
         if (shouldSwitchPath) {
-            val preferred = preferredDeviceStartPath(finalRoots)
+            val preferred = deviceFileService.preferredStartPath(finalRoots)
             if (preferred != "/") {
                 loadDeviceDirectory(
                     deviceId = deviceId,
@@ -292,36 +289,6 @@ internal fun DefaultFileExplorerComponent.loadDeviceRoots(deviceId: String) {
             )
         }
     }
-}
-
-/**
- * Проверяет какие корни реально доступны shell-пользователю и оставляет только их.
- *
- * Использует лёгкий probe вместо полного listDirectory, чтобы не делать дорогой
- * обход содержимого для каждой категории.
- */
-internal suspend fun DefaultFileExplorerComponent.resolveAccessibleRoots(
-    deviceId: String,
-    roots: List<String>,
-): List<String> {
-    val adbPath = adbPath()
-    val accessible = mutableListOf<String>()
-
-    for (root in roots) {
-        if (!isActiveDevice(deviceId)) return emptyList()
-
-        val canOpen = deviceFileService.canAccessDirectory(
-            deviceId = deviceId,
-            path = root,
-            adbPath = adbPath,
-        ).getOrDefault(false)
-
-        if (canOpen) {
-            accessible += root
-        }
-    }
-
-    return accessible
 }
 
 /** Проверка актуальности device-запроса для защиты от stale-ответов. */
@@ -400,55 +367,4 @@ internal fun DefaultFileExplorerComponent.isActiveDevice(deviceId: String): Bool
         selected.state == DeviceState.DEVICE &&
         selected.deviceId == deviceId &&
         _state.value.activeDeviceId == deviceId
-}
-
-/** Нормализует device-путь в абсолютный формат без хвостовых `/`. */
-internal fun DefaultFileExplorerComponent.normalizeDevicePath(path: String): String {
-    val normalized = path.trim().ifBlank { "/" }
-        .let { if (it.startsWith("/")) it else "/$it" }
-        .replace(Regex("/{2,}"), "/")
-        .trimEnd('/')
-    return normalized.ifBlank { "/" }
-}
-
-/** Базовый список корней для dropdown, даже если Storage недоступен. */
-internal fun DefaultFileExplorerComponent.defaultDeviceRoots(): List<String> = listOf(
-    deviceFileService.defaultPath(),
-    "/storage/emulated/0",
-    "/storage/self/primary",
-    "/data/local/tmp",
-).flatMap(::toBrowsablePaths).distinct()
-
-/** Предпочтительный стартовый путь для device-панели. */
-internal fun DefaultFileExplorerComponent.preferredDeviceStartPath(roots: List<String>): String {
-    val normalizedRoots = roots.map(::normalizeDevicePath).distinct()
-    val preferredByPriority = listOf(
-        normalizeDevicePath(deviceFileService.defaultPath()),
-        "/sdcard",
-        "/storage/emulated/0",
-        "/storage/self/primary",
-        "/data/local/tmp",
-    )
-
-    return preferredByPriority.firstOrNull { candidate -> normalizedRoots.any { it == candidate } }
-        ?: normalizedRoots.firstOrNull()
-        ?: normalizeDevicePath(deviceFileService.defaultPath())
-}
-
-/**
- * Преобразует mount-point в реально просматриваемые пути для файлового менеджера.
- *
- * `df` часто возвращает системные точки (`/storage/emulated`), тогда как
- * пользовательские файлы доступны по `/storage/emulated/0` или `/sdcard`.
- */
-internal fun DefaultFileExplorerComponent.toBrowsablePaths(rawPath: String): List<String> {
-    val path = normalizeDevicePath(rawPath)
-    val candidates = when (path) {
-        "/" -> emptyList()
-        "/storage/emulated" -> listOf("/storage/emulated/0", "/sdcard")
-        "/storage/self" -> listOf("/storage/self/primary", "/sdcard")
-        "/mnt/shell/emulated" -> listOf("/storage/emulated/0", "/sdcard")
-        else -> listOf(path)
-    }
-    return candidates.map(::normalizeDevicePath).distinct()
 }
