@@ -206,10 +206,8 @@ class SystemScreenToolsClient(
         sessionId: String,
     ): Result<Unit> = runCatchingPreserveCancellation {
         val meta = sessionMutex.withLock {
-            val current = sessionsById.remove(sessionId)
+            sessionsById[sessionId]
                 ?: error("Сессия screenrecord не найдена: $sessionId")
-            sessionIdByDevice.remove(current.deviceId, sessionId)
-            current
         }
 
         val stopResult = stopRemoteRecordProcess(
@@ -232,6 +230,13 @@ class SystemScreenToolsClient(
                     append(stopResult.stderr.trim().ifBlank { "пусто" })
                 }
             )
+        }
+
+        // Удаляем сессию из реестра только после успешной остановки.
+        // Так при ошибке stop остаётся возможность безопасного ретрая.
+        sessionMutex.withLock {
+            sessionsById.remove(sessionId)
+            sessionIdByDevice.remove(meta.deviceId, sessionId)
         }
     }
 

@@ -26,10 +26,7 @@ import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
 import com.adbdeck.feature.quicktoggles.DefaultQuickTogglesComponent
 import com.adbdeck.feature.quicktoggles.service.DefaultQuickTogglesService
-import com.adbdeck.feature.screentools.DefaultScreenToolsComponent
-import com.adbdeck.feature.screentools.service.DefaultHostFileService
-import com.adbdeck.feature.screentools.service.DefaultScreenrecordService
-import com.adbdeck.feature.screentools.service.DefaultScreenshotService
+import com.adbdeck.feature.screentools.createScreenToolsComponent
 import com.adbdeck.feature.settings.DefaultSettingsComponent
 import com.adbdeck.feature.deviceinfo.service.DefaultDeviceInfoService
 import com.adbdeck.feature.systemmonitor.DefaultSystemMonitorComponent
@@ -257,23 +254,13 @@ class DefaultRootComponent(
         )
 
         is Screen.ScreenTools -> RootComponent.Child.ScreenTools(
-            run {
-                val screenshotService = DefaultScreenshotService(screenToolsClient)
-                val screenrecordService = DefaultScreenrecordService(
-                    screenToolsClient = screenToolsClient,
-                    deviceFileClient = deviceFileClient,
-                )
-                val hostFileService = DefaultHostFileService()
-
-                DefaultScreenToolsComponent(
-                    componentContext = componentContext,
-                    deviceManager = deviceManager,
-                    settingsRepository = settingsRepository,
-                    screenshotService = screenshotService,
-                    screenrecordService = screenrecordService,
-                    hostFileService = hostFileService,
-                )
-            }
+            createScreenToolsComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                settingsRepository = settingsRepository,
+                screenToolsClient = screenToolsClient,
+                deviceFileClient = deviceFileClient,
+            )
         )
 
         is Screen.ApkInstall -> RootComponent.Child.ApkInstall(

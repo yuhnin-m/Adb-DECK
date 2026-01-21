@@ -20,6 +20,9 @@ interface HostFileService {
     /** Открыть директорию [path] в файловом менеджере ОС. */
     suspend fun openFolder(path: String): Result<Unit>
 
+    /** Открыть системный диалог выбора директории. */
+    suspend fun selectDirectory(initialPath: String): Result<String?>
+
     /** Скопировать изображение из [path] в системный буфер обмена. */
     suspend fun copyImageToClipboard(path: String): Result<Unit>
 

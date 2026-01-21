@@ -1,5 +1,7 @@
 package com.adbdeck.feature.screentools
 
+import adbdeck.feature.screen_tools.generated.resources.Res
+import adbdeck.feature.screen_tools.generated.resources.*
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
@@ -8,6 +10,7 @@ import com.adbdeck.core.adb.api.screen.ScreenrecordSession
 import com.adbdeck.core.adb.api.screen.ScreenshotOptions
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.screentools.service.HostFileService
+import com.adbdeck.feature.screentools.service.ScreenrecordStopError
 import com.adbdeck.feature.screentools.service.ScreenrecordService
 import com.adbdeck.feature.screentools.service.ScreenshotService
 import com.arkivanov.decompose.ComponentContext
@@ -20,11 +23,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 
 /**
  * Реализация [ScreenToolsComponent].
@@ -58,10 +66,26 @@ class DefaultScreenToolsComponent(
                 .ifBlank { hostFileService.defaultScreenshotDirectory() }
             val screenrecordDir = settings.screenToolsScreenrecordOutputDir
                 .ifBlank { hostFileService.defaultScreenrecordDirectory() }
+            val defaultDeviceMessage = runBlocking {
+                getString(Res.string.screen_tools_device_not_selected)
+            }
+            val defaultScreenshotStatus = runBlocking {
+                getString(Res.string.screen_tools_status_screenshot_ready)
+            }
+            val defaultScreenrecordStatus = runBlocking {
+                getString(Res.string.screen_tools_status_screenrecord_idle)
+            }
 
             ScreenToolsState(
-                screenshot = ScreenshotSectionState(outputDirectory = screenshotDir),
-                screenrecord = ScreenrecordSectionState(outputDirectory = screenrecordDir),
+                deviceMessage = defaultDeviceMessage,
+                screenshot = ScreenshotSectionState(
+                    outputDirectory = screenshotDir,
+                    status = ScreenToolsStatus(message = defaultScreenshotStatus),
+                ),
+                screenrecord = ScreenrecordSectionState(
+                    outputDirectory = screenrecordDir,
+                    status = ScreenToolsStatus(message = defaultScreenrecordStatus),
+                ),
             )
         }
     )
@@ -69,11 +93,12 @@ class DefaultScreenToolsComponent(
 
     private var screenshotJob: Job? = null
     private var hostActionJob: Job? = null
+    private var directoryPickerJob: Job? = null
+    private var persistDirectoriesJob: Job? = null
     private var recordingJob: Job? = null
     private var recordingTickerJob: Job? = null
     private var feedbackJob: Job? = null
-
-    private var activeRecordingSession: ScreenrecordSession? = null
+    private val feedbackMutex = Mutex()
 
     init {
         scope.launch {
@@ -84,6 +109,13 @@ class DefaultScreenToolsComponent(
     }
 
     override fun onSelectTab(tab: ScreenToolsTab) {
+        if (tab == ScreenToolsTab.SCREENSHOT && isScreenrecordBusy()) {
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_feedback_tab_switch_blocked_recording,
+                isError = true,
+            )
+            return
+        }
         _state.update { it.copy(selectedTab = tab) }
     }
 
@@ -96,6 +128,13 @@ class DefaultScreenToolsComponent(
             screenshotDir = normalized,
             screenrecordDir = _state.value.screenrecord.outputDirectory,
         )
+    }
+
+    override fun onPickScreenshotOutputDirectory() {
+        val initialPath = _state.value.screenshot.outputDirectory
+        pickOutputDirectory(initialPath) { selected ->
+            onScreenshotOutputDirectoryChanged(selected)
+        }
     }
 
     override fun onScreenshotQualityChanged(quality: ScreenshotQualityPreset) {
@@ -115,6 +154,13 @@ class DefaultScreenToolsComponent(
         )
     }
 
+    override fun onPickScreenrecordOutputDirectory() {
+        val initialPath = _state.value.screenrecord.outputDirectory
+        pickOutputDirectory(initialPath) { selected ->
+            onScreenrecordOutputDirectoryChanged(selected)
+        }
+    }
+
     override fun onScreenrecordQualityChanged(quality: ScreenrecordQualityPreset) {
         _state.update {
             it.copy(screenrecord = it.screenrecord.copy(quality = quality))
@@ -123,13 +169,19 @@ class DefaultScreenToolsComponent(
 
     override fun onTakeScreenshot() {
         if (screenshotJob?.isActive == true) {
-            showFeedback("Скриншот уже выполняется", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_feedback_screenshot_running,
+                isError = true,
+            )
             return
         }
 
         val deviceId = _state.value.activeDeviceId
         if (deviceId == null) {
-            showFeedback("Выберите доступное активное устройство", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_choose_active_device,
+                isError = true,
+            )
             return
         }
 
@@ -141,18 +193,20 @@ class DefaultScreenToolsComponent(
         ).toString()
 
         screenshotJob = scope.launch {
+            val creatingMessage = getString(Res.string.screen_tools_status_screenshot_creating)
             _state.update { current ->
                 current.copy(
                     screenshot = current.screenshot.copy(
                         isCapturing = true,
-                        status = ScreenToolsStatus("Создаём скриншот…", progress = null),
+                        status = ScreenToolsStatus(creatingMessage, progress = null),
                     )
                 )
             }
 
             val ensureResult = hostFileService.ensureDirectory(outputDirectory)
             if (!ensureResult.isSuccess) {
-                val message = ensureResult.exceptionOrNull()?.message ?: "Не удалось подготовить папку скриншотов"
+                val message = ensureResult.exceptionOrNull()?.message
+                    ?: getString(Res.string.screen_tools_error_prepare_screenshot_dir)
                 _state.update { current ->
                     current.copy(
                         screenshot = current.screenshot.copy(
@@ -178,30 +232,39 @@ class DefaultScreenToolsComponent(
             result.fold(
                 onSuccess = {
                     val fileName = File(outputPath).name
+                    val statusMessage = getString(Res.string.screen_tools_status_screenshot_saved, fileName)
                     _state.update { current ->
                         current.copy(
                             screenshot = current.screenshot.copy(
                                 isCapturing = false,
                                 lastFilePath = outputPath,
-                                status = ScreenToolsStatus("Скриншот сохранён: $fileName"),
+                                status = ScreenToolsStatus(statusMessage),
                             )
                         )
                     }
-                    showFeedback("Скриншот создан", isError = false)
+                    showFeedbackResource(
+                        messageRes = Res.string.screen_tools_feedback_screenshot_created,
+                        isError = false,
+                    )
                 },
                 onFailure = { error ->
+                    val statusMessage = error.message
+                        ?: getString(Res.string.screen_tools_error_screenshot_failed)
                     _state.update { current ->
                         current.copy(
                             screenshot = current.screenshot.copy(
                                 isCapturing = false,
                                 status = ScreenToolsStatus(
-                                    message = error.message ?: "Не удалось сделать скриншот",
+                                    message = statusMessage,
                                     isError = true,
                                 ),
                             )
                         )
                     }
-                    showFeedback(error.message ?: "Ошибка screenshot", isError = true)
+                    showFeedback(
+                        message = error.message ?: getString(Res.string.screen_tools_feedback_screenshot_failed),
+                        isError = true,
+                    )
                 },
             )
         }
@@ -210,12 +273,15 @@ class DefaultScreenToolsComponent(
     override fun onCopyLastScreenshotToClipboard() {
         val path = _state.value.screenshot.lastFilePath
         if (!hostFileService.isFile(path)) {
-            showFeedback("Файл скриншота не найден", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_error_screenshot_file_not_found,
+                isError = true,
+            )
             return
         }
 
         runHostAction(
-            successMessage = "Скриншот скопирован в буфер обмена",
+            successMessageRes = Res.string.screen_tools_feedback_screenshot_copied,
             action = { hostFileService.copyImageToClipboard(path!!) },
         )
     }
@@ -223,12 +289,15 @@ class DefaultScreenToolsComponent(
     override fun onOpenLastScreenshotFile() {
         val path = _state.value.screenshot.lastFilePath
         if (!hostFileService.isFile(path)) {
-            showFeedback("Файл скриншота не найден", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_error_screenshot_file_not_found,
+                isError = true,
+            )
             return
         }
 
         runHostAction(
-            successMessage = "Скриншот открыт",
+            successMessageRes = Res.string.screen_tools_feedback_screenshot_opened,
             action = { hostFileService.openFile(path!!) },
         )
     }
@@ -236,20 +305,26 @@ class DefaultScreenToolsComponent(
     override fun onOpenScreenshotFolder() {
         val directory = _state.value.screenshot.outputDirectory
         runHostAction(
-            successMessage = "Открыта папка скриншотов",
+            successMessageRes = Res.string.screen_tools_feedback_screenshot_folder_opened,
             action = { hostFileService.openFolder(directory) },
         )
     }
 
     override fun onStartRecording() {
-        if (activeRecordingSession != null || _state.value.screenrecord.isRecording || _state.value.screenrecord.isStarting) {
-            showFeedback("Запись уже выполняется", isError = true)
+        if (isScreenrecordBusy()) {
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_feedback_recording_running,
+                isError = true,
+            )
             return
         }
 
         val deviceId = _state.value.activeDeviceId
         if (deviceId == null) {
-            showFeedback("Выберите доступное активное устройство", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_choose_active_device,
+                isError = true,
+            )
             return
         }
 
@@ -260,26 +335,29 @@ class DefaultScreenToolsComponent(
 
         recordingJob?.cancel()
         recordingJob = scope.launch {
+            val startingMessage = getString(Res.string.screen_tools_status_recording_starting)
             _state.update { current ->
                 current.copy(
                     screenrecord = current.screenrecord.copy(
-                        isStarting = true,
-                        isRecording = false,
-                        isStopping = false,
+                        phase = RecordingPhase.STARTING,
+                        activeSession = null,
                         elapsedSeconds = 0,
+                        recordingDeviceId = null,
                         currentLocalTargetPath = localOutputPath,
-                        status = ScreenToolsStatus("Запускаем запись…", progress = null),
+                        status = ScreenToolsStatus(startingMessage, progress = null),
                     )
                 )
             }
 
             val ensureResult = hostFileService.ensureDirectory(outputDirectory)
             if (!ensureResult.isSuccess) {
-                val message = ensureResult.exceptionOrNull()?.message ?: "Не удалось подготовить папку записей"
+                val message = ensureResult.exceptionOrNull()?.message
+                    ?: getString(Res.string.screen_tools_error_prepare_recordings_dir)
                 _state.update { current ->
                     current.copy(
                         screenrecord = current.screenrecord.copy(
-                            isStarting = false,
+                            phase = RecordingPhase.IDLE,
+                            activeSession = null,
                             status = ScreenToolsStatus(message = message, isError = true),
                         )
                     )
@@ -302,44 +380,55 @@ class DefaultScreenToolsComponent(
 
             startResult.fold(
                 onSuccess = { session ->
-                    activeRecordingSession = session
                     startRecordingTicker(session.startedAtEpochMillis)
+                    val activeMessage = getString(Res.string.screen_tools_status_recording_active)
                     _state.update { current ->
                         current.copy(
                             screenrecord = current.screenrecord.copy(
-                                isStarting = false,
-                                isRecording = true,
-                                isStopping = false,
+                                phase = RecordingPhase.RECORDING,
+                                activeSession = session,
                                 recordingDeviceId = session.deviceId,
                                 currentLocalTargetPath = localOutputPath,
-                                status = ScreenToolsStatus("Идёт запись экрана…"),
+                                status = ScreenToolsStatus(activeMessage),
                             )
                         )
                     }
-                    showFeedback("Запись запущена", isError = false)
+                    showFeedbackResource(
+                        messageRes = Res.string.screen_tools_feedback_recording_started,
+                        isError = false,
+                    )
                 },
                 onFailure = { error ->
+                    val statusMessage = error.message
+                        ?: getString(Res.string.screen_tools_error_recording_start_failed)
                     _state.update { current ->
                         current.copy(
                             screenrecord = current.screenrecord.copy(
-                                isStarting = false,
+                                phase = RecordingPhase.IDLE,
+                                activeSession = null,
                                 status = ScreenToolsStatus(
-                                    message = error.message ?: "Не удалось запустить запись",
+                                    message = statusMessage,
                                     isError = true,
                                 ),
                             )
                         )
                     }
-                    showFeedback(error.message ?: "Ошибка запуска записи", isError = true)
+                    showFeedback(
+                        message = error.message ?: getString(Res.string.screen_tools_feedback_recording_start_failed),
+                        isError = true,
+                    )
                 },
             )
         }
     }
 
     override fun onStopRecording() {
-        val session = activeRecordingSession
+        val session = _state.value.screenrecord.activeSession
         if (session == null) {
-            showFeedback("Запись не запущена", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_feedback_recording_not_started,
+                isError = true,
+            )
             return
         }
 
@@ -350,14 +439,13 @@ class DefaultScreenToolsComponent(
 
         recordingJob?.cancel()
         recordingJob = scope.launch {
+            val stoppingMessage = getString(Res.string.screen_tools_status_recording_stopping)
             _state.update { current ->
                 current.copy(
                     screenrecord = current.screenrecord.copy(
-                        isStarting = false,
-                        isRecording = true,
-                        isStopping = true,
+                        phase = RecordingPhase.STOPPING,
                         status = ScreenToolsStatus(
-                            message = "Останавливаем запись…",
+                            message = stoppingMessage,
                             progress = 0.1f,
                         ),
                     )
@@ -384,48 +472,105 @@ class DefaultScreenToolsComponent(
 
             if (!isActive) return@launch
 
-            activeRecordingSession = null
-
             result.fold(
                 onSuccess = {
                     val fileName = File(localOutputPath).name
+                    val statusMessage = getString(Res.string.screen_tools_status_recording_saved, fileName)
                     _state.update { current ->
                         current.copy(
                             screenrecord = current.screenrecord.copy(
-                                isStarting = false,
-                                isRecording = false,
-                                isStopping = false,
+                                phase = RecordingPhase.IDLE,
+                                activeSession = null,
                                 recordingDeviceId = null,
                                 elapsedSeconds = 0,
                                 currentLocalTargetPath = null,
                                 lastFilePath = localOutputPath,
                                 status = ScreenToolsStatus(
-                                    message = "Запись сохранена: $fileName",
+                                    message = statusMessage,
                                     progress = 1f,
                                 ),
                             )
                         )
                     }
-                    showFeedback("Видео сохранено", isError = false)
+                    showFeedbackResource(
+                        messageRes = Res.string.screen_tools_feedback_recording_saved,
+                        isError = false,
+                    )
                 },
                 onFailure = { error ->
-                    _state.update { current ->
-                        current.copy(
-                            screenrecord = current.screenrecord.copy(
-                                isStarting = false,
-                                isRecording = false,
-                                isStopping = false,
-                                recordingDeviceId = null,
-                                elapsedSeconds = 0,
-                                currentLocalTargetPath = null,
-                                status = ScreenToolsStatus(
-                                    message = error.message ?: "Не удалось остановить запись",
-                                    isError = true,
-                                ),
+                    when (error) {
+                        is ScreenrecordStopError.StopOnDevice -> {
+                            startRecordingTicker(session.startedAtEpochMillis)
+                            _state.update { current ->
+                                current.copy(
+                                    screenrecord = current.screenrecord.copy(
+                                        phase = RecordingPhase.RECORDING,
+                                        activeSession = session,
+                                        recordingDeviceId = session.deviceId,
+                                        currentLocalTargetPath = localOutputPath,
+                                        status = ScreenToolsStatus(
+                                            message = error.message
+                                                ?: getString(Res.string.screen_tools_error_recording_stop_failed_retry),
+                                            isError = true,
+                                        ),
+                                    )
+                                )
+                            }
+                            showFeedbackResource(
+                                messageRes = Res.string.screen_tools_feedback_recording_stop_retry,
+                                isError = true,
                             )
-                        )
+                        }
+
+                        is ScreenrecordStopError.CopyToHost -> {
+                            _state.update { current ->
+                                current.copy(
+                                    screenrecord = current.screenrecord.copy(
+                                        phase = RecordingPhase.IDLE,
+                                        activeSession = null,
+                                        recordingDeviceId = null,
+                                        elapsedSeconds = 0,
+                                        currentLocalTargetPath = null,
+                                        status = ScreenToolsStatus(
+                                            message = error.message
+                                                ?: getString(Res.string.screen_tools_error_recording_copy_failed),
+                                            isError = true,
+                                        ),
+                                    )
+                                )
+                            }
+                            showFeedbackResource(
+                                messageRes = Res.string.screen_tools_feedback_recording_copy_failed,
+                                isError = true,
+                            )
+                        }
+
+                        else -> {
+                            // На неизвестной ошибке не теряем session-контекст:
+                            // безопаснее считать, что запись может ещё идти.
+                            startRecordingTicker(session.startedAtEpochMillis)
+                            val statusMessage = error.message
+                                ?: getString(Res.string.screen_tools_error_recording_stop_failed)
+                            _state.update { current ->
+                                current.copy(
+                                    screenrecord = current.screenrecord.copy(
+                                        phase = RecordingPhase.RECORDING,
+                                        activeSession = session,
+                                        recordingDeviceId = session.deviceId,
+                                        currentLocalTargetPath = localOutputPath,
+                                        status = ScreenToolsStatus(
+                                            message = statusMessage,
+                                            isError = true,
+                                        ),
+                                    )
+                                )
+                            }
+                            showFeedback(
+                                message = error.message ?: getString(Res.string.screen_tools_feedback_recording_stop_failed),
+                                isError = true,
+                            )
+                        }
                     }
-                    showFeedback(error.message ?: "Ошибка остановки записи", isError = true)
                 },
             )
         }
@@ -434,12 +579,15 @@ class DefaultScreenToolsComponent(
     override fun onOpenLastVideoFile() {
         val path = _state.value.screenrecord.lastFilePath
         if (!hostFileService.isFile(path)) {
-            showFeedback("Видеофайл не найден", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_error_video_file_not_found,
+                isError = true,
+            )
             return
         }
 
         runHostAction(
-            successMessage = "Видео открыто",
+            successMessageRes = Res.string.screen_tools_feedback_video_opened,
             action = { hostFileService.openFile(path!!) },
         )
     }
@@ -447,7 +595,7 @@ class DefaultScreenToolsComponent(
     override fun onOpenVideoFolder() {
         val directory = _state.value.screenrecord.outputDirectory
         runHostAction(
-            successMessage = "Открыта папка видеозаписей",
+            successMessageRes = Res.string.screen_tools_feedback_video_folder_opened,
             action = { hostFileService.openFolder(directory) },
         )
     }
@@ -461,16 +609,19 @@ class DefaultScreenToolsComponent(
     /**
      * Обрабатывает смену активного устройства из общего [DeviceManager].
      */
-    private fun handleDeviceChanged(device: AdbDevice?) {
+    private suspend fun handleDeviceChanged(device: AdbDevice?) {
         val nextActiveDeviceId = when {
             device == null -> null
             device.state != DeviceState.DEVICE -> null
             else -> device.deviceId
         }
         val nextMessage = when {
-            device == null -> "Активное устройство не выбрано"
-            device.state != DeviceState.DEVICE -> "Устройство недоступно: ${device.state.rawValue}"
-            else -> "Активное устройство: ${device.deviceId}"
+            device == null -> getString(Res.string.screen_tools_device_not_selected)
+            device.state != DeviceState.DEVICE -> getString(
+                Res.string.screen_tools_device_unavailable,
+                device.state.rawValue,
+            )
+            else -> getString(Res.string.screen_tools_device_active, device.deviceId)
         }
 
         _state.update {
@@ -480,7 +631,7 @@ class DefaultScreenToolsComponent(
             )
         }
 
-        val session = activeRecordingSession
+        val session = _state.value.screenrecord.activeSession
         if (session != null && session.deviceId != nextActiveDeviceId) {
             interruptRecordingBecauseDeviceChanged(session)
         }
@@ -490,29 +641,33 @@ class DefaultScreenToolsComponent(
      * Прерывает локальный контекст записи, если устройство сменилось/пропало.
      */
     private fun interruptRecordingBecauseDeviceChanged(session: ScreenrecordSession) {
-        activeRecordingSession = null
         recordingTickerJob?.cancel()
         recordingTickerJob = null
         recordingJob?.cancel()
         recordingJob = null
 
-        _state.update { current ->
-            current.copy(
-                screenrecord = current.screenrecord.copy(
-                    isStarting = false,
-                    isRecording = false,
-                    isStopping = false,
-                    recordingDeviceId = null,
-                    elapsedSeconds = 0,
-                    currentLocalTargetPath = null,
-                    status = ScreenToolsStatus(
-                        message = "Запись прервана: активное устройство изменилось или стало недоступно",
-                        isError = true,
-                    ),
+        scope.launch {
+            val interruptedStatus = getString(Res.string.screen_tools_status_recording_interrupted)
+            _state.update { current ->
+                current.copy(
+                    screenrecord = current.screenrecord.copy(
+                        phase = RecordingPhase.IDLE,
+                        activeSession = null,
+                        recordingDeviceId = null,
+                        elapsedSeconds = 0,
+                        currentLocalTargetPath = null,
+                        status = ScreenToolsStatus(
+                            message = interruptedStatus,
+                            isError = true,
+                        ),
+                    )
                 )
+            }
+            showFeedbackResource(
+                messageRes = Res.string.screen_tools_feedback_recording_interrupted,
+                isError = true,
             )
         }
-        showFeedback("Запись прервана из-за смены устройства", isError = true)
 
         // Останавливаем удаленную запись best-effort, чтобы не оставлять временный файл.
         scope.launch {
@@ -529,7 +684,7 @@ class DefaultScreenToolsComponent(
     private fun startRecordingTicker(startedAtEpochMillis: Long) {
         recordingTickerJob?.cancel()
         recordingTickerJob = scope.launch {
-            while (isActive && activeRecordingSession != null) {
+            while (isActive && _state.value.screenrecord.activeSession != null) {
                 val elapsed = ((System.currentTimeMillis() - startedAtEpochMillis) / 1_000L)
                     .coerceAtLeast(0L)
                 _state.update { current ->
@@ -542,19 +697,50 @@ class DefaultScreenToolsComponent(
         }
     }
 
+    /** `true`, если запись экрана сейчас выполняется или находится в переходном состоянии. */
+    private fun isScreenrecordBusy(): Boolean {
+        val screenrecord = _state.value.screenrecord
+        return screenrecord.activeSession != null || screenrecord.phase != RecordingPhase.IDLE
+    }
+
     /**
      * Выполнить host-side действие (open/copy) с единым feedback.
      */
     private fun runHostAction(
-        successMessage: String,
+        successMessageRes: StringResource,
         action: suspend () -> Result<Unit>,
     ) {
         hostActionJob?.cancel()
         hostActionJob = scope.launch {
             val result = action()
+            val successMessage = getString(successMessageRes)
+            val fallbackError = getString(Res.string.screen_tools_error_host_operation_failed)
             result.fold(
                 onSuccess = { showFeedback(successMessage, isError = false) },
-                onFailure = { showFeedback(it.message ?: "Ошибка host-операции", isError = true) },
+                onFailure = { showFeedback(it.message ?: fallbackError, isError = true) },
+            )
+        }
+    }
+
+    /**
+     * Открывает системный диалог выбора директории и применяет выбранный путь.
+     */
+    private fun pickOutputDirectory(
+        initialPath: String,
+        onSelected: (String) -> Unit,
+    ) {
+        directoryPickerJob?.cancel()
+        directoryPickerJob = scope.launch {
+            val fallbackError = getString(Res.string.screen_tools_error_host_operation_failed)
+            hostFileService.selectDirectory(initialPath).fold(
+                onSuccess = { selected ->
+                    if (!selected.isNullOrBlank()) {
+                        onSelected(selected)
+                    }
+                },
+                onFailure = { error ->
+                    showFeedback(error.message ?: fallbackError, isError = true)
+                },
             )
         }
     }
@@ -566,7 +752,11 @@ class DefaultScreenToolsComponent(
         screenshotDir: String,
         screenrecordDir: String,
     ) {
-        scope.launch {
+        // Сохраняем только последнее состояние директорий:
+        // если пользователь быстро меняет пути, старые save-задачи
+        // не должны перетирать более новые значения.
+        persistDirectoriesJob?.cancel()
+        persistDirectoriesJob = scope.launch {
             val current = settingsRepository.getSettings()
             settingsRepository.saveSettings(
                 current.copy(
@@ -590,6 +780,25 @@ class DefaultScreenToolsComponent(
     /** Имя файла видеозаписи с читаемым timestamp. */
     private fun buildScreenrecordFileName(now: Instant = Instant.now()): String =
         "screenrecord_${FILE_NAME_FORMATTER.format(now)}.mp4"
+
+    /**
+     * Показать feedback по строковому ресурсу.
+     *
+     * Mutex сохраняет порядок сообщений, если несколько корутин
+     * отправляют feedback почти одновременно.
+     */
+    private fun showFeedbackResource(
+        messageRes: StringResource,
+        isError: Boolean,
+        vararg args: Any,
+    ) {
+        scope.launch {
+            feedbackMutex.withLock {
+                val message = getString(messageRes, *args)
+                showFeedback(message = message, isError = isError)
+            }
+        }
+    }
 
     /**
      * Показать краткоживущее сообщение в нижнем feedback-баннере.

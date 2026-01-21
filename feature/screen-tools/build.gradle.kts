@@ -23,6 +23,7 @@ dependencies {
     implementation(compose.materialIconsExtended)
     implementation(compose.ui)
     implementation(compose.components.uiToolingPreview)
+    implementation(compose.components.resources)
 
     implementation(libs.decompose)
     implementation(libs.decompose.extensions.compose)
@@ -30,6 +31,7 @@ dependencies {
     implementation(libs.essenty.lifecycle.coroutines)
 
     implementation(project(":core:designsystem"))
+    implementation(project(":core:i18n"))
     implementation(project(":core:ui"))
     implementation(project(":core:utils"))
     implementation(project(":core:adb-api"))

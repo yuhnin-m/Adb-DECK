@@ -1,0 +1,116 @@
+<resources>
+    <string name="screen_tools_tab_screenshot">Screenshot</string>
+    <string name="screen_tools_tab_screenrecord">Screenrecord</string>
+
+    <string name="screen_tools_device_not_selected">No active device selected</string>
+    <string name="screen_tools_device_unavailable">Device unavailable: %1$s</string>
+    <string name="screen_tools_device_active">Active device: %1$s</string>
+    <string name="screen_tools_choose_active_device">Select an available active device</string>
+
+    <string name="screen_tools_status_screenshot_ready">Ready to take screenshot</string>
+    <string name="screen_tools_status_screenrecord_idle">Recording is not started</string>
+
+    <string name="screen_tools_feedback_screenshot_running">Screenshot is already in progress</string>
+    <string name="screen_tools_status_screenshot_creating">Taking screenshot…</string>
+    <string name="screen_tools_error_prepare_screenshot_dir">Failed to prepare screenshot directory</string>
+    <string name="screen_tools_status_screenshot_saved">Screenshot saved: %1$s</string>
+    <string name="screen_tools_feedback_screenshot_created">Screenshot created</string>
+    <string name="screen_tools_error_screenshot_failed">Failed to take screenshot</string>
+    <string name="screen_tools_feedback_screenshot_failed">Screenshot error</string>
+    <string name="screen_tools_error_screenshot_file_not_found">Screenshot file not found</string>
+    <string name="screen_tools_feedback_screenshot_copied">Screenshot copied to clipboard</string>
+    <string name="screen_tools_feedback_screenshot_opened">Screenshot opened</string>
+    <string name="screen_tools_feedback_screenshot_folder_opened">Screenshot folder opened</string>
+
+    <string name="screen_tools_feedback_recording_running">Recording is already in progress</string>
+    <string name="screen_tools_status_recording_starting">Starting recording…</string>
+    <string name="screen_tools_error_prepare_recordings_dir">Failed to prepare recordings directory</string>
+    <string name="screen_tools_status_recording_active">Screen recording is in progress…</string>
+    <string name="screen_tools_feedback_recording_started">Recording started</string>
+    <string name="screen_tools_error_recording_start_failed">Failed to start recording</string>
+    <string name="screen_tools_feedback_recording_start_failed">Recording start error</string>
+    <string name="screen_tools_feedback_recording_not_started">Recording is not started</string>
+    <string name="screen_tools_status_recording_stopping">Stopping recording…</string>
+    <string name="screen_tools_status_recording_saved">Recording saved: %1$s</string>
+    <string name="screen_tools_feedback_recording_saved">Video saved</string>
+    <string name="screen_tools_error_recording_stop_failed">Failed to stop recording</string>
+    <string name="screen_tools_error_recording_stop_failed_retry">Failed to stop recording on device. Try Stop again</string>
+    <string name="screen_tools_error_recording_copy_failed">Recording stopped, but failed to copy video to computer</string>
+    <string name="screen_tools_feedback_recording_stop_failed">Recording stop error</string>
+    <string name="screen_tools_feedback_recording_stop_retry">Recording is still active. Retry stop</string>
+    <string name="screen_tools_feedback_recording_copy_failed">Recording stopped, copy to host failed</string>
+    <string name="screen_tools_error_video_file_not_found">Video file not found</string>
+    <string name="screen_tools_feedback_video_opened">Video opened</string>
+    <string name="screen_tools_feedback_video_folder_opened">Video folder opened</string>
+    <string name="screen_tools_status_recording_interrupted">Recording interrupted: active device changed or became unavailable</string>
+    <string name="screen_tools_feedback_recording_interrupted">Recording interrupted because device changed</string>
+    <string name="screen_tools_feedback_tab_switch_blocked_recording">Stop recording before switching to screenshot</string>
+    <string name="screen_tools_error_host_operation_failed">Host operation failed</string>
+    <string name="screen_tools_error_file_not_found">File not found: %1$s</string>
+    <string name="screen_tools_error_folder_not_found">Folder not found: %1$s</string>
+    <string name="screen_tools_error_image_file_not_found">Image file not found: %1$s</string>
+    <string name="screen_tools_error_image_read_failed">Failed to read image file: %1$s</string>
+    <string name="screen_tools_error_desktop_unsupported">Desktop API is not supported in current environment</string>
+    <string name="screen_tools_error_open_unsupported">Open action is not supported by the system</string>
+
+    <string name="screen_tools_output_screenshot_title">Screenshot output directory</string>
+    <string name="screen_tools_output_screenrecord_title">Screenrecord output directory</string>
+    <string name="screen_tools_quality_screenshot_title">Screenshot quality</string>
+    <string name="screen_tools_quality_screenrecord_title">Screenrecord quality</string>
+    <string name="screen_tools_status_screenshot_title">Screenshot status</string>
+    <string name="screen_tools_status_screenrecord_title">Screenrecord status</string>
+
+    <string name="screen_tools_action_take_screenshot">Take screenshot</string>
+    <string name="screen_tools_action_copy_clipboard">Copy to clipboard</string>
+    <string name="screen_tools_action_open_file">Open file</string>
+    <string name="screen_tools_action_open_folder">Open folder</string>
+    <string name="screen_tools_action_start_recording">Start recording</string>
+    <string name="screen_tools_action_stop_recording">Stop recording</string>
+    <string name="screen_tools_action_choose_directory">Select…</string>
+
+    <string name="screen_tools_label_last_file">Last file: %1$s</string>
+    <string name="screen_tools_preview_last_screenshot_cd">Latest screenshot preview</string>
+    <string name="screen_tools_preview_empty_message">The latest screenshot preview will appear here</string>
+    <string name="screen_tools_label_recording_time">Recording time: %1$s</string>
+    <string name="screen_tools_field_path_label">Path</string>
+    <string name="screen_tools_dialog_choose_directory_title">Select directory</string>
+
+    <string name="screen_tools_quality_screenshot_png_lossless">PNG (lossless)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_best">JPEG Best (95%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_high">JPEG High (90%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_medium">JPEG Medium (80%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_low">JPEG Low (65%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_tiny">JPEG Tiny (45%)</string>
+
+    <string name="screen_tools_quality_screenrecord_ultra_native">Ultra (native)</string>
+    <string name="screen_tools_quality_screenrecord_high_1080">High (1080p)</string>
+    <string name="screen_tools_quality_screenrecord_medium_720">Medium (720p)</string>
+    <string name="screen_tools_quality_screenrecord_balanced_540">Balanced (540p)</string>
+    <string name="screen_tools_quality_screenrecord_low_480">Low (480p)</string>
+    <string name="screen_tools_quality_screenrecord_eco_360">Eco (360p)</string>
+    <string name="screen_tools_quality_bitrate_format">%1$s • %2$d Mbps</string>
+
+    <string name="screen_tools_player_unavailable">Embedded player is unavailable in current environment</string>
+    <string name="screen_tools_player_action_play">Play</string>
+    <string name="screen_tools_player_action_pause">Pause</string>
+    <string name="screen_tools_player_action_stop">Stop</string>
+    <string name="screen_tools_player_status_no_video">Video is not selected</string>
+    <string name="screen_tools_player_status_file_not_found">Video file not found: %1$s</string>
+    <string name="screen_tools_player_status_loaded">Video loaded (%1$ss)</string>
+    <string name="screen_tools_player_status_error_player">MediaPlayer error</string>
+    <string name="screen_tools_player_status_error_media">Media error</string>
+    <string name="screen_tools_player_status_playing">Playing</string>
+    <string name="screen_tools_player_status_paused">Paused</string>
+    <string name="screen_tools_player_status_stopped">Stopped</string>
+
+    <string name="screen_tools_service_progress_stop_device">Stopping recording on device…</string>
+    <string name="screen_tools_service_progress_copy_host">Copying video to computer…</string>
+    <string name="screen_tools_service_progress_cleanup_device">Removing temporary file on device…</string>
+    <string name="screen_tools_service_progress_cleanup_failed_but_saved">Video is saved, but device cleanup failed</string>
+    <string name="screen_tools_service_progress_saved">Recording saved</string>
+    <string name="screen_tools_service_abort_failed">Failed to abort recording. stop: %1$s; cleanup: %2$s</string>
+    <string name="screen_tools_service_stop_stage_stop_failed">Failed to stop recording on device</string>
+    <string name="screen_tools_service_stop_stage_stop_failed_with_reason">Failed to stop recording on device: %1$s</string>
+    <string name="screen_tools_service_stop_stage_copy_failed">Failed to copy recording to computer</string>
+    <string name="screen_tools_service_stop_stage_copy_failed_with_reason">Failed to copy recording to computer: %1$s</string>
+</resources>

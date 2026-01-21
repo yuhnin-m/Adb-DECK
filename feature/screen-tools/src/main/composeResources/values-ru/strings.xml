@@ -1,0 +1,116 @@
+<resources>
+    <string name="screen_tools_tab_screenshot">Скриншот</string>
+    <string name="screen_tools_tab_screenrecord">Запись экрана</string>
+
+    <string name="screen_tools_device_not_selected">Активное устройство не выбрано</string>
+    <string name="screen_tools_device_unavailable">Устройство недоступно: %1$s</string>
+    <string name="screen_tools_device_active">Активное устройство: %1$s</string>
+    <string name="screen_tools_choose_active_device">Выберите доступное активное устройство</string>
+
+    <string name="screen_tools_status_screenshot_ready">Готов к созданию скриншота</string>
+    <string name="screen_tools_status_screenrecord_idle">Запись не запущена</string>
+
+    <string name="screen_tools_feedback_screenshot_running">Скриншот уже выполняется</string>
+    <string name="screen_tools_status_screenshot_creating">Создаём скриншот…</string>
+    <string name="screen_tools_error_prepare_screenshot_dir">Не удалось подготовить папку скриншотов</string>
+    <string name="screen_tools_status_screenshot_saved">Скриншот сохранён: %1$s</string>
+    <string name="screen_tools_feedback_screenshot_created">Скриншот создан</string>
+    <string name="screen_tools_error_screenshot_failed">Не удалось сделать скриншот</string>
+    <string name="screen_tools_feedback_screenshot_failed">Ошибка скриншота</string>
+    <string name="screen_tools_error_screenshot_file_not_found">Файл скриншота не найден</string>
+    <string name="screen_tools_feedback_screenshot_copied">Скриншот скопирован в буфер обмена</string>
+    <string name="screen_tools_feedback_screenshot_opened">Скриншот открыт</string>
+    <string name="screen_tools_feedback_screenshot_folder_opened">Открыта папка скриншотов</string>
+
+    <string name="screen_tools_feedback_recording_running">Запись уже выполняется</string>
+    <string name="screen_tools_status_recording_starting">Запускаем запись…</string>
+    <string name="screen_tools_error_prepare_recordings_dir">Не удалось подготовить папку записей</string>
+    <string name="screen_tools_status_recording_active">Идёт запись экрана…</string>
+    <string name="screen_tools_feedback_recording_started">Запись запущена</string>
+    <string name="screen_tools_error_recording_start_failed">Не удалось запустить запись</string>
+    <string name="screen_tools_feedback_recording_start_failed">Ошибка запуска записи</string>
+    <string name="screen_tools_feedback_recording_not_started">Запись не запущена</string>
+    <string name="screen_tools_status_recording_stopping">Останавливаем запись…</string>
+    <string name="screen_tools_status_recording_saved">Запись сохранена: %1$s</string>
+    <string name="screen_tools_feedback_recording_saved">Видео сохранено</string>
+    <string name="screen_tools_error_recording_stop_failed">Не удалось остановить запись</string>
+    <string name="screen_tools_error_recording_stop_failed_retry">Не удалось остановить запись на устройстве. Попробуйте снова</string>
+    <string name="screen_tools_error_recording_copy_failed">Запись остановлена, но не удалось скопировать видео на компьютер</string>
+    <string name="screen_tools_feedback_recording_stop_failed">Ошибка остановки записи</string>
+    <string name="screen_tools_feedback_recording_stop_retry">Запись всё ещё активна. Повторите остановку</string>
+    <string name="screen_tools_feedback_recording_copy_failed">Запись остановлена, но копирование на хост не удалось</string>
+    <string name="screen_tools_error_video_file_not_found">Видеофайл не найден</string>
+    <string name="screen_tools_feedback_video_opened">Видео открыто</string>
+    <string name="screen_tools_feedback_video_folder_opened">Открыта папка видеозаписей</string>
+    <string name="screen_tools_status_recording_interrupted">Запись прервана: активное устройство изменилось или стало недоступно</string>
+    <string name="screen_tools_feedback_recording_interrupted">Запись прервана из-за смены устройства</string>
+    <string name="screen_tools_feedback_tab_switch_blocked_recording">Остановите запись перед переключением на скриншоты</string>
+    <string name="screen_tools_error_host_operation_failed">Ошибка операции на хосте</string>
+    <string name="screen_tools_error_file_not_found">Файл не найден: %1$s</string>
+    <string name="screen_tools_error_folder_not_found">Папка не найдена: %1$s</string>
+    <string name="screen_tools_error_image_file_not_found">Файл изображения не найден: %1$s</string>
+    <string name="screen_tools_error_image_read_failed">Не удалось прочитать файл изображения: %1$s</string>
+    <string name="screen_tools_error_desktop_unsupported">Desktop API не поддерживается в текущем окружении</string>
+    <string name="screen_tools_error_open_unsupported">Операция открытия не поддерживается системой</string>
+
+    <string name="screen_tools_output_screenshot_title">Папка скриншотов</string>
+    <string name="screen_tools_output_screenrecord_title">Папка записей экрана</string>
+    <string name="screen_tools_quality_screenshot_title">Качество скриншота</string>
+    <string name="screen_tools_quality_screenrecord_title">Качество видеозаписи</string>
+    <string name="screen_tools_status_screenshot_title">Статус скриншота</string>
+    <string name="screen_tools_status_screenrecord_title">Статус записи экрана</string>
+
+    <string name="screen_tools_action_take_screenshot">Сделать скриншот</string>
+    <string name="screen_tools_action_copy_clipboard">Копировать в буфер</string>
+    <string name="screen_tools_action_open_file">Открыть файл</string>
+    <string name="screen_tools_action_open_folder">Открыть папку</string>
+    <string name="screen_tools_action_start_recording">Начать запись</string>
+    <string name="screen_tools_action_stop_recording">Остановить запись</string>
+    <string name="screen_tools_action_choose_directory">Выбрать…</string>
+
+    <string name="screen_tools_label_last_file">Последний файл: %1$s</string>
+    <string name="screen_tools_preview_last_screenshot_cd">Превью последнего скриншота</string>
+    <string name="screen_tools_preview_empty_message">Здесь появится превью последнего скриншота</string>
+    <string name="screen_tools_label_recording_time">Время записи: %1$s</string>
+    <string name="screen_tools_field_path_label">Путь</string>
+    <string name="screen_tools_dialog_choose_directory_title">Выберите директорию</string>
+
+    <string name="screen_tools_quality_screenshot_png_lossless">PNG (без потерь)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_best">JPEG Best (95%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_high">JPEG High (90%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_medium">JPEG Medium (80%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_low">JPEG Low (65%)</string>
+    <string name="screen_tools_quality_screenshot_jpeg_tiny">JPEG Tiny (45%)</string>
+
+    <string name="screen_tools_quality_screenrecord_ultra_native">Ultra (native)</string>
+    <string name="screen_tools_quality_screenrecord_high_1080">High (1080p)</string>
+    <string name="screen_tools_quality_screenrecord_medium_720">Medium (720p)</string>
+    <string name="screen_tools_quality_screenrecord_balanced_540">Balanced (540p)</string>
+    <string name="screen_tools_quality_screenrecord_low_480">Low (480p)</string>
+    <string name="screen_tools_quality_screenrecord_eco_360">Eco (360p)</string>
+    <string name="screen_tools_quality_bitrate_format">%1$s • %2$d Mbps</string>
+
+    <string name="screen_tools_player_unavailable">Встроенный плеер недоступен в текущем окружении</string>
+    <string name="screen_tools_player_action_play">Воспроизвести</string>
+    <string name="screen_tools_player_action_pause">Пауза</string>
+    <string name="screen_tools_player_action_stop">Стоп</string>
+    <string name="screen_tools_player_status_no_video">Видео не выбрано</string>
+    <string name="screen_tools_player_status_file_not_found">Файл видео не найден: %1$s</string>
+    <string name="screen_tools_player_status_loaded">Видео загружено (%1$ss)</string>
+    <string name="screen_tools_player_status_error_player">Ошибка MediaPlayer</string>
+    <string name="screen_tools_player_status_error_media">Ошибка Media</string>
+    <string name="screen_tools_player_status_playing">Воспроизведение</string>
+    <string name="screen_tools_player_status_paused">Пауза</string>
+    <string name="screen_tools_player_status_stopped">Остановлено</string>
+
+    <string name="screen_tools_service_progress_stop_device">Останавливаем запись на устройстве…</string>
+    <string name="screen_tools_service_progress_copy_host">Копируем видео на компьютер…</string>
+    <string name="screen_tools_service_progress_cleanup_device">Удаляем временный файл на устройстве…</string>
+    <string name="screen_tools_service_progress_cleanup_failed_but_saved">Видео сохранено, но очистка на устройстве не выполнена</string>
+    <string name="screen_tools_service_progress_saved">Запись сохранена</string>
+    <string name="screen_tools_service_abort_failed">Не удалось корректно прервать запись. stop: %1$s; cleanup: %2$s</string>
+    <string name="screen_tools_service_stop_stage_stop_failed">Не удалось остановить запись на устройстве</string>
+    <string name="screen_tools_service_stop_stage_stop_failed_with_reason">Не удалось остановить запись на устройстве: %1$s</string>
+    <string name="screen_tools_service_stop_stage_copy_failed">Не удалось скопировать запись на компьютер</string>
+    <string name="screen_tools_service_stop_stage_copy_failed_with_reason">Не удалось скопировать запись на компьютер: %1$s</string>
+</resources>

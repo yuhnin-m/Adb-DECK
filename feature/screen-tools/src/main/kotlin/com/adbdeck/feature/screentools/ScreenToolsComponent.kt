@@ -16,11 +16,17 @@ interface ScreenToolsComponent {
     /** Изменить директорию вывода скриншотов. */
     fun onScreenshotOutputDirectoryChanged(path: String)
 
+    /** Открыть системный выбор директории для скриншотов. */
+    fun onPickScreenshotOutputDirectory()
+
     /** Изменить профиль качества скриншотов. */
     fun onScreenshotQualityChanged(quality: ScreenshotQualityPreset)
 
     /** Изменить директорию вывода записей экрана. */
     fun onScreenrecordOutputDirectoryChanged(path: String)
+
+    /** Открыть системный выбор директории для видеозаписей. */
+    fun onPickScreenrecordOutputDirectory()
 
     /** Изменить профиль качества видеозаписи. */
     fun onScreenrecordQualityChanged(quality: ScreenrecordQualityPreset)

@@ -465,8 +465,10 @@ private class PreviewScreenToolsComponent : ScreenToolsComponent {
 
     override fun onSelectTab(tab: ScreenToolsTab) = Unit
     override fun onScreenshotOutputDirectoryChanged(path: String) = Unit
+    override fun onPickScreenshotOutputDirectory() = Unit
     override fun onScreenshotQualityChanged(quality: ScreenshotQualityPreset) = Unit
     override fun onScreenrecordOutputDirectoryChanged(path: String) = Unit
+    override fun onPickScreenrecordOutputDirectory() = Unit
     override fun onScreenrecordQualityChanged(quality: ScreenrecordQualityPreset) = Unit
     override fun onTakeScreenshot() = Unit
     override fun onCopyLastScreenshotToClipboard() = Unit
