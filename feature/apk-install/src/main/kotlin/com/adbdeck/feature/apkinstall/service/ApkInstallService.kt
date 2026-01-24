@@ -1,6 +1,6 @@
 package com.adbdeck.feature.apkinstall.service
 
-import com.adbdeck.core.adb.api.screen.ApkInstallOptions
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallOptions
 
 /**
  * Сервис установки APK на активное устройство.

@@ -35,16 +35,4 @@ interface ScreenToolsClient {
         sessionId: String,
     ): Result<Unit>
 
-    /**
-     * Установить APK на устройство через `adb install`.
-     *
-     * @param onProgress Колбек статуса/прогресса установки.
-     */
-    suspend fun installApk(
-        deviceId: String,
-        localApkPath: String,
-        adbPath: String = "adb",
-        options: ApkInstallOptions = ApkInstallOptions(),
-        onProgress: (ApkInstallProgress) -> Unit = {},
-    ): Result<Unit>
 }

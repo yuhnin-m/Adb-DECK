@@ -17,6 +17,7 @@ import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.contacts.ContactsClient
 import com.adbdeck.core.adb.api.intents.IntentLaunchClient
 import com.adbdeck.core.adb.api.notifications.NotificationsClient
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallClient
 import com.adbdeck.core.adb.api.device.DeviceControlClient
 import com.adbdeck.core.adb.api.files.DeviceFileClient
 import com.adbdeck.core.adb.api.device.DeviceInfoClient
@@ -70,6 +71,7 @@ fun main() = application {
         deviceFileClient    = get(DeviceFileClient::class.java),
         contactsClient      = get(ContactsClient::class.java),
         screenToolsClient   = get(ScreenToolsClient::class.java),
+        apkInstallClient    = get(ApkInstallClient::class.java),
         intentLaunchClient  = get(IntentLaunchClient::class.java),
         notificationsClient = get(NotificationsClient::class.java),
     )

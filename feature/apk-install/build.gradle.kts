@@ -12,6 +12,7 @@ dependencies {
     implementation(compose.materialIconsExtended)
     implementation(compose.ui)
     implementation(compose.components.uiToolingPreview)
+    implementation(compose.components.resources)
 
     implementation(libs.decompose)
     implementation(libs.decompose.extensions.compose)

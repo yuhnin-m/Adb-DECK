@@ -1,13 +1,13 @@
 package com.adbdeck.feature.apkinstall.service
 
-import com.adbdeck.core.adb.api.screen.ApkInstallOptions
-import com.adbdeck.core.adb.api.screen.ScreenToolsClient
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallClient
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallOptions
 
 /**
- * Реализация [ApkInstallService] поверх [ScreenToolsClient].
+ * Реализация [ApkInstallService] поверх [ApkInstallClient].
  */
 class DefaultApkInstallService(
-    private val screenToolsClient: ScreenToolsClient,
+    private val apkInstallClient: ApkInstallClient,
 ) : ApkInstallService {
 
     override suspend fun install(
@@ -17,7 +17,7 @@ class DefaultApkInstallService(
         options: ApkInstallOptions,
         onProgress: (progress: Float?, message: String) -> Unit,
     ): Result<Unit> =
-        screenToolsClient.installApk(
+        apkInstallClient.installApk(
             deviceId = deviceId,
             localApkPath = localApkPath,
             adbPath = adbPath,

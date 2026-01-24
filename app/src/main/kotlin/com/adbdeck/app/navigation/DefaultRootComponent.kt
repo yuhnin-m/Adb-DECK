@@ -1,6 +1,7 @@
 package com.adbdeck.app.navigation
 
 import com.adbdeck.core.adb.api.adb.AdbClient
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallClient
 import com.adbdeck.core.adb.api.contacts.ContactsClient
 import com.adbdeck.core.adb.api.device.DeviceControlClient
 import com.adbdeck.core.adb.api.intents.IntentLaunchClient
@@ -19,8 +20,7 @@ import com.adbdeck.feature.deeplinks.DefaultDeepLinksComponent
 import com.adbdeck.feature.deviceinfo.DefaultDeviceInfoComponent
 import com.adbdeck.feature.notifications.DefaultNotificationsComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
-import com.adbdeck.feature.apkinstall.DefaultApkInstallComponent
-import com.adbdeck.feature.apkinstall.service.DefaultApkInstallService
+import com.adbdeck.feature.apkinstall.createApkInstallComponent
 import com.adbdeck.feature.fileexplorer.createFileExplorerComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
@@ -56,6 +56,7 @@ import com.arkivanov.decompose.value.Value
  * @param deviceFileClient     ADB-клиент файловых операций на устройстве.
  * @param contactsClient       ADB-клиент для работы с контактами.
  * @param screenToolsClient    ADB-клиент для screenshot/screenrecord.
+ * @param apkInstallClient     ADB-клиент установки APK.
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -70,6 +71,7 @@ class DefaultRootComponent(
     private val deviceFileClient: DeviceFileClient,
     private val contactsClient: ContactsClient,
     private val screenToolsClient: ScreenToolsClient,
+    private val apkInstallClient: ApkInstallClient,
     private val intentLaunchClient: IntentLaunchClient,
     private val notificationsClient: NotificationsClient,
 ) : RootComponent, ComponentContext by componentContext {
@@ -264,15 +266,12 @@ class DefaultRootComponent(
         )
 
         is Screen.ApkInstall -> RootComponent.Child.ApkInstall(
-            run {
-                val apkInstallService = DefaultApkInstallService(screenToolsClient)
-                DefaultApkInstallComponent(
-                    componentContext = componentContext,
-                    deviceManager = deviceManager,
-                    settingsRepository = settingsRepository,
-                    apkInstallService = apkInstallService,
-                )
-            }
+            createApkInstallComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                settingsRepository = settingsRepository,
+                apkInstallClient = apkInstallClient,
+            )
         )
 
         is Screen.DeepLinks -> RootComponent.Child.DeepLinks(

@@ -17,11 +17,13 @@ import java.util.concurrent.TimeUnit
 class SystemProcessRunner : ProcessRunner {
 
     private companion object {
-        private const val DEFAULT_TIMEOUT_MS = 60_000L
         private const val POLL_TIMEOUT_MS = 200L
     }
 
-    override suspend fun run(command: List<String>): ProcessResult = withContext(Dispatchers.IO) {
+    override suspend fun run(
+        command: List<String>,
+        timeoutMs: Long,
+    ): ProcessResult = withContext(Dispatchers.IO) {
         coroutineScope {
             val process = ProcessBuilder(command)
                 .redirectErrorStream(false)
@@ -36,7 +38,7 @@ class SystemProcessRunner : ProcessRunner {
                     process.errorStream.bufferedReader().use { it.readText() }
                 }
 
-                val timeoutDeadlineNs = System.nanoTime() + DEFAULT_TIMEOUT_MS * 1_000_000L
+                val timeoutDeadlineNs = System.nanoTime() + timeoutMs * 1_000_000L
                 while (true) {
                     currentCoroutineContext().ensureActive()
                     val finished = process.waitFor(POLL_TIMEOUT_MS, TimeUnit.MILLISECONDS)
@@ -45,7 +47,7 @@ class SystemProcessRunner : ProcessRunner {
                         process.destroyForcibly()
                         stdoutDeferred.cancel()
                         stderrDeferred.cancel()
-                        error("Команда превысила таймаут ${DEFAULT_TIMEOUT_MS / 1000}с: ${command.joinToString(" ")}")
+                        error("Command timed out after ${timeoutMs / 1000}s: ${command.joinToString(" ")}")
                     }
                 }
 

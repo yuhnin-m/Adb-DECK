@@ -1,7 +1,5 @@
 package com.adbdeck.core.adb.impl.screen
 
-import com.adbdeck.core.adb.api.screen.ApkInstallOptions
-import com.adbdeck.core.adb.api.screen.ApkInstallProgress
 import com.adbdeck.core.adb.api.screen.ScreenToolsClient
 import com.adbdeck.core.adb.api.screen.ScreenrecordOptions
 import com.adbdeck.core.adb.api.screen.ScreenrecordSession
@@ -41,12 +39,10 @@ class SystemScreenToolsClient(
 
     private companion object {
         private const val SCREENSHOT_TIMEOUT_MS = 25_000L
-        private const val APK_INSTALL_TIMEOUT_MS = 8 * 60_000L
         private const val PROCESS_POLL_TIMEOUT_MS = 200L
 
         private const val START_PID_PREFIX = "__PID__:"
         private const val START_ERR_PREFIX = "__ERR__START_FAILED__"
-        private val APK_PROGRESS_REGEX = Regex("""\[\s*(\d{1,3})%\]""")
     }
 
     /**
@@ -240,94 +236,6 @@ class SystemScreenToolsClient(
         }
     }
 
-    override suspend fun installApk(
-        deviceId: String,
-        localApkPath: String,
-        adbPath: String,
-        options: ApkInstallOptions,
-        onProgress: (ApkInstallProgress) -> Unit,
-    ): Result<Unit> = runCatchingPreserveCancellation {
-        val apkFile = File(localApkPath.trim())
-        if (!apkFile.isFile) {
-            error("APK файл не найден: ${apkFile.absolutePath}")
-        }
-        if (!apkFile.name.endsWith(".apk", ignoreCase = true)) {
-            error("Ожидался .apk файл: ${apkFile.absolutePath}")
-        }
-
-        val command = buildList {
-            add(adbPath)
-            add("-s")
-            add(deviceId)
-            add("install")
-            if (options.reinstall) add("-r")
-            if (options.allowDowngrade) add("-d")
-            if (options.grantRuntimePermissions) add("-g")
-            add(apkFile.absolutePath)
-        }
-
-        withContext(Dispatchers.IO) {
-            onProgress(ApkInstallProgress(progress = 0f, message = "Запускаем adb install…"))
-
-            val process = ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start()
-
-            coroutineScope {
-                val output = StringBuilder()
-                val readerDeferred = async(Dispatchers.IO) {
-                    process.inputStream.bufferedReader().useLines { lines ->
-                        lines.forEach { rawLine ->
-                            val line = rawLine.trim()
-                            if (line.isEmpty()) return@forEach
-                            output.appendLine(line)
-
-                            onProgress(
-                                ApkInstallProgress(
-                                    progress = parseApkInstallProgress(line),
-                                    message = line,
-                                )
-                            )
-                        }
-                    }
-                }
-
-                try {
-                    if (!waitForProcess(process, APK_INSTALL_TIMEOUT_MS)) {
-                        process.destroyForcibly()
-                        readerDeferred.cancel()
-                        error("Установка APK превысила таймаут ${APK_INSTALL_TIMEOUT_MS / 1000}с")
-                    }
-
-                    readerDeferred.await()
-                    val exitCode = process.exitValue()
-                    val outputText = output.toString().trim()
-                    val success = exitCode == 0 &&
-                            outputText.lineSequence().any { it.contains("Success", ignoreCase = true) }
-
-                    if (!success) {
-                        error(
-                            buildString {
-                                append("Не удалось установить APK. ")
-                                append("exitCode=")
-                                append(exitCode)
-                                append(". ADB: ")
-                                append(outputText.ifBlank { "детали не получены" })
-                            }
-                        )
-                    }
-
-                    onProgress(ApkInstallProgress(progress = 1f, message = "Установка APK завершена"))
-                } catch (t: Throwable) {
-                    process.destroyForcibly()
-                    throw t
-                } finally {
-                    process.destroy()
-                }
-            }
-        }
-    }
-
     /**
      * Снимает raw PNG с устройства в [targetPng].
      */
@@ -486,15 +394,4 @@ class SystemScreenToolsClient(
     private fun shellQuote(value: String): String =
         "'" + value.replace("'", "'\"'\"'") + "'"
 
-    /** Пытается извлечь процент установки из строки вывода adb. */
-    private fun parseApkInstallProgress(line: String): Float? {
-        val percent = APK_PROGRESS_REGEX.find(line)
-            ?.groupValues
-            ?.getOrNull(1)
-            ?.toIntOrNull()
-            ?.coerceIn(0, 100)
-            ?: return null
-
-        return percent / 100f
-    }
 }

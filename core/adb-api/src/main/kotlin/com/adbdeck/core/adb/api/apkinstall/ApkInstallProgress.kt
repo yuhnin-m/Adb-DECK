@@ -1,4 +1,4 @@
-package com.adbdeck.core.adb.api.screen
+package com.adbdeck.core.adb.api.apkinstall
 
 /**
  * Прогресс установки APK.

@@ -4,6 +4,7 @@ import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.contacts.ContactsClient
 import com.adbdeck.core.adb.api.intents.IntentLaunchClient
 import com.adbdeck.core.adb.api.notifications.NotificationsClient
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallClient
 import com.adbdeck.core.adb.api.device.DeviceControlClient
 import com.adbdeck.core.adb.api.files.DeviceFileClient
 import com.adbdeck.core.adb.api.device.DeviceInfoClient
@@ -17,6 +18,7 @@ import com.adbdeck.core.adb.impl.adb.SystemAdbClient
 import com.adbdeck.core.adb.impl.contacts.SystemContactsClient
 import com.adbdeck.core.adb.impl.intents.SystemIntentLaunchClient
 import com.adbdeck.core.adb.impl.notifications.SystemNotificationsClient
+import com.adbdeck.core.adb.impl.apkinstall.SystemApkInstallClient
 import com.adbdeck.core.adb.impl.device.SystemDeviceControlClient
 import com.adbdeck.core.adb.impl.files.SystemDeviceFileClient
 import com.adbdeck.core.adb.impl.device.SystemDeviceInfoClient
@@ -100,6 +102,9 @@ val appModule = module {
 
     // ── ScreenToolsClient ─────────────────────────────────────────
     singleOf(::SystemScreenToolsClient) bind ScreenToolsClient::class
+
+    // ── ApkInstallClient ──────────────────────────────────────────
+    singleOf(::SystemApkInstallClient) bind ApkInstallClient::class
 
     // ── IntentLaunchClient ────────────────────────────────────────
     singleOf(::SystemIntentLaunchClient) bind IntentLaunchClient::class

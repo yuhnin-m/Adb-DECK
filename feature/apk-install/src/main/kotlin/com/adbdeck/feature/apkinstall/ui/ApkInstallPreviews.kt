@@ -16,6 +16,8 @@ private class PreviewApkInstallComponent(
     override val state: StateFlow<ApkInstallState>,
 ) : ApkInstallComponent {
     override fun onApkPathChanged(path: String) = Unit
+    override fun onPickApkFile() = Unit
+    override fun onApkPathDropped(path: String) = Unit
     override fun onInstallApk() = Unit
     override fun onClearLog() = Unit
     override fun onDismissFeedback() = Unit

@@ -26,11 +26,11 @@ data class ApkInstallFeedback(
  */
 data class ApkInstallState(
     val activeDeviceId: String? = null,
-    val deviceMessage: String = "Активное устройство не выбрано",
+    val deviceMessage: String = "",
     val apkPath: String = "",
     val isInstalling: Boolean = false,
     val installingDeviceId: String? = null,
-    val status: ApkInstallStatus = ApkInstallStatus(message = "Выберите APK для установки"),
+    val status: ApkInstallStatus = ApkInstallStatus(message = ""),
     val logLines: List<String> = emptyList(),
     val lastInstalledApkPath: String? = null,
     val feedback: ApkInstallFeedback? = null,

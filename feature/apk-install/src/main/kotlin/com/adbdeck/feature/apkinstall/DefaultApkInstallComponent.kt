@@ -1,12 +1,19 @@
 package com.adbdeck.feature.apkinstall
 
+import adbdeck.feature.apk_install.generated.resources.Res
+import adbdeck.feature.apk_install.generated.resources.*
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.feature.apkinstall.service.ApkFileValidationError
+import com.adbdeck.feature.apkinstall.service.ApkFileValidationResult
+import com.adbdeck.feature.apkinstall.service.ApkInstallHostFileService
 import com.adbdeck.feature.apkinstall.service.ApkInstallService
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import java.io.File
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +22,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.File
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 
 /**
  * Реализация [ApkInstallComponent].
@@ -23,6 +33,7 @@ import java.io.File
  * Отвечает за:
  * - синхронизацию с active device из [DeviceManager];
  * - запуск `adb install` без блокировки UI;
+ * - валидацию APK через host-side [ApkInstallHostFileService];
  * - показ прогресса, лога и ошибок.
  */
 class DefaultApkInstallComponent(
@@ -30,6 +41,7 @@ class DefaultApkInstallComponent(
     private val deviceManager: DeviceManager,
     private val settingsRepository: SettingsRepository,
     private val apkInstallService: ApkInstallService,
+    private val hostFileService: ApkInstallHostFileService,
 ) : ApkInstallComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -39,8 +51,31 @@ class DefaultApkInstallComponent(
 
     private var installJob: Job? = null
     private var feedbackJob: Job? = null
+    private var pickApkJob: Job? = null
+    private var pathStatusJob: Job? = null
+    private val feedbackMutex = Mutex()
 
     init {
+        scope.launch {
+            // Первичный локализованный статус до первого ввода пути.
+            val initialDeviceMessage = getString(Res.string.apk_install_device_not_selected)
+            val initialStatus = getString(Res.string.apk_install_status_select_apk)
+            _state.update { current ->
+                current.copy(
+                    deviceMessage = if (current.deviceMessage.isBlank()) {
+                        initialDeviceMessage
+                    } else {
+                        current.deviceMessage
+                    },
+                    status = if (current.status.message.isBlank()) {
+                        current.status.copy(message = initialStatus)
+                    } else {
+                        current.status
+                    },
+                )
+            }
+        }
+
         scope.launch {
             deviceManager.selectedDeviceFlow.collect { device ->
                 handleDeviceChanged(device)
@@ -53,115 +88,72 @@ class DefaultApkInstallComponent(
         _state.update { current ->
             current.copy(
                 apkPath = normalized,
-                status = if (normalized.isBlank()) {
-                    ApkInstallStatus("Выберите APK для установки")
-                } else {
-                    ApkInstallStatus("Готово к установке: ${File(normalized).name}")
+            )
+        }
+        updateIdleStatusByPath(normalized)
+    }
+
+    override fun onPickApkFile() {
+        pickApkJob?.cancel()
+        pickApkJob = scope.launch {
+            val initialPath = _state.value.apkPath
+            hostFileService.selectApkFile(initialPath).fold(
+                onSuccess = { selected ->
+                    if (!selected.isNullOrBlank()) {
+                        onApkPathChanged(selected)
+                    }
+                },
+                onFailure = { error ->
+                    handleError(
+                        error = ApkInstallError.PickerFailed(error.message),
+                        updateStatus = false,
+                    )
                 },
             )
         }
     }
 
+    override fun onApkPathDropped(path: String) {
+        // DropTarget callback приходит с AWT-потока. Обновление состояния
+        // фичи выполняем через основной scope компонента.
+        scope.launch {
+            onApkPathChanged(path)
+        }
+    }
+
     override fun onInstallApk() {
         if (installJob?.isActive == true || _state.value.isInstalling) {
-            showFeedback("Установка APK уже выполняется", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.apk_install_feedback_install_running,
+                isError = true,
+            )
             return
         }
 
         val deviceId = _state.value.activeDeviceId
         if (deviceId == null) {
-            showFeedback("Выберите доступное активное устройство", isError = true)
-            return
-        }
-
-        val apkPath = _state.value.apkPath.trim()
-        if (apkPath.isBlank()) {
-            showFeedback("Выберите APK-файл", isError = true)
-            return
-        }
-
-        val apkFile = File(apkPath)
-        if (!apkFile.isFile) {
-            showFeedback("APK-файл не найден: $apkPath", isError = true)
-            return
-        }
-        if (!apkFile.name.endsWith(".apk", ignoreCase = true)) {
-            showFeedback("Нужен файл с расширением .apk", isError = true)
+            showFeedbackResource(
+                messageRes = Res.string.apk_install_feedback_choose_device,
+                isError = true,
+            )
             return
         }
 
         installJob = scope.launch {
-            _state.update { current ->
-                current.copy(
-                    isInstalling = true,
-                    installingDeviceId = deviceId,
-                    status = ApkInstallStatus(
-                        message = "Запускаем установку APK…",
-                        progress = 0f,
-                    ),
-                    logLines = listOf("Запуск установки: ${apkFile.absolutePath}"),
-                )
-            }
-
-            val result = apkInstallService.install(
-                deviceId = deviceId,
-                localApkPath = apkFile.absolutePath,
-                adbPath = adbPath(),
-            ) { progress, message ->
-                _state.update { current ->
-                    current.copy(
-                        status = ApkInstallStatus(
-                            message = message,
-                            progress = progress,
-                        ),
-                        logLines = appendLog(
-                            current = current.logLines,
-                            line = message,
-                        ),
+            val rawPath = _state.value.apkPath
+            when (val validation = hostFileService.validateApkPath(rawPath)) {
+                is ApkFileValidationResult.Invalid -> {
+                    handleError(
+                        error = validation.toApkInstallError(),
+                        updateStatus = false,
                     )
+                    return@launch
+                }
+
+                is ApkFileValidationResult.Valid -> {
+                    startInstall(deviceId = deviceId, apkPath = validation.absolutePath, apkFileName = validation.fileName)
                 }
             }
-
-            if (!isActive) return@launch
-
-            result.fold(
-                onSuccess = {
-                    _state.update { current ->
-                        current.copy(
-                            isInstalling = false,
-                            installingDeviceId = null,
-                            lastInstalledApkPath = apkFile.absolutePath,
-                            status = ApkInstallStatus(
-                                message = "APK установлен: ${apkFile.name}",
-                                progress = 1f,
-                            ),
-                            logLines = appendLog(
-                                current = current.logLines,
-                                line = "Установка завершена успешно",
-                            ),
-                        )
-                    }
-                    showFeedback("APK успешно установлен", isError = false)
-                },
-                onFailure = { error ->
-                    val message = error.message ?: "Не удалось установить APK"
-                    _state.update { current ->
-                        current.copy(
-                            isInstalling = false,
-                            installingDeviceId = null,
-                            status = ApkInstallStatus(
-                                message = message,
-                                isError = true,
-                            ),
-                            logLines = appendLog(
-                                current = current.logLines,
-                                line = "Ошибка: $message",
-                            ),
-                        )
-                    }
-                    showFeedback(message, isError = true)
-                },
-            )
         }
     }
 
@@ -175,17 +167,40 @@ class DefaultApkInstallComponent(
         _state.update { it.copy(feedback = null) }
     }
 
+    /** Обновляет idle-статус в зависимости от введенного пути к APK. */
+    private fun updateIdleStatusByPath(path: String) {
+        pathStatusJob?.cancel()
+        pathStatusJob = scope.launch {
+            val message = if (path.isBlank()) {
+                getString(Res.string.apk_install_status_select_apk)
+            } else {
+                getString(Res.string.apk_install_status_ready, File(path).name)
+            }
+            _state.update { current ->
+                if (current.isInstalling) {
+                    current
+                } else {
+                    current.copy(status = ApkInstallStatus(message = message))
+                }
+            }
+        }
+    }
+
     /** Синхронизация состояния с текущим active device. */
-    private fun handleDeviceChanged(device: AdbDevice?) {
+    private suspend fun handleDeviceChanged(device: AdbDevice?) {
         val nextActiveDeviceId = when {
             device == null -> null
             device.state != DeviceState.DEVICE -> null
             else -> device.deviceId
         }
         val nextMessage = when {
-            device == null -> "Активное устройство не выбрано"
-            device.state != DeviceState.DEVICE -> "Устройство недоступно: ${device.state.rawValue}"
-            else -> "Активное устройство: ${device.deviceId}"
+            device == null -> getString(Res.string.apk_install_device_not_selected)
+            device.state != DeviceState.DEVICE -> getString(
+                Res.string.apk_install_device_unavailable,
+                device.state.rawValue,
+            )
+
+            else -> getString(Res.string.apk_install_device_active, device.deviceId)
         }
 
         _state.update {
@@ -201,31 +216,198 @@ class DefaultApkInstallComponent(
         }
     }
 
+    /** Запустить установку APK после успешной host-валидации пути. */
+    private suspend fun startInstall(
+        deviceId: String,
+        apkPath: String,
+        apkFileName: String,
+    ) {
+        val statusInstalling = getString(Res.string.apk_install_status_installing)
+        val logStarted = getString(Res.string.apk_install_log_started, apkPath)
+        _state.update { current ->
+            current.copy(
+                isInstalling = true,
+                installingDeviceId = deviceId,
+                status = ApkInstallStatus(
+                    message = statusInstalling,
+                    progress = 0f,
+                ),
+                logLines = listOf(logStarted),
+            )
+        }
+
+        val result = apkInstallService.install(
+            deviceId = deviceId,
+            localApkPath = apkPath,
+            adbPath = adbPath(),
+        ) { progress, message ->
+            _state.update { current ->
+                current.copy(
+                    status = ApkInstallStatus(
+                        message = message,
+                        progress = progress,
+                    ),
+                    logLines = appendLog(
+                        current = current.logLines,
+                        line = message,
+                    ),
+                )
+            }
+        }
+
+        if (!coroutineContext.isActive) return
+
+        result.fold(
+            onSuccess = {
+                val statusInstalled = getString(Res.string.apk_install_status_installed, apkFileName)
+                val logSuccess = getString(Res.string.apk_install_log_success)
+                _state.update { current ->
+                    current.copy(
+                        isInstalling = false,
+                        installingDeviceId = null,
+                        lastInstalledApkPath = apkPath,
+                        status = ApkInstallStatus(
+                            message = statusInstalled,
+                            progress = 1f,
+                        ),
+                        logLines = appendLog(
+                            current = current.logLines,
+                            line = logSuccess,
+                        ),
+                    )
+                }
+                showFeedbackResource(
+                    messageRes = Res.string.apk_install_feedback_install_success,
+                    isError = false,
+                )
+            },
+            onFailure = { error ->
+                handleError(
+                    error = ApkInstallError.InstallFailed(error.message),
+                    updateStatus = true,
+                    appendLogOnError = true,
+                )
+            },
+        )
+    }
+
     /** Прерывает установку, если устройство сменилось или стало недоступно. */
-    private fun interruptInstallBecauseDeviceChanged() {
+    private suspend fun interruptInstallBecauseDeviceChanged() {
         installJob?.cancel()
         installJob = null
 
+        val statusMessage = getString(Res.string.apk_install_status_interrupted)
+        val logInterrupted = getString(Res.string.apk_install_log_interrupted)
         _state.update { current ->
             current.copy(
                 isInstalling = false,
                 installingDeviceId = null,
                 status = ApkInstallStatus(
-                    message = "Установка APK прервана: активное устройство изменилось или стало недоступно",
+                    message = statusMessage,
                     isError = true,
                 ),
                 logLines = appendLog(
                     current = current.logLines,
-                    line = "Установка прервана из-за смены устройства",
+                    line = logInterrupted,
                 ),
             )
         }
-        showFeedback("Установка APK прервана из-за смены устройства", isError = true)
+        showFeedbackResource(
+            messageRes = Res.string.apk_install_feedback_install_interrupted,
+            isError = true,
+        )
     }
 
     /** Текущий путь к adb из настроек приложения. */
     private fun adbPath(): String =
         settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+
+    /** Обработать typed-ошибку с единым UX-пайплайном. */
+    private suspend fun handleError(
+        error: ApkInstallError,
+        updateStatus: Boolean,
+        appendLogOnError: Boolean = false,
+    ) {
+        val message = resolveErrorMessage(error)
+
+        if (updateStatus) {
+            _state.update { current ->
+                current.copy(
+                    isInstalling = false,
+                    installingDeviceId = null,
+                    status = ApkInstallStatus(
+                        message = message,
+                        isError = true,
+                    ),
+                    logLines = if (appendLogOnError) {
+                        val logError = getString(Res.string.apk_install_log_error, message)
+                        appendLog(current.logLines, logError)
+                    } else {
+                        current.logLines
+                    },
+                )
+            }
+        }
+
+        showFeedback(message = message, isError = true)
+    }
+
+    /** Сопоставляет typed-ошибку с локализованным текстом. */
+    private suspend fun resolveErrorMessage(error: ApkInstallError): String =
+        when (error) {
+            ApkInstallError.InstallAlreadyRunning ->
+                getString(Res.string.apk_install_feedback_install_running)
+
+            ApkInstallError.ActiveDeviceMissing ->
+                getString(Res.string.apk_install_feedback_choose_device)
+
+            ApkInstallError.ApkPathMissing ->
+                getString(Res.string.apk_install_feedback_choose_apk)
+
+            is ApkInstallError.ApkFileNotFound ->
+                getString(Res.string.apk_install_feedback_apk_not_found, error.path)
+
+            ApkInstallError.InvalidApkExtension ->
+                getString(Res.string.apk_install_feedback_invalid_apk)
+
+            ApkInstallError.ApkPathAccessFailed ->
+                getString(Res.string.apk_install_feedback_apk_access_error)
+
+            is ApkInstallError.InstallFailed -> {
+                val details = error.details?.trim().orEmpty()
+                if (details.isBlank()) {
+                    getString(Res.string.apk_install_feedback_install_failed)
+                } else {
+                    getString(Res.string.apk_install_error_install_with_details, details)
+                }
+            }
+
+            ApkInstallError.InstallInterruptedByDeviceChange ->
+                getString(Res.string.apk_install_feedback_install_interrupted)
+
+            is ApkInstallError.PickerFailed -> {
+                val details = error.details?.trim().orEmpty()
+                if (details.isBlank()) {
+                    getString(Res.string.apk_install_feedback_picker_failed)
+                } else {
+                    getString(Res.string.apk_install_error_picker_with_details, details)
+                }
+            }
+        }
+
+    /** Показывает feedback по ресурсу и сохраняет порядок при конкуренции корутин. */
+    private fun showFeedbackResource(
+        messageRes: StringResource,
+        isError: Boolean,
+        vararg args: Any,
+    ) {
+        scope.launch {
+            feedbackMutex.withLock {
+                val message = getString(messageRes, *args)
+                showFeedback(message = message, isError = isError)
+            }
+        }
+    }
 
     /** Показывает feedback и автоматически скрывает через 5 секунд. */
     private fun showFeedback(message: String, isError: Boolean) {
@@ -262,4 +444,13 @@ class DefaultApkInstallComponent(
             next
         }
     }
+
+    /** Преобразует ошибку валидации host-файла в typed-ошибку экрана. */
+    private fun ApkFileValidationResult.Invalid.toApkInstallError(): ApkInstallError =
+        when (reason) {
+            ApkFileValidationError.EMPTY_PATH -> ApkInstallError.ApkPathMissing
+            ApkFileValidationError.FILE_NOT_FOUND -> ApkInstallError.ApkFileNotFound(originalPath)
+            ApkFileValidationError.INVALID_EXTENSION -> ApkInstallError.InvalidApkExtension
+            ApkFileValidationError.IO_ACCESS_ERROR -> ApkInstallError.ApkPathAccessFailed
+        }
 }
