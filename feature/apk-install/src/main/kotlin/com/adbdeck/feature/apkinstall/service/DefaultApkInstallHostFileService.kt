@@ -19,6 +19,7 @@ class DefaultApkInstallHostFileService : ApkInstallHostFileService {
 
     private companion object {
         private val HOME_DIR: String = System.getProperty("user.home")
+        private val INSTALLABLE_EXTENSIONS = setOf("apk", "aab", "apks", "xapk")
     }
 
     override suspend fun selectApkFile(initialPath: String): Result<String?> = runCatchingPreserveCancellation {
@@ -26,9 +27,12 @@ class DefaultApkInstallHostFileService : ApkInstallHostFileService {
         val filterLabel = getString(Res.string.apk_install_dialog_apk_filter_label)
         withContext(Dispatchers.IO) {
             val chooser = JFileChooser(resolveInitialDirectory(initialPath)).apply {
-                fileSelectionMode = JFileChooser.FILES_ONLY
-                isAcceptAllFileFilterUsed = false
-                fileFilter = FileNameExtensionFilter(filterLabel, "apk")
+                fileSelectionMode = JFileChooser.FILES_AND_DIRECTORIES
+                isAcceptAllFileFilterUsed = true
+                fileFilter = FileNameExtensionFilter(
+                    filterLabel,
+                    *INSTALLABLE_EXTENSIONS.toTypedArray(),
+                )
                 this.dialogTitle = dialogTitle
             }
 
@@ -59,6 +63,31 @@ class DefaultApkInstallHostFileService : ApkInstallHostFileService {
                 )
             }
 
+            if (!file.exists()) {
+                return@withContext ApkFileValidationResult.Invalid(
+                    reason = ApkFileValidationError.FILE_NOT_FOUND,
+                    originalPath = normalized,
+                )
+            }
+
+            if (file.isDirectory) {
+                val hasSplitApkFiles = file.walkTopDown()
+                    .maxDepth(3)
+                    .any { child ->
+                        child.isFile && child.name.endsWith(".apk", ignoreCase = true)
+                    }
+                if (!hasSplitApkFiles) {
+                    return@withContext ApkFileValidationResult.Invalid(
+                        reason = ApkFileValidationError.UNSUPPORTED_FORMAT,
+                        originalPath = normalized,
+                    )
+                }
+                return@withContext ApkFileValidationResult.Valid(
+                    absolutePath = file.absolutePath,
+                    fileName = file.name.ifBlank { file.absolutePath },
+                )
+            }
+
             if (!file.isFile) {
                 return@withContext ApkFileValidationResult.Invalid(
                     reason = ApkFileValidationError.FILE_NOT_FOUND,
@@ -66,9 +95,10 @@ class DefaultApkInstallHostFileService : ApkInstallHostFileService {
                 )
             }
 
-            if (!file.name.endsWith(".apk", ignoreCase = true)) {
+            val extension = file.extension.lowercase()
+            if (extension !in INSTALLABLE_EXTENSIONS) {
                 return@withContext ApkFileValidationResult.Invalid(
-                    reason = ApkFileValidationError.INVALID_EXTENSION,
+                    reason = ApkFileValidationError.UNSUPPORTED_FORMAT,
                     originalPath = normalized,
                 )
             }

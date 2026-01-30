@@ -1,5 +1,6 @@
 package com.adbdeck.feature.notifications
 
+import com.adbdeck.core.adb.api.notifications.NotificationPostRequest
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import kotlinx.coroutines.flow.StateFlow
 
@@ -102,6 +103,11 @@ interface NotificationsComponent {
      * @param path   Путь к файлу на хосте (выбирается через JFileChooser в UI).
      */
     fun onExportToJson(record: NotificationRecord, path: String)
+
+    /**
+     * Отправить тестовое уведомление на устройство через `cmd notification post`.
+     */
+    fun onPostNotification(request: NotificationPostRequest)
 
     // ── Интеграция ───────────────────────────────────────────────────────────
 

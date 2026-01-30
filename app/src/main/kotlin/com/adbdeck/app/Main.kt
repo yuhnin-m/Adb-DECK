@@ -27,6 +27,7 @@ import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.adb.api.screen.ScreenToolsClient
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.designsystem.AdbDeckTheme
+import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.DefaultComponentContext
@@ -72,6 +73,7 @@ fun main() = application {
         contactsClient      = get(ContactsClient::class.java),
         screenToolsClient   = get(ScreenToolsClient::class.java),
         apkInstallClient    = get(ApkInstallClient::class.java),
+        processRunner       = get(ProcessRunner::class.java),
         intentLaunchClient  = get(IntentLaunchClient::class.java),
         notificationsClient = get(NotificationsClient::class.java),
     )

@@ -6,8 +6,11 @@ import com.adbdeck.core.settings.AppTheme
  * Состояние UI экрана настроек.
  *
  * @param adbPath            Текущее значение поля пути к adb.
+ * @param bundletoolPath     Текущее значение поля пути к bundletool.
  * @param adbCheckResult     Текст результата последней проверки adb (пустой — проверки не было).
  * @param isCheckingAdb      Флаг выполняющейся проверки adb.
+ * @param bundletoolCheckResult Текст результата последней проверки bundletool.
+ * @param isCheckingBundletool  Флаг выполняющейся проверки bundletool.
  * @param isSaved            Флаг успешного сохранения (используется для краткосрочной анимации).
  * @param currentTheme       Текущая выбранная тема.
  *
@@ -24,8 +27,11 @@ import com.adbdeck.core.settings.AppTheme
  */
 data class SettingsUiState(
     val adbPath: String = "adb",
+    val bundletoolPath: String = "bundletool",
     val adbCheckResult: String = "",
     val isCheckingAdb: Boolean = false,
+    val bundletoolCheckResult: String = "",
+    val isCheckingBundletool: Boolean = false,
     val isSaved: Boolean = false,
     val currentTheme: AppTheme = AppTheme.SYSTEM,
 

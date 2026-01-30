@@ -6,7 +6,7 @@ package com.adbdeck.feature.apkinstall.service
 enum class ApkFileValidationError {
     EMPTY_PATH,
     FILE_NOT_FOUND,
-    INVALID_EXTENSION,
+    UNSUPPORTED_FORMAT,
     IO_ACCESS_ERROR,
 }
 
@@ -14,7 +14,7 @@ enum class ApkFileValidationError {
  * Результат проверки APK-файла на хосте.
  */
 sealed interface ApkFileValidationResult {
-    /** Путь валиден и указывает на существующий `.apk` файл. */
+    /** Путь валиден и указывает на поддерживаемый install target. */
     data class Valid(
         val absolutePath: String,
         val fileName: String,
@@ -33,14 +33,14 @@ sealed interface ApkFileValidationResult {
 interface ApkInstallHostFileService {
 
     /**
-     * Открыть системный диалог выбора APK-файла.
+     * Открыть системный диалог выбора install target.
      *
      * @return Абсолютный путь к выбранному файлу или `null`, если пользователь отменил выбор.
      */
     suspend fun selectApkFile(initialPath: String): Result<String?>
 
     /**
-     * Проверить, что путь указывает на существующий `.apk` файл.
+     * Проверить, что путь указывает на поддерживаемый файл/каталог для установки.
      */
     suspend fun validateApkPath(path: String): ApkFileValidationResult
 }

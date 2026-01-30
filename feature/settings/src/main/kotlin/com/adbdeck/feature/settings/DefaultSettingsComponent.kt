@@ -2,6 +2,7 @@ package com.adbdeck.feature.settings
 
 import com.adbdeck.core.adb.api.adb.AdbCheckResult
 import com.adbdeck.core.adb.api.adb.AdbClient
+import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
@@ -25,6 +26,7 @@ import kotlinx.coroutines.launch
 class DefaultSettingsComponent(
     componentContext: ComponentContext,
     private val adbClient: AdbClient,
+    private val processRunner: ProcessRunner,
     private val settingsRepository: SettingsRepository,
 ) : SettingsComponent, ComponentContext by componentContext {
 
@@ -34,6 +36,7 @@ class DefaultSettingsComponent(
         settingsRepository.getSettings().let { s ->
             SettingsUiState(
                 adbPath = s.adbPath,
+                bundletoolPath = s.bundletoolPath,
                 currentTheme = s.theme,
                 logcatCompactMode = s.logcatCompactMode,
                 logcatShowDate = s.logcatShowDate,
@@ -55,11 +58,22 @@ class DefaultSettingsComponent(
         _state.update { it.copy(adbPath = path, adbCheckResult = "", isSaved = false) }
     }
 
+    override fun onBundletoolPathChanged(path: String) {
+        _state.update {
+            it.copy(
+                bundletoolPath = path,
+                bundletoolCheckResult = "",
+                isSaved = false,
+            )
+        }
+    }
+
     override fun onSave() {
         scope.launch {
             val current = settingsRepository.getSettings()
             val updated = current.copy(
                 adbPath = _state.value.adbPath,
+                bundletoolPath = _state.value.bundletoolPath,
                 theme = _state.value.currentTheme,
             )
             settingsRepository.saveSettings(updated)
@@ -78,6 +92,47 @@ class DefaultSettingsComponent(
                 is AdbCheckResult.NotAvailable -> "✗ Не найден: ${result.reason}"
             }
             _state.update { it.copy(isCheckingAdb = false, adbCheckResult = resultText) }
+        }
+    }
+
+    override fun onCheckBundletool() {
+        if (_state.value.isCheckingBundletool) return
+        scope.launch {
+            _state.update { it.copy(isCheckingBundletool = true, bundletoolCheckResult = "") }
+            val path = _state.value.bundletoolPath.trim().ifBlank { "bundletool" }
+            val command = buildBundletoolCommand(path) + "version"
+
+            val result = runCatching { processRunner.run(command) }
+            val resultText = result.fold(
+                onSuccess = { processResult ->
+                    if (processResult.isSuccess) {
+                        val version = processResult.stdout.lineSequence()
+                            .map(String::trim)
+                            .firstOrNull { it.isNotEmpty() }
+                            ?: processResult.stderr.lineSequence()
+                                .map(String::trim)
+                                .firstOrNull { it.isNotEmpty() }
+                                ?: "unknown"
+                        "✓ Доступен: $version"
+                    } else {
+                        val details = processResult.stderr.ifBlank { processResult.stdout }
+                            .lineSequence()
+                            .map(String::trim)
+                            .firstOrNull { it.isNotEmpty() }
+                            ?: "не удалось получить версию"
+                        "✗ Не найден: $details"
+                    }
+                },
+                onFailure = { error ->
+                    "✗ Не найден: ${error.message ?: "не удалось запустить команду"}"
+                },
+            )
+            _state.update {
+                it.copy(
+                    isCheckingBundletool = false,
+                    bundletoolCheckResult = resultText,
+                )
+            }
         }
     }
 
@@ -154,4 +209,11 @@ class DefaultSettingsComponent(
             )
         }
     }
+
+    /** Собирает команду запуска bundletool из пути к бинарнику или `.jar`. */
+    private fun buildBundletoolCommand(path: String): List<String> =
+        when {
+            path.endsWith(".jar", ignoreCase = true) -> listOf("java", "-jar", path)
+            else -> listOf(path)
+        }
 }

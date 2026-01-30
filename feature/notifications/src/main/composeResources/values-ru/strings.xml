@@ -1,0 +1,161 @@
+<resources>
+    <string name="notifications_empty_select_device">Выберите активное устройство в верхней панели.</string>
+    <string name="notifications_loading">Загрузка уведомлений…</string>
+    <string name="notifications_empty_not_found">Ничего не найдено.</string>
+    <string name="notifications_empty_none">Уведомлений нет.</string>
+
+    <string name="notifications_toolbar_search_placeholder">Поиск по пакету, заголовку и тексту</string>
+    <string name="notifications_toolbar_package_placeholder">Пакет</string>
+    <string name="notifications_toolbar_sort_description">Сортировка</string>
+    <string name="notifications_toolbar_compose">Конструктор</string>
+    <string name="notifications_toolbar_close_composer">Закрыть конструктор</string>
+
+    <string name="notifications_filter_all">Все</string>
+    <string name="notifications_filter_current">Текущие</string>
+    <string name="notifications_filter_history">История</string>
+    <string name="notifications_filter_saved">Сохранённые</string>
+
+    <string name="notifications_sort_newest">Сначала новые</string>
+    <string name="notifications_sort_oldest">Сначала старые</string>
+    <string name="notifications_sort_package">По пакету</string>
+
+    <string name="notifications_row_ongoing">ONGOING</string>
+    <string name="notifications_row_saved_marker">★</string>
+
+    <string name="notifications_composer_title">Отправка тестового уведомления</string>
+    <string name="notifications_composer_subtitle_device">Устройство: %1$s</string>
+    <string name="notifications_composer_no_device">Активное устройство не выбрано.</string>
+    <string name="notifications_composer_reset_all">Сбросить всё</string>
+    <string name="notifications_composer_section_source">Источник для автозаполнения</string>
+    <string name="notifications_composer_fill_selected">Заполнить из выбранного</string>
+    <string name="notifications_composer_saved_placeholder">Сохранённое уведомление</string>
+    <string name="notifications_composer_fill_saved">Применить сохранённое</string>
+    <string name="notifications_composer_section_base">Базовые параметры</string>
+    <string name="notifications_composer_field_tag">Тег (обязательно)</string>
+    <string name="notifications_composer_field_title">Заголовок</string>
+    <string name="notifications_composer_field_text">Текст (обязательно)</string>
+    <string name="notifications_composer_section_visual">Визуальные параметры</string>
+    <string name="notifications_composer_enable_icon">Включить иконку</string>
+    <string name="notifications_composer_enable_large_icon">Включить большую иконку</string>
+    <string name="notifications_composer_field_icon">Icon spec (-i)</string>
+    <string name="notifications_composer_field_large_icon">Large icon spec (-I)</string>
+    <string name="notifications_composer_section_style">Стиль</string>
+    <string name="notifications_composer_field_style">Режим стиля</string>
+    <string name="notifications_composer_style_none">Без стиля</string>
+    <string name="notifications_composer_style_bigtext">BigText</string>
+    <string name="notifications_composer_style_bigpicture">BigPicture</string>
+    <string name="notifications_composer_style_inbox">Inbox</string>
+    <string name="notifications_composer_style_messaging">Messaging</string>
+    <string name="notifications_composer_style_media">Media</string>
+    <string name="notifications_composer_field_big_text">Значение big text</string>
+    <string name="notifications_composer_enable_picture">Включить изображение</string>
+    <string name="notifications_composer_field_picture_spec">Picture spec (--picture)</string>
+    <string name="notifications_composer_field_inbox_lines">Строки inbox</string>
+    <string name="notifications_composer_hint_inbox_lines">Разделитель | : Строка 1 | Строка 2 | Строка 3</string>
+    <string name="notifications_composer_field_conversation">Название диалога</string>
+    <string name="notifications_composer_field_messages">Сообщения</string>
+    <string name="notifications_composer_hint_messages">Формат: Alice:Привет | Bob:Ответ</string>
+    <string name="notifications_composer_style_error_inbox_required">Для Inbox нужна хотя бы одна строка.</string>
+    <string name="notifications_composer_style_error_messaging_required">Для Messaging нужно хотя бы одно сообщение.</string>
+    <string name="notifications_composer_style_error_messaging_format">Неверный формат сообщений. Используйте Имя:Текст.</string>
+    <string name="notifications_composer_style_error_picture_required">Для BigPicture нужно заполнить picture spec.</string>
+    <string name="notifications_composer_section_intent">Intent и дополнительные параметры</string>
+    <string name="notifications_composer_enable_content_intent">Включить content intent</string>
+    <string name="notifications_composer_enable_deep_link">Включить deep link</string>
+    <string name="notifications_composer_field_content_intent">Content intent spec (-c)</string>
+    <string name="notifications_composer_hint_intent">Пример: activity -a android.intent.action.VIEW -d https://example.com</string>
+    <string name="notifications_composer_field_deep_link">Deep link URL</string>
+    <string name="notifications_composer_hint_deep_link">Используется как fallback для генерации content-intent, если поле intent пустое.</string>
+    <string name="notifications_composer_switch_verbose">Verbose режим (-v)</string>
+    <string name="notifications_composer_send">Отправить</string>
+    <string name="notifications_composer_cancel">Отмена</string>
+    <string name="notifications_composer_pick_host_image">Выбрать картинку с хоста</string>
+    <string name="notifications_composer_host_image_selected">Картинка выбрана: %1$s</string>
+    <string name="notifications_composer_host_image_encode_failed">Не удалось закодировать картинку: %1$s</string>
+    <string name="notifications_composer_host_image_file_not_found">Файл картинки не найден на хосте: %1$s</string>
+    <string name="notifications_composer_section_actions">Кнопки действий</string>
+    <string name="notifications_composer_enable_actions">Включить кнопки действий</string>
+    <string name="notifications_composer_actions_support_note">ADB cmd notification post не поддерживает action-кнопки напрямую. Intent первой кнопки используется как fallback для content-intent.</string>
+    <string name="notifications_composer_field_action_label">Текст кнопки</string>
+    <string name="notifications_composer_field_action_intent">Действие кнопки (intent)</string>
+    <string name="notifications_composer_actions_add">Добавить кнопку</string>
+    <string name="notifications_composer_actions_remove">Удалить кнопку</string>
+    <string name="notifications_composer_field_actions">Кнопки (Название => intent)</string>
+    <string name="notifications_composer_hint_actions">Формат: Open app => activity -n com.example/.Main | Web => activity -a android.intent.action.VIEW -d https://example.com</string>
+
+    <string name="notifications_status_shown">Показано: %1$d</string>
+    <string name="notifications_status_current">Текущих: %1$d</string>
+    <string name="notifications_status_history">В истории: %1$d</string>
+    <string name="notifications_status_saved">Сохранено: %1$d</string>
+
+    <string name="notifications_detail_tab_details">Детали</string>
+    <string name="notifications_detail_tab_dump">Дамп</string>
+    <string name="notifications_detail_tab_saved">Сохранённые (%1$d)</string>
+
+    <string name="notifications_detail_label_package">Пакет</string>
+    <string name="notifications_detail_label_id_tag">ID / Tag</string>
+    <string name="notifications_detail_label_key">Ключ</string>
+    <string name="notifications_detail_label_channel">Канал</string>
+    <string name="notifications_detail_label_title">Заголовок</string>
+    <string name="notifications_detail_label_text">Текст</string>
+    <string name="notifications_detail_label_sub_text">Подтекст</string>
+    <string name="notifications_detail_label_big_text">Big text</string>
+    <string name="notifications_detail_label_summary">Summary</string>
+    <string name="notifications_detail_label_category">Категория</string>
+    <string name="notifications_detail_label_importance">Важность</string>
+    <string name="notifications_detail_label_flags">Флаги</string>
+    <string name="notifications_detail_label_ongoing">Ongoing</string>
+    <string name="notifications_detail_label_clearable">Clearable</string>
+    <string name="notifications_detail_label_date">Дата</string>
+    <string name="notifications_detail_label_group">Группа</string>
+    <string name="notifications_detail_label_sort_key">Sort key</string>
+
+    <string name="notifications_detail_section_actions">Действия</string>
+    <string name="notifications_detail_section_component_actions">Инструменты</string>
+    <string name="notifications_detail_section_visual">Визуальные параметры</string>
+    <string name="notifications_detail_actions_count">Количество</string>
+    <string name="notifications_detail_action_item">Действие %1$d</string>
+    <string name="notifications_detail_actions_unavailable">Подписи действий не получены из dumpsys.</string>
+
+    <string name="notifications_detail_action_copy_package">Копировать пакет</string>
+    <string name="notifications_detail_action_copy_title">Копировать заголовок</string>
+    <string name="notifications_detail_action_copy_text">Копировать текст</string>
+    <string name="notifications_detail_action_copy_dump">Копировать дамп</string>
+    <string name="notifications_detail_action_save">Сохранить в коллекцию</string>
+    <string name="notifications_detail_action_open_packages">Открыть в Packages</string>
+    <string name="notifications_detail_action_open_deep_links">Deep Links</string>
+    <string name="notifications_detail_action_export_json">Экспорт JSON</string>
+    <string name="notifications_detail_action_delete_saved">Удалить</string>
+
+    <string name="notifications_detail_raw_dump_unavailable">(Исходный дамп недоступен — запись из сохранённых)</string>
+    <string name="notifications_saved_empty">Нет сохранённых уведомлений.</string>
+    <string name="notifications_saved_saved_at">Сохранено: %1$s</string>
+
+    <string name="notifications_importance_high">5 — HIGH</string>
+    <string name="notifications_importance_default">4 — DEFAULT</string>
+    <string name="notifications_importance_low">3 — LOW</string>
+    <string name="notifications_importance_min">2 — MIN</string>
+    <string name="notifications_importance_none">1 — NONE</string>
+    <string name="notifications_importance_unspecified">0 — UNSPECIFIED</string>
+
+    <string name="notifications_export_dialog_title">Экспорт уведомления</string>
+    <string name="notifications_export_dialog_filter_description">JSON-файлы</string>
+
+    <string name="notifications_feedback_copied_package">Скопировано: %1$s</string>
+    <string name="notifications_feedback_copied_title">Заголовок скопирован.</string>
+    <string name="notifications_feedback_copied_text">Текст скопирован.</string>
+    <string name="notifications_feedback_copied_raw">Исходный блок скопирован.</string>
+    <string name="notifications_feedback_already_saved">Уведомление уже сохранено.</string>
+    <string name="notifications_feedback_saved">Уведомление сохранено в коллекцию.</string>
+    <string name="notifications_feedback_exported">Экспортировано: %1$s</string>
+    <string name="notifications_feedback_posted">Уведомление отправлено (tag: %1$s).</string>
+    <string name="notifications_feedback_storage_load_failed">Не удалось загрузить сохранённые уведомления: %1$s</string>
+    <string name="notifications_feedback_storage_save_failed">Не удалось сохранить коллекцию уведомлений: %1$s</string>
+
+    <string name="notifications_error_unknown">Неизвестная ошибка</string>
+    <string name="notifications_error_post_no_device">Нельзя отправить уведомление без активного устройства.</string>
+    <string name="notifications_error_post_invalid_input">Нужно заполнить tag и text.</string>
+    <string name="notifications_error_post_with_details">Не удалось отправить уведомление: %1$s</string>
+    <string name="notifications_error_export_with_details">Ошибка экспорта: %1$s</string>
+    <string name="notifications_error_clipboard_with_details">Ошибка буфера обмена: %1$s</string>
+</resources>

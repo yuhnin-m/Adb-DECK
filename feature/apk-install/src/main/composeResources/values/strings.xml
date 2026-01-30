@@ -3,46 +3,46 @@
     <string name="apk_install_device_unavailable">Device unavailable: %1$s</string>
     <string name="apk_install_device_active">Active device: %1$s</string>
 
-    <string name="apk_install_status_select_apk">Select APK to install</string>
+    <string name="apk_install_status_select_apk">Select package to install</string>
     <string name="apk_install_status_ready">Ready to install: %1$s</string>
-    <string name="apk_install_status_installing">Starting APK installation...</string>
-    <string name="apk_install_status_installed">APK installed: %1$s</string>
-    <string name="apk_install_status_interrupted">APK installation interrupted: active device changed or became unavailable</string>
+    <string name="apk_install_status_installing">Starting package installation...</string>
+    <string name="apk_install_status_installed">Package installed: %1$s</string>
+    <string name="apk_install_status_interrupted">Package installation interrupted: active device changed or became unavailable</string>
 
-    <string name="apk_install_feedback_install_running">APK installation is already running</string>
+    <string name="apk_install_feedback_install_running">Package installation is already running</string>
     <string name="apk_install_feedback_choose_device">Select an active device first</string>
-    <string name="apk_install_feedback_choose_apk">Select APK file first</string>
-    <string name="apk_install_feedback_install_success">APK installed successfully</string>
-    <string name="apk_install_feedback_install_failed">Failed to install APK</string>
-    <string name="apk_install_feedback_install_interrupted">APK installation interrupted because active device changed</string>
-    <string name="apk_install_feedback_picker_failed">Failed to open APK file picker</string>
-    <string name="apk_install_feedback_invalid_apk">A valid .apk file is required</string>
-    <string name="apk_install_feedback_apk_not_found">APK file not found: %1$s</string>
-    <string name="apk_install_feedback_apk_access_error">Failed to access APK file</string>
+    <string name="apk_install_feedback_choose_apk">Select install target first</string>
+    <string name="apk_install_feedback_install_success">Package installed successfully</string>
+    <string name="apk_install_feedback_install_failed">Failed to install package</string>
+    <string name="apk_install_feedback_install_interrupted">Package installation interrupted because active device changed</string>
+    <string name="apk_install_feedback_picker_failed">Failed to open file picker</string>
+    <string name="apk_install_feedback_invalid_apk">Supported targets: .apk, .aab, .apks, .xapk or directory with split APK files</string>
+    <string name="apk_install_feedback_apk_not_found">Install target not found: %1$s</string>
+    <string name="apk_install_feedback_apk_access_error">Failed to access install target</string>
 
-    <string name="apk_install_error_install_with_details">Failed to install APK: %1$s</string>
-    <string name="apk_install_error_picker_with_details">Failed to open APK file picker: %1$s</string>
+    <string name="apk_install_error_install_with_details">Failed to install package: %1$s</string>
+    <string name="apk_install_error_picker_with_details">Failed to open file picker: %1$s</string>
 
     <string name="apk_install_log_started">Install started: %1$s</string>
     <string name="apk_install_log_success">Installation completed successfully</string>
     <string name="apk_install_log_error">Error: %1$s</string>
     <string name="apk_install_log_interrupted">Installation interrupted due to device change</string>
 
-    <string name="apk_install_section_file_title">APK file</string>
-    <string name="apk_install_field_apk_path_placeholder">Path to .apk</string>
-    <string name="apk_install_action_choose_apk">Choose APK…</string>
-    <string name="apk_install_action_install">Install APK</string>
+    <string name="apk_install_section_file_title">Install target</string>
+    <string name="apk_install_field_apk_path_placeholder">Path to .apk / .aab / .apks / .xapk or split directory</string>
+    <string name="apk_install_action_choose_apk">Choose file/folder…</string>
+    <string name="apk_install_action_install">Install</string>
 
     <string name="apk_install_section_drop_title">Drag and drop</string>
-    <string name="apk_install_drop_enabled">Drop .apk file here</string>
-    <string name="apk_install_drop_disabled">Select active device to install APK</string>
+    <string name="apk_install_drop_enabled">Drop package file or split folder here</string>
+    <string name="apk_install_drop_disabled">Select active device to install package</string>
 
-    <string name="apk_install_section_status_title">APK install status</string>
+    <string name="apk_install_section_status_title">Install status</string>
     <string name="apk_install_section_log_title">Install log</string>
     <string name="apk_install_action_clear_log">Clear log</string>
-    <string name="apk_install_empty_log">adb install output and error details will appear here</string>
-    <string name="apk_install_label_last_installed">Last installed APK: %1$s</string>
+    <string name="apk_install_empty_log">Installation output and error details will appear here</string>
+    <string name="apk_install_label_last_installed">Last installed target: %1$s</string>
 
-    <string name="apk_install_dialog_choose_apk_title">Choose APK file</string>
-    <string name="apk_install_dialog_apk_filter_label">Android Package (*.apk)</string>
+    <string name="apk_install_dialog_choose_apk_title">Choose install target</string>
+    <string name="apk_install_dialog_apk_filter_label">Installable files (*.apk, *.aab, *.apks, *.xapk)</string>
 </resources>

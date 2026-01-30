@@ -120,6 +120,80 @@ fun SettingsScreen(component: SettingsComponent) {
                     color = if (isSuccess) AdbDeckGreen else MaterialTheme.colorScheme.error,
                 )
             }
+
+            Spacer(Modifier.height(Dimensions.paddingLarge))
+
+            OutlinedTextField(
+                value = state.bundletoolPath,
+                onValueChange = component::onBundletoolPathChanged,
+                label = { Text("Путь к bundletool") },
+                placeholder = { Text("bundletool") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = {
+                    Text(
+                        text = "Можно указать путь к исполняемому файлу bundletool или к bundletool-all.jar.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                },
+            )
+
+            Spacer(Modifier.height(Dimensions.paddingMedium))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+            ) {
+                OutlinedButton(
+                    onClick = component::onCheckBundletool,
+                    enabled = !state.isCheckingBundletool,
+                ) {
+                    if (state.isCheckingBundletool) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .width(16.dp)
+                                .height(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(Modifier.width(Dimensions.paddingSmall))
+                        Text("Проверяется…")
+                    } else {
+                        Text("Проверить bundletool")
+                    }
+                }
+            }
+
+            if (state.bundletoolCheckResult.isNotBlank()) {
+                Spacer(Modifier.height(Dimensions.paddingSmall))
+                val isSuccess = state.bundletoolCheckResult.startsWith("✓")
+                Text(
+                    text = state.bundletoolCheckResult,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isSuccess) AdbDeckGreen else MaterialTheme.colorScheme.error,
+                )
+            }
+
+            Spacer(Modifier.height(Dimensions.paddingSmall))
+
+            Text(
+                text = "Скачать bundletool: https://github.com/google/bundletool/releases",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "macOS: /opt/homebrew/bin/bundletool или ~/Tools/bundletool/bundletool-all.jar",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "Linux: /usr/local/bin/bundletool или ~/tools/bundletool/bundletool-all.jar",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = "Windows: C:\\tools\\bundletool\\bundletool.bat или C:\\tools\\bundletool\\bundletool-all.jar",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         Spacer(Modifier.height(Dimensions.paddingLarge))

@@ -21,5 +21,6 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
     implementation(project(":core:adb-api"))
+    implementation(project(":core:process"))
     implementation(project(":core:settings"))
 }

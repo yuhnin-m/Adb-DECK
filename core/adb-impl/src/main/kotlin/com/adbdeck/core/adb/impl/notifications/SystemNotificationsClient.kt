@@ -1,8 +1,13 @@
 package com.adbdeck.core.adb.impl.notifications
 
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
+import com.adbdeck.core.adb.api.notifications.NotificationPostRequest
+import com.adbdeck.core.adb.api.notifications.NotificationPostStyle
 import com.adbdeck.core.adb.api.notifications.NotificationsClient
 import com.adbdeck.core.process.ProcessRunner
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.collections.iterator
 
 /**
@@ -23,7 +28,7 @@ class SystemNotificationsClient(
     override suspend fun getNotifications(
         deviceId: String,
         adbPath: String,
-    ): Result<List<NotificationRecord>> = runCatching {
+    ): Result<List<NotificationRecord>> = runCatchingPreserveCancellation {
         val noRedactResult = processRunner.run(
             listOf(adbPath, "-s", deviceId, "shell", "dumpsys", "notification", "--noredact")
         )
@@ -46,7 +51,72 @@ class SystemNotificationsClient(
             }
         }
 
-        parseNotificationDump(output)
+        // Парсинг может быть заметно тяжелым на больших дампах, поэтому уводим в background.
+        withContext(Dispatchers.Default) {
+            parseNotificationDump(output)
+        }
+    }
+
+    override suspend fun postNotification(
+        deviceId: String,
+        request: NotificationPostRequest,
+        adbPath: String,
+    ): Result<Unit> = runCatchingPreserveCancellation {
+        val tag = request.tag.trim()
+        val text = request.text.trim()
+        require(tag.isNotEmpty()) { "Tag уведомления не должен быть пустым." }
+        require(text.isNotEmpty()) { "Текст уведомления не должен быть пустым." }
+
+        val command = mutableListOf(
+            adbPath,
+            "-s",
+            deviceId,
+            "shell",
+            "cmd",
+            "notification",
+            "post",
+        )
+
+        if (request.verbose) {
+            command += "--verbose"
+        }
+
+        request.title?.trim()?.takeIf { it.isNotEmpty() }?.let { title ->
+            command += "--title"
+            command += title
+        }
+
+        request.iconSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { icon ->
+            command += "--icon"
+            command += icon
+        }
+
+        request.largeIconSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { icon ->
+            command += "--large-icon"
+            command += icon
+        }
+
+        appendStyleArguments(command = command, request = request)
+
+        request.contentIntentSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { rawIntentSpec ->
+            val intentTokens = parseShellTokens(rawIntentSpec)
+            require(intentTokens.isNotEmpty()) {
+                "Intent spec для --content-intent не должен быть пустым."
+            }
+            command += "--content-intent"
+            command += intentTokens
+        }
+
+        command += tag
+        command += text
+
+        val result = processRunner.run(command)
+        if (!result.isSuccess) {
+            val reason = result.stderr
+                .ifBlank { result.stdout }
+                .ifBlank { "Не удалось выполнить cmd notification post." }
+            error("Не удалось отправить уведомление: ${reason.take(400)}")
+        }
     }
 
     // ── Парсинг дампа ────────────────────────────────────────────────────────
@@ -324,9 +394,127 @@ class SystemNotificationsClient(
         return cleanFieldValue(value)
     }
 
+    /**
+     * Добавляет флаги стиля (`-S ...`) для `cmd notification post`.
+     */
+    private fun appendStyleArguments(
+        command: MutableList<String>,
+        request: NotificationPostRequest,
+    ) {
+        when (request.style) {
+            NotificationPostStyle.NONE -> Unit
+
+            NotificationPostStyle.BIGTEXT -> {
+                command += "--style"
+                command += "bigtext"
+                request.bigText?.trim()?.takeIf { it.isNotEmpty() }?.let { bigText ->
+                    command += bigText
+                }
+            }
+
+            NotificationPostStyle.BIGPICTURE -> {
+                val pictureSpec = request.pictureSpec
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: error("Для стиля BIGPICTURE требуется pictureSpec.")
+
+                command += "--style"
+                command += "bigpicture"
+                command += "--picture"
+                command += pictureSpec
+            }
+
+            NotificationPostStyle.INBOX -> {
+                val inboxLines = request.inboxLines
+                    .asSequence()
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+                    .toList()
+                require(inboxLines.isNotEmpty()) {
+                    "Для стиля INBOX требуется минимум одна строка."
+                }
+
+                command += "--style"
+                command += "inbox"
+                inboxLines.forEach { line ->
+                    command += "--line"
+                    command += line
+                }
+            }
+
+            NotificationPostStyle.MESSAGING -> {
+                val messages = request.messagingMessages
+                    .asSequence()
+                    .map { message ->
+                        NotificationMessageToken(
+                            who = message.who.trim().ifBlank { "User" },
+                            text = message.text.trim(),
+                        )
+                    }
+                    .filter { it.text.isNotEmpty() }
+                    .toList()
+                require(messages.isNotEmpty()) {
+                    "Для стиля MESSAGING требуется минимум одно сообщение."
+                }
+
+                command += "--style"
+                command += "messaging"
+
+                request.messagingConversationTitle
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { conversation ->
+                        command += "--conversation"
+                        command += conversation
+                    }
+
+                messages.forEach { message ->
+                    command += "--message"
+                    command += "${message.who}:${message.text}"
+                }
+            }
+
+            NotificationPostStyle.MEDIA -> {
+                command += "--style"
+                command += "media"
+            }
+        }
+    }
+
+    /**
+     * Простой shell-like токенизатор для полей ввода вида `activity -a ...`.
+     *
+     * Поддерживает:
+     * - последовательности без пробелов;
+     * - двойные и одинарные кавычки как контейнер токена.
+     */
+    private fun parseShellTokens(raw: String): List<String> =
+        SHELL_TOKEN_RE.findAll(raw)
+            .map { match ->
+                var token = match.value.trim()
+                if (token.length >= 2) {
+                    val isDoubleQuoted = token.first() == '"' && token.last() == '"'
+                    val isSingleQuoted = token.first() == '\'' && token.last() == '\''
+                    if (isDoubleQuoted || isSingleQuoted) {
+                        token = token.substring(1, token.length - 1)
+                    }
+                }
+                token
+            }
+            .filter { it.isNotEmpty() }
+            .toList()
+
     // ── Константы ────────────────────────────────────────────────────────────
 
     private companion object {
+        private data class NotificationMessageToken(
+            val who: String,
+            val text: String,
+        )
+
+        // Разбор аргументов в стиле shell: bare tokens + "quoted" + 'quoted'.
+        val SHELL_TOKEN_RE = Regex("""[^\s"']+|"([^"\\]|\\.)*"|'([^'\\]|\\.)*'""")
+
         // Regex-паттерны для первой строки блока и дополнительных полей
         val PKG_RE     = Regex("""pkg=(\S+)""")
         val ID_RE      = Regex("""\bid=(-?\d+)""")

@@ -3,12 +3,12 @@ package com.adbdeck.feature.apkinstall.service
 import com.adbdeck.core.adb.api.apkinstall.ApkInstallOptions
 
 /**
- * Сервис установки APK на активное устройство.
+ * Сервис установки пакета на активное устройство.
  */
 interface ApkInstallService {
 
     /**
-     * Устанавливает APK-файл на устройство.
+     * Устанавливает пакет на устройство.
      *
      * @param onProgress Колбек прогресса и статуса установки.
      */

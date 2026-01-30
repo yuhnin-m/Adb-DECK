@@ -1,0 +1,161 @@
+<resources>
+    <string name="notifications_empty_select_device">Select an active device in the top panel.</string>
+    <string name="notifications_loading">Loading notifications…</string>
+    <string name="notifications_empty_not_found">Nothing found.</string>
+    <string name="notifications_empty_none">No notifications.</string>
+
+    <string name="notifications_toolbar_search_placeholder">Search in package, title, and text</string>
+    <string name="notifications_toolbar_package_placeholder">Package</string>
+    <string name="notifications_toolbar_sort_description">Sort</string>
+    <string name="notifications_toolbar_compose">Compose</string>
+    <string name="notifications_toolbar_close_composer">Close composer</string>
+
+    <string name="notifications_filter_all">All</string>
+    <string name="notifications_filter_current">Current</string>
+    <string name="notifications_filter_history">History</string>
+    <string name="notifications_filter_saved">Saved</string>
+
+    <string name="notifications_sort_newest">Newest first</string>
+    <string name="notifications_sort_oldest">Oldest first</string>
+    <string name="notifications_sort_package">By package</string>
+
+    <string name="notifications_row_ongoing">ONGOING</string>
+    <string name="notifications_row_saved_marker">★</string>
+
+    <string name="notifications_composer_title">Send test notification</string>
+    <string name="notifications_composer_subtitle_device">Device: %1$s</string>
+    <string name="notifications_composer_no_device">No active device selected.</string>
+    <string name="notifications_composer_reset_all">Reset all</string>
+    <string name="notifications_composer_section_source">Prefill source</string>
+    <string name="notifications_composer_fill_selected">Fill from selected</string>
+    <string name="notifications_composer_saved_placeholder">Saved notification</string>
+    <string name="notifications_composer_fill_saved">Apply saved</string>
+    <string name="notifications_composer_section_base">Base parameters</string>
+    <string name="notifications_composer_field_tag">Tag (required)</string>
+    <string name="notifications_composer_field_title">Title</string>
+    <string name="notifications_composer_field_text">Text (required)</string>
+    <string name="notifications_composer_section_visual">Visual parameters</string>
+    <string name="notifications_composer_enable_icon">Enable icon</string>
+    <string name="notifications_composer_enable_large_icon">Enable large icon</string>
+    <string name="notifications_composer_field_icon">Icon spec (-i)</string>
+    <string name="notifications_composer_field_large_icon">Large icon spec (-I)</string>
+    <string name="notifications_composer_section_style">Style</string>
+    <string name="notifications_composer_field_style">Style mode</string>
+    <string name="notifications_composer_style_none">None</string>
+    <string name="notifications_composer_style_bigtext">BigText</string>
+    <string name="notifications_composer_style_bigpicture">BigPicture</string>
+    <string name="notifications_composer_style_inbox">Inbox</string>
+    <string name="notifications_composer_style_messaging">Messaging</string>
+    <string name="notifications_composer_style_media">Media</string>
+    <string name="notifications_composer_field_big_text">Big text value</string>
+    <string name="notifications_composer_enable_picture">Enable picture</string>
+    <string name="notifications_composer_field_picture_spec">Picture spec (--picture)</string>
+    <string name="notifications_composer_field_inbox_lines">Inbox lines</string>
+    <string name="notifications_composer_hint_inbox_lines">Use | as separator: Line 1 | Line 2 | Line 3</string>
+    <string name="notifications_composer_field_conversation">Conversation title</string>
+    <string name="notifications_composer_field_messages">Messages</string>
+    <string name="notifications_composer_hint_messages">Format: Alice:Hi | Bob:Hello</string>
+    <string name="notifications_composer_style_error_inbox_required">Inbox style requires at least one line.</string>
+    <string name="notifications_composer_style_error_messaging_required">Messaging style requires at least one message.</string>
+    <string name="notifications_composer_style_error_messaging_format">Invalid messages format. Use Who:Text.</string>
+    <string name="notifications_composer_style_error_picture_required">BigPicture style requires picture spec.</string>
+    <string name="notifications_composer_section_intent">Intent and advanced options</string>
+    <string name="notifications_composer_enable_content_intent">Enable content intent</string>
+    <string name="notifications_composer_enable_deep_link">Enable deep link</string>
+    <string name="notifications_composer_field_content_intent">Content intent spec (-c)</string>
+    <string name="notifications_composer_hint_intent">Example: activity -a android.intent.action.VIEW -d https://example.com</string>
+    <string name="notifications_composer_field_deep_link">Deep link URL</string>
+    <string name="notifications_composer_hint_deep_link">Used as fallback to generate content-intent when intent field is empty.</string>
+    <string name="notifications_composer_switch_verbose">Verbose mode (-v)</string>
+    <string name="notifications_composer_send">Send</string>
+    <string name="notifications_composer_cancel">Cancel</string>
+    <string name="notifications_composer_pick_host_image">Pick image from host</string>
+    <string name="notifications_composer_host_image_selected">Image selected: %1$s</string>
+    <string name="notifications_composer_host_image_encode_failed">Failed to encode image: %1$s</string>
+    <string name="notifications_composer_host_image_file_not_found">Host image file not found: %1$s</string>
+    <string name="notifications_composer_section_actions">Action buttons</string>
+    <string name="notifications_composer_enable_actions">Enable action buttons</string>
+    <string name="notifications_composer_actions_support_note">ADB cmd notification post does not support action buttons directly. First action intent is used as content-intent fallback.</string>
+    <string name="notifications_composer_field_action_label">Button text</string>
+    <string name="notifications_composer_field_action_intent">Button action (intent)</string>
+    <string name="notifications_composer_actions_add">Add button</string>
+    <string name="notifications_composer_actions_remove">Remove button</string>
+    <string name="notifications_composer_field_actions">Actions (Label => intent)</string>
+    <string name="notifications_composer_hint_actions">Format: Open app => activity -n com.example/.Main | Web => activity -a android.intent.action.VIEW -d https://example.com</string>
+
+    <string name="notifications_status_shown">Shown: %1$d</string>
+    <string name="notifications_status_current">Current: %1$d</string>
+    <string name="notifications_status_history">History: %1$d</string>
+    <string name="notifications_status_saved">Saved: %1$d</string>
+
+    <string name="notifications_detail_tab_details">Details</string>
+    <string name="notifications_detail_tab_dump">Dump</string>
+    <string name="notifications_detail_tab_saved">Saved (%1$d)</string>
+
+    <string name="notifications_detail_label_package">Package</string>
+    <string name="notifications_detail_label_id_tag">ID / Tag</string>
+    <string name="notifications_detail_label_key">Key</string>
+    <string name="notifications_detail_label_channel">Channel</string>
+    <string name="notifications_detail_label_title">Title</string>
+    <string name="notifications_detail_label_text">Text</string>
+    <string name="notifications_detail_label_sub_text">Sub text</string>
+    <string name="notifications_detail_label_big_text">Big text</string>
+    <string name="notifications_detail_label_summary">Summary</string>
+    <string name="notifications_detail_label_category">Category</string>
+    <string name="notifications_detail_label_importance">Importance</string>
+    <string name="notifications_detail_label_flags">Flags</string>
+    <string name="notifications_detail_label_ongoing">Ongoing</string>
+    <string name="notifications_detail_label_clearable">Clearable</string>
+    <string name="notifications_detail_label_date">Date</string>
+    <string name="notifications_detail_label_group">Group</string>
+    <string name="notifications_detail_label_sort_key">Sort key</string>
+
+    <string name="notifications_detail_section_actions">Actions</string>
+    <string name="notifications_detail_section_component_actions">Tools</string>
+    <string name="notifications_detail_section_visual">Visual parameters</string>
+    <string name="notifications_detail_actions_count">Count</string>
+    <string name="notifications_detail_action_item">Action %1$d</string>
+    <string name="notifications_detail_actions_unavailable">Action titles are unavailable in dumpsys output.</string>
+
+    <string name="notifications_detail_action_copy_package">Copy package</string>
+    <string name="notifications_detail_action_copy_title">Copy title</string>
+    <string name="notifications_detail_action_copy_text">Copy text</string>
+    <string name="notifications_detail_action_copy_dump">Copy dump</string>
+    <string name="notifications_detail_action_save">Save to collection</string>
+    <string name="notifications_detail_action_open_packages">Open in Packages</string>
+    <string name="notifications_detail_action_open_deep_links">Deep Links</string>
+    <string name="notifications_detail_action_export_json">Export JSON</string>
+    <string name="notifications_detail_action_delete_saved">Delete</string>
+
+    <string name="notifications_detail_raw_dump_unavailable">(Raw dump unavailable — item is loaded from saved collection)</string>
+    <string name="notifications_saved_empty">No saved notifications.</string>
+    <string name="notifications_saved_saved_at">Saved: %1$s</string>
+
+    <string name="notifications_importance_high">5 — HIGH</string>
+    <string name="notifications_importance_default">4 — DEFAULT</string>
+    <string name="notifications_importance_low">3 — LOW</string>
+    <string name="notifications_importance_min">2 — MIN</string>
+    <string name="notifications_importance_none">1 — NONE</string>
+    <string name="notifications_importance_unspecified">0 — UNSPECIFIED</string>
+
+    <string name="notifications_export_dialog_title">Export notification</string>
+    <string name="notifications_export_dialog_filter_description">JSON files</string>
+
+    <string name="notifications_feedback_copied_package">Copied: %1$s</string>
+    <string name="notifications_feedback_copied_title">Title copied.</string>
+    <string name="notifications_feedback_copied_text">Text copied.</string>
+    <string name="notifications_feedback_copied_raw">Raw block copied.</string>
+    <string name="notifications_feedback_already_saved">Notification is already saved.</string>
+    <string name="notifications_feedback_saved">Notification saved to collection.</string>
+    <string name="notifications_feedback_exported">Exported: %1$s</string>
+    <string name="notifications_feedback_posted">Notification sent (tag: %1$s).</string>
+    <string name="notifications_feedback_storage_load_failed">Failed to load saved notifications: %1$s</string>
+    <string name="notifications_feedback_storage_save_failed">Failed to persist saved notifications: %1$s</string>
+
+    <string name="notifications_error_unknown">Unknown error</string>
+    <string name="notifications_error_post_no_device">Cannot send notification without an active device.</string>
+    <string name="notifications_error_post_invalid_input">Tag and text are required.</string>
+    <string name="notifications_error_post_with_details">Failed to send notification: %1$s</string>
+    <string name="notifications_error_export_with_details">Export failed: %1$s</string>
+    <string name="notifications_error_clipboard_with_details">Clipboard operation failed: %1$s</string>
+</resources>

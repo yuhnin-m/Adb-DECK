@@ -110,7 +110,6 @@ data class NotificationFeedback(
  * Полное состояние экрана Notifications.
  *
  * @param activeDeviceId            Серийный номер активного устройства или null.
- * @param deviceMessage             Строка-подсказка о статусе устройства.
  * @param listState                 Состояние загрузки основного списка.
  * @param currentNotifications      Уведомления, полученные при последнем refresh.
  * @param snapshotHistory           Runtime-история: ранее виденные уведомления (max 500).
@@ -125,11 +124,11 @@ data class NotificationFeedback(
  * @param selectedRecord            Выбранная запись уведомления или null.
  * @param selectedTab               Активная вкладка панели деталей.
  * @param isRefreshing              `true` во время выполнения refresh.
+ * @param isPostingNotification     `true` во время отправки тестового уведомления.
  * @param feedback                  Временное сообщение обратной связи или null.
  */
 data class NotificationsState(
     val activeDeviceId: String? = null,
-    val deviceMessage: String = "Активное устройство не выбрано",
 
     val listState: NotificationsListState = NotificationsListState.NoDevice,
     val currentNotifications: List<NotificationRecord> = emptyList(),
@@ -148,5 +147,6 @@ data class NotificationsState(
     val selectedTab: NotificationsTab = NotificationsTab.DETAILS,
 
     val isRefreshing: Boolean = false,
+    val isPostingNotification: Boolean = false,
     val feedback: NotificationFeedback? = null,
 )

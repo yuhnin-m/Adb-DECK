@@ -3,46 +3,46 @@
     <string name="apk_install_device_unavailable">Устройство недоступно: %1$s</string>
     <string name="apk_install_device_active">Активное устройство: %1$s</string>
 
-    <string name="apk_install_status_select_apk">Выберите APK для установки</string>
+    <string name="apk_install_status_select_apk">Выберите источник установки</string>
     <string name="apk_install_status_ready">Готово к установке: %1$s</string>
-    <string name="apk_install_status_installing">Запускаем установку APK...</string>
-    <string name="apk_install_status_installed">APK установлен: %1$s</string>
-    <string name="apk_install_status_interrupted">Установка APK прервана: активное устройство изменилось или стало недоступно</string>
+    <string name="apk_install_status_installing">Запускаем установку пакета...</string>
+    <string name="apk_install_status_installed">Пакет установлен: %1$s</string>
+    <string name="apk_install_status_interrupted">Установка пакета прервана: активное устройство изменилось или стало недоступно</string>
 
-    <string name="apk_install_feedback_install_running">Установка APK уже выполняется</string>
+    <string name="apk_install_feedback_install_running">Установка уже выполняется</string>
     <string name="apk_install_feedback_choose_device">Сначала выберите активное устройство</string>
-    <string name="apk_install_feedback_choose_apk">Сначала выберите APK-файл</string>
-    <string name="apk_install_feedback_install_success">APK успешно установлен</string>
-    <string name="apk_install_feedback_install_failed">Не удалось установить APK</string>
-    <string name="apk_install_feedback_install_interrupted">Установка APK прервана из-за смены устройства</string>
-    <string name="apk_install_feedback_picker_failed">Не удалось открыть диалог выбора APK</string>
-    <string name="apk_install_feedback_invalid_apk">Нужен корректный .apk файл</string>
-    <string name="apk_install_feedback_apk_not_found">APK-файл не найден: %1$s</string>
-    <string name="apk_install_feedback_apk_access_error">Не удалось получить доступ к APK-файлу</string>
+    <string name="apk_install_feedback_choose_apk">Сначала выберите источник установки</string>
+    <string name="apk_install_feedback_install_success">Установка выполнена успешно</string>
+    <string name="apk_install_feedback_install_failed">Не удалось установить пакет</string>
+    <string name="apk_install_feedback_install_interrupted">Установка прервана из-за смены устройства</string>
+    <string name="apk_install_feedback_picker_failed">Не удалось открыть диалог выбора файла</string>
+    <string name="apk_install_feedback_invalid_apk">Поддерживаемые источники: .apk, .aab, .apks, .xapk или папка со split APK</string>
+    <string name="apk_install_feedback_apk_not_found">Источник установки не найден: %1$s</string>
+    <string name="apk_install_feedback_apk_access_error">Не удалось получить доступ к источнику установки</string>
 
-    <string name="apk_install_error_install_with_details">Не удалось установить APK: %1$s</string>
-    <string name="apk_install_error_picker_with_details">Не удалось открыть диалог выбора APK: %1$s</string>
+    <string name="apk_install_error_install_with_details">Не удалось установить пакет: %1$s</string>
+    <string name="apk_install_error_picker_with_details">Не удалось открыть диалог выбора файла: %1$s</string>
 
     <string name="apk_install_log_started">Запуск установки: %1$s</string>
     <string name="apk_install_log_success">Установка завершена успешно</string>
     <string name="apk_install_log_error">Ошибка: %1$s</string>
     <string name="apk_install_log_interrupted">Установка прервана из-за смены устройства</string>
 
-    <string name="apk_install_section_file_title">APK-файл</string>
-    <string name="apk_install_field_apk_path_placeholder">Путь к .apk</string>
-    <string name="apk_install_action_choose_apk">Выбрать APK…</string>
-    <string name="apk_install_action_install">Установить APK</string>
+    <string name="apk_install_section_file_title">Источник установки</string>
+    <string name="apk_install_field_apk_path_placeholder">Путь к .apk / .aab / .apks / .xapk или папке со split APK</string>
+    <string name="apk_install_action_choose_apk">Выбрать файл/папку…</string>
+    <string name="apk_install_action_install">Установить</string>
 
     <string name="apk_install_section_drop_title">Перетаскивание</string>
-    <string name="apk_install_drop_enabled">Перетащите сюда .apk файл</string>
-    <string name="apk_install_drop_disabled">Выберите активное устройство для установки APK</string>
+    <string name="apk_install_drop_enabled">Перетащите сюда файл пакета или папку со split APK</string>
+    <string name="apk_install_drop_disabled">Выберите активное устройство для установки пакета</string>
 
-    <string name="apk_install_section_status_title">Статус установки APK</string>
+    <string name="apk_install_section_status_title">Статус установки</string>
     <string name="apk_install_section_log_title">Лог установки</string>
     <string name="apk_install_action_clear_log">Очистить лог</string>
-    <string name="apk_install_empty_log">Здесь появится вывод adb install и детали ошибок</string>
-    <string name="apk_install_label_last_installed">Последний установленный APK: %1$s</string>
+    <string name="apk_install_empty_log">Здесь появится вывод установки и детали ошибок</string>
+    <string name="apk_install_label_last_installed">Последний установленный источник: %1$s</string>
 
-    <string name="apk_install_dialog_choose_apk_title">Выберите APK-файл</string>
-    <string name="apk_install_dialog_apk_filter_label">Android Package (*.apk)</string>
+    <string name="apk_install_dialog_choose_apk_title">Выберите источник установки</string>
+    <string name="apk_install_dialog_apk_filter_label">Файлы для установки (*.apk, *.aab, *.apks, *.xapk)</string>
 </resources>

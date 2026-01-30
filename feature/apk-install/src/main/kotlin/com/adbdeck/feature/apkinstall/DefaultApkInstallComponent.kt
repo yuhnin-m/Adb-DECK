@@ -2,6 +2,7 @@ package com.adbdeck.feature.apkinstall
 
 import adbdeck.feature.apk_install.generated.resources.Res
 import adbdeck.feature.apk_install.generated.resources.*
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallOptions
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
@@ -240,6 +241,9 @@ class DefaultApkInstallComponent(
             deviceId = deviceId,
             localApkPath = apkPath,
             adbPath = adbPath(),
+            options = ApkInstallOptions(
+                bundletoolPath = settingsRepository.getSettings().bundletoolPath,
+            ),
         ) { progress, message ->
             _state.update { current ->
                 current.copy(
@@ -450,7 +454,7 @@ class DefaultApkInstallComponent(
         when (reason) {
             ApkFileValidationError.EMPTY_PATH -> ApkInstallError.ApkPathMissing
             ApkFileValidationError.FILE_NOT_FOUND -> ApkInstallError.ApkFileNotFound(originalPath)
-            ApkFileValidationError.INVALID_EXTENSION -> ApkInstallError.InvalidApkExtension
+            ApkFileValidationError.UNSUPPORTED_FORMAT -> ApkInstallError.InvalidApkExtension
             ApkFileValidationError.IO_ACCESS_ERROR -> ApkInstallError.ApkPathAccessFailed
         }
 }

@@ -18,11 +18,21 @@ interface SettingsComponent {
      */
     fun onAdbPathChanged(path: String)
 
+    /**
+     * Пользователь изменил поле пути к bundletool.
+     *
+     * @param path Новое значение пути.
+     */
+    fun onBundletoolPathChanged(path: String)
+
     /** Сохранить текущие настройки. */
     fun onSave()
 
     /** Проверить доступность adb по текущему пути. */
     fun onCheckAdb()
+
+    /** Проверить доступность bundletool по текущему пути и вывести версию. */
+    fun onCheckBundletool()
 
     /**
      * Пользователь выбрал другую тему.

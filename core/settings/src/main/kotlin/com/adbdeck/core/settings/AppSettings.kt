@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
  * Новые поля с дефолтами — обратно совместимы благодаря `ignoreUnknownKeys = true`.
  *
  * @param adbPath                Путь к adb. Пусто → системный PATH.
+ * @param bundletoolPath         Путь к bundletool (исполняемый файл или `.jar`).
  * @param theme                  Режим темы приложения.
  * @param knownEndpoints         Сохраненные TCP/IP endpoint-ы ("host:port").
  *
@@ -30,6 +31,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AppSettings(
     val adbPath: String = "adb",
+    val bundletoolPath: String = "bundletool",
     val theme: AppTheme = AppTheme.SYSTEM,
     val knownEndpoints: List<String> = emptyList(),
 

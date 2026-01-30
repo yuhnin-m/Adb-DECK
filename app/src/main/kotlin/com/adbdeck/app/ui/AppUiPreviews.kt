@@ -218,7 +218,10 @@ private class PreviewSettingsComponent : SettingsComponent {
     override val state: StateFlow<SettingsUiState> = MutableStateFlow(
         SettingsUiState(
             adbPath = "/opt/homebrew/bin/adb",
+            bundletoolPath = "/opt/homebrew/bin/bundletool",
             adbCheckResult = "✓ Доступен: Android Debug Bridge version 1.0.41",
+            bundletoolCheckResult = "✓ Доступен: 1.18.2",
+            isCheckingBundletool = false,
             isSaved = true,
             currentTheme = AppTheme.DARK,
             logcatCompactMode = true,
@@ -232,8 +235,10 @@ private class PreviewSettingsComponent : SettingsComponent {
     )
 
     override fun onAdbPathChanged(path: String) = Unit
+    override fun onBundletoolPathChanged(path: String) = Unit
     override fun onSave() = Unit
     override fun onCheckAdb() = Unit
+    override fun onCheckBundletool() = Unit
     override fun onThemeChanged(theme: AppTheme) = Unit
     override fun onLogcatCompactModeChanged(value: Boolean) = Unit
     override fun onLogcatShowDateChanged(value: Boolean) = Unit

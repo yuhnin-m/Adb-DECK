@@ -1,22 +1,32 @@
 package com.adbdeck.feature.notifications
 
+import adbdeck.feature.notifications.generated.resources.Res
+import adbdeck.feature.notifications.generated.resources.*
+import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.notifications.NotificationPostRequest
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import com.adbdeck.core.adb.api.notifications.NotificationsClient
-import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.notifications.storage.NotificationsStorage
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
@@ -24,28 +34,11 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
-import java.io.File
-import java.util.UUID
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 
 /**
  * Реализация [NotificationsComponent].
- *
- * Архитектурные паттерны:
- * - Подписка на [DeviceManager.selectedDeviceFlow] для получения активного устройства.
- * - [refreshJob] — отменяет предыдущий запрос при новом вызове [onRefresh].
- * - `snapshotHistory` — runtime-история до [MAX_HISTORY] записей, не персистируется.
- * - `savedNotifications` — персистентная коллекция через [NotificationsStorage], до [MAX_SAVED] записей.
- * - [applyFiltersAndSort] пересчитывает [NotificationsState.displayedNotifications] при каждом изменении.
- * - Feedback-баннер автоматически скрывается через 3 секунды.
- *
- * @param componentContext      Контекст Decompose-компонента.
- * @param deviceManager         Менеджер ADB-устройств.
- * @param notificationsClient   Клиент для получения уведомлений через ADB.
- * @param settingsRepository    Репозиторий настроек (adbPath).
- * @param onOpenInPackages      Коллбек навигации в экран Packages.
- * @param onOpenInDeepLinks     Коллбек навигации в экран Deep Links.
  */
 class DefaultNotificationsComponent(
     componentContext: ComponentContext,
@@ -56,82 +49,135 @@ class DefaultNotificationsComponent(
     private val onOpenInDeepLinks: (String) -> Unit,
 ) : NotificationsComponent, ComponentContext by componentContext {
 
-    private val scope   = coroutineScope()
+    private val scope = coroutineScope()
     private val storage = NotificationsStorage()
-    private val json    = Json { prettyPrint = true }
 
     private val _state = MutableStateFlow(NotificationsState())
     override val state: StateFlow<NotificationsState> = _state.asStateFlow()
 
     private var refreshJob: Job? = null
+    private var postNotificationJob: Job? = null
     private var feedbackJob: Job? = null
+    private val feedbackMutex = Mutex()
 
     init {
-        // Загрузить сохранённые уведомления из файла
         scope.launch {
-            val saved = storage.load()
-            _state.update { it.copy(savedNotifications = saved).withDisplayed() }
-        }
-
-        // Подписка на изменение активного устройства
-        scope.launch {
-            deviceManager.selectedDeviceFlow.collect { device ->
-                val msg = if (device != null) "Устройство: ${device.deviceId}" else "Активное устройство не выбрано"
-                // withDisplayed() не нужен — данные ещё не загружены,
-                // списки пусты или неизменны, пересчёт бессмысленен
-                _state.update { st ->
-                    st.copy(
-                        activeDeviceId = device?.deviceId,
-                        deviceMessage  = msg,
-                        listState      = if (device == null) NotificationsListState.NoDevice else st.listState,
+            storage.load()
+                .onSuccess { saved ->
+                    _state.update { current ->
+                        current.copy(savedNotifications = saved).withDisplayed()
+                    }
+                }
+                .onFailure { error ->
+                    val details = error.readableDetailsOrNull()
+                        ?: getString(Res.string.notifications_error_unknown)
+                    showFeedbackMessageResource(
+                        messageRes = Res.string.notifications_feedback_storage_load_failed,
+                        isError = true,
+                        details,
                     )
                 }
-                if (device != null) onRefresh()
+        }
+
+        scope.launch {
+            deviceManager.selectedDeviceFlow.collect { selectedDevice ->
+                val nextDeviceId = selectedDevice
+                    ?.takeIf { it.state == DeviceState.DEVICE }
+                    ?.deviceId
+                val previousDeviceId = _state.value.activeDeviceId
+
+                if (nextDeviceId == null) {
+                    _state.update { current ->
+                        current.copy(
+                            activeDeviceId = null,
+                            listState = NotificationsListState.NoDevice,
+                            currentNotifications = emptyList(),
+                            snapshotHistory = emptyList(),
+                            selectedKey = null,
+                            selectedRecord = null,
+                            isRefreshing = false,
+                            isPostingNotification = false,
+                        ).withDisplayed()
+                    }
+                    refreshJob?.cancel()
+                    postNotificationJob?.cancel()
+                    return@collect
+                }
+
+                _state.update { current ->
+                    current.copy(
+                        activeDeviceId = nextDeviceId,
+                        listState = if (current.listState is NotificationsListState.NoDevice) {
+                            NotificationsListState.Loading
+                        } else {
+                            current.listState
+                        },
+                    )
+                }
+
+                if (previousDeviceId != nextDeviceId) {
+                    onRefresh()
+                }
             }
         }
     }
 
-    // ── Загрузка ──────────────────────────────────────────────────────────────
-
     override fun onRefresh() {
-        val deviceId = _state.value.activeDeviceId ?: return
+        val selectedDevice = deviceManager.selectedDeviceFlow.value
+            ?.takeIf { it.state == DeviceState.DEVICE }
+            ?: run {
+                _state.update { current ->
+                    current.copy(
+                        activeDeviceId = null,
+                        listState = NotificationsListState.NoDevice,
+                        isRefreshing = false,
+                    )
+                }
+                return
+            }
+
+        val deviceId = selectedDevice.deviceId
+        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { ADB_EXECUTABLE_DEFAULT }
 
         refreshJob?.cancel()
-        // withDisplayed() не нужен — пока listState = Loading список всё равно не отображается
-        _state.update { it.copy(isRefreshing = true, listState = NotificationsListState.Loading) }
+        _state.update {
+            it.copy(
+                activeDeviceId = deviceId,
+                isRefreshing = true,
+                listState = NotificationsListState.Loading,
+            )
+        }
 
         refreshJob = scope.launch {
-            val adbPath = runCatching {
-                settingsRepository.settingsFlow.first().adbPath.ifBlank { "adb" }
-            }.getOrDefault("adb")
+            val unknownErrorMessage = getString(Res.string.notifications_error_unknown)
+            val result = notificationsClient.getNotifications(
+                deviceId = deviceId,
+                adbPath = adbPath,
+            )
 
-            // Проверяем, что устройство не изменилось пока ждали
-            if (_state.value.activeDeviceId != deviceId) return@launch
-
-            val result = notificationsClient.getNotifications(deviceId = deviceId, adbPath = adbPath)
-
-            if (_state.value.activeDeviceId != deviceId) return@launch
+            if (!isDeviceRequestStillActual(deviceId = deviceId)) return@launch
 
             result.fold(
                 onSuccess = { notifications ->
-                    _state.update { st ->
-                        // Добавить в snapshot новые ключи
-                        val newKeys      = notifications.map { it.key }.toSet()
-                        val historyOld   = st.snapshotHistory.filter { it.key !in newKeys }
-                        val mergedHistory = (notifications + historyOld).take(MAX_HISTORY)
+                    _state.update { current ->
+                        val newKeys = notifications.asSequence().map { it.key }.toHashSet()
+                        val oldHistoryWithoutDuplicates = current.snapshotHistory
+                            .filter { historyItem -> historyItem.key !in newKeys }
+                        val mergedHistory = (notifications + oldHistoryWithoutDuplicates).take(MAX_HISTORY)
 
-                        st.copy(
-                            listState            = NotificationsListState.Success(notifications),
-                            currentNotifications  = notifications,
-                            snapshotHistory      = mergedHistory,
-                            isRefreshing         = false,
+                        current.copy(
+                            listState = NotificationsListState.Success(notifications),
+                            currentNotifications = notifications,
+                            snapshotHistory = mergedHistory,
+                            isRefreshing = false,
                         ).withDisplayed()
                     }
                 },
                 onFailure = { error ->
-                    _state.update { st ->
-                        st.copy(
-                            listState    = NotificationsListState.Error(error.message ?: "Неизвестная ошибка"),
+                    val message = error.readableDetailsOrNull() ?: unknownErrorMessage
+                    _state.update { current ->
+                        current.copy(
+                            listState = NotificationsListState.Error(message),
                             isRefreshing = false,
                         ).withDisplayed()
                     }
@@ -140,28 +186,30 @@ class DefaultNotificationsComponent(
         }
     }
 
-    // ── Фильтрация и поиск ───────────────────────────────────────────────────
-
     override fun onSearchChanged(query: String) {
-        _state.update { it.copy(searchQuery = query).withDisplayed() }
+        _state.update { current -> current.copy(searchQuery = query).withDisplayed() }
     }
 
     override fun onPackageFilterChanged(pkg: String) {
-        _state.update { it.copy(packageFilter = pkg).withDisplayed() }
+        _state.update { current -> current.copy(packageFilter = pkg).withDisplayed() }
     }
 
     override fun onFilterChanged(filter: NotificationsFilter) {
-        _state.update { it.copy(filter = filter).withDisplayed() }
+        _state.update { current -> current.copy(filter = filter).withDisplayed() }
     }
 
     override fun onSortOrderChanged(order: NotificationsSortOrder) {
-        _state.update { it.copy(sortOrder = order).withDisplayed() }
+        _state.update { current -> current.copy(sortOrder = order).withDisplayed() }
     }
 
-    // ── Выбор и детали ───────────────────────────────────────────────────────
-
     override fun onSelectNotification(record: NotificationRecord) {
-        _state.update { it.copy(selectedKey = record.key, selectedRecord = record, selectedTab = NotificationsTab.DETAILS) }
+        _state.update {
+            it.copy(
+                selectedKey = record.key,
+                selectedRecord = record,
+                selectedTab = NotificationsTab.DETAILS,
+            )
+        }
     }
 
     override fun onCloseDetail() {
@@ -172,59 +220,86 @@ class DefaultNotificationsComponent(
         _state.update { it.copy(selectedTab = tab) }
     }
 
-    // ── Действия ─────────────────────────────────────────────────────────────
-
     override fun onCopyPackageName(record: NotificationRecord) {
-        copyToClipboard(record.packageName)
-        showFeedback("Скопировано: ${record.packageName}")
+        copyToClipboardWithFeedback(
+            text = record.packageName,
+            successRes = Res.string.notifications_feedback_copied_package,
+            successArgs = arrayOf(record.packageName),
+        )
     }
 
     override fun onCopyTitle(record: NotificationRecord) {
-        val text = record.title ?: record.text ?: record.packageName
-        copyToClipboard(text)
-        showFeedback("Заголовок скопирован")
+        val content = record.title ?: record.text ?: record.packageName
+        copyToClipboardWithFeedback(
+            text = content,
+            successRes = Res.string.notifications_feedback_copied_title,
+        )
     }
 
     override fun onCopyText(record: NotificationRecord) {
-        val text = record.text ?: record.title ?: record.packageName
-        copyToClipboard(text)
-        showFeedback("Текст скопирован")
+        val content = record.text ?: record.title ?: record.packageName
+        copyToClipboardWithFeedback(
+            text = content,
+            successRes = Res.string.notifications_feedback_copied_text,
+        )
     }
 
     override fun onCopyRawDump(record: NotificationRecord) {
-        copyToClipboard(record.rawBlock)
-        showFeedback("Исходный блок скопирован")
+        copyToClipboardWithFeedback(
+            text = record.rawBlock,
+            successRes = Res.string.notifications_feedback_copied_raw,
+        )
     }
 
     override fun onSaveNotification(record: NotificationRecord) {
-        val st = _state.value
-        // Не сохранять дубли по key
-        if (st.savedNotifications.any { it.record.key == record.key }) {
-            showFeedback("Уведомление уже сохранено")
+        val newSavedNotification = SavedNotification(
+            id = UUID.randomUUID().toString(),
+            savedAt = System.currentTimeMillis(),
+            record = record,
+        )
+
+        _state.update { current ->
+            if (current.savedNotifications.any { saved -> saved.record.key == record.key }) {
+                return@update current
+            }
+            val newSavedList = (listOf(newSavedNotification) + current.savedNotifications)
+                .take(MAX_SAVED)
+            current.copy(savedNotifications = newSavedList).withDisplayed()
+        }
+
+        val isSavedNow = _state.value.savedNotifications.any { saved ->
+            saved.id == newSavedNotification.id
+        }
+
+        if (!isSavedNow) {
+            showFeedbackResource(
+                messageRes = Res.string.notifications_feedback_already_saved,
+                isError = false,
+            )
             return
         }
-        val saved = SavedNotification(
-            id      = UUID.randomUUID().toString(),
-            savedAt = System.currentTimeMillis(),
-            record  = record,
+
+        persistSavedNotificationsAsync()
+        showFeedbackResource(
+            messageRes = Res.string.notifications_feedback_saved,
+            isError = false,
         )
-        val newList = (listOf(saved) + st.savedNotifications).take(MAX_SAVED)
-        _state.update { it.copy(savedNotifications = newList).withDisplayed() }
-        persistAsync()
-        showFeedback("Уведомление сохранено в коллекцию")
     }
 
     override fun onDeleteSaved(id: String) {
-        _state.update { st ->
-            st.copy(savedNotifications = st.savedNotifications.filter { it.id != id }).withDisplayed()
+        _state.update { current ->
+            current.copy(
+                savedNotifications = current.savedNotifications.filterNot { saved -> saved.id == id },
+            ).withDisplayed()
         }
-        persistAsync()
+        persistSavedNotificationsAsync()
     }
 
     override fun onExportToJson(record: NotificationRecord, path: String) {
         scope.launch {
-            runCatching {
-                val obj = buildJsonObject {
+            val unknownErrorMessage = getString(Res.string.notifications_error_unknown)
+            val operationResult = runCatchingPreserveCancellation {
+                val payload = buildJsonObject {
                     put("key", record.key)
                     put("packageName", record.packageName)
                     put("notificationId", record.notificationId)
@@ -257,16 +332,91 @@ class DefaultNotificationsComponent(
                         }
                     }
                 }
-                val content = json.encodeToString(obj)
-                withContext(Dispatchers.IO) { File(path).writeText(content) }
-                showFeedback("Экспортировано: $path")
-            }.onFailure { e ->
-                showFeedback("Ошибка экспорта: ${e.message}", isError = true)
+
+                val content = EXPORT_JSON.encodeToString(payload)
+                withContext(Dispatchers.IO) {
+                    File(path).writeText(content)
+                }
+            }
+
+            operationResult.onSuccess {
+                showFeedbackResource(
+                    messageRes = Res.string.notifications_feedback_exported,
+                    isError = false,
+                    path,
+                )
+            }.onFailure { error ->
+                val details = error.readableDetailsOrNull() ?: unknownErrorMessage
+                showFeedbackMessageResource(
+                    messageRes = Res.string.notifications_error_export_with_details,
+                    isError = true,
+                    details,
+                )
             }
         }
     }
 
-    // ── Интеграция ───────────────────────────────────────────────────────────
+    override fun onPostNotification(request: NotificationPostRequest) {
+        val activeDeviceId = _state.value.activeDeviceId
+        if (activeDeviceId.isNullOrBlank()) {
+            showFeedbackResource(
+                messageRes = Res.string.notifications_error_post_no_device,
+                isError = true,
+            )
+            return
+        }
+
+        val normalizedTag = request.tag.trim()
+        val normalizedText = request.text.trim()
+        if (normalizedTag.isEmpty() || normalizedText.isEmpty()) {
+            showFeedbackResource(
+                messageRes = Res.string.notifications_error_post_invalid_input,
+                isError = true,
+            )
+            return
+        }
+
+        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { ADB_EXECUTABLE_DEFAULT }
+        val normalizedRequest = request.copy(
+            tag = normalizedTag,
+            text = normalizedText,
+        )
+
+        postNotificationJob?.cancel()
+        _state.update { current -> current.copy(isPostingNotification = true) }
+
+        postNotificationJob = scope.launch {
+            val unknownErrorMessage = getString(Res.string.notifications_error_unknown)
+            val result = notificationsClient.postNotification(
+                deviceId = activeDeviceId,
+                request = normalizedRequest,
+                adbPath = adbPath,
+            )
+
+            if (!isDeviceRequestStillActual(deviceId = activeDeviceId)) {
+                _state.update { current -> current.copy(isPostingNotification = false) }
+                return@launch
+            }
+
+            result.onSuccess {
+                _state.update { current -> current.copy(isPostingNotification = false) }
+                showFeedbackResource(
+                    messageRes = Res.string.notifications_feedback_posted,
+                    isError = false,
+                    normalizedRequest.tag,
+                )
+                onRefresh()
+            }.onFailure { error ->
+                val details = error.readableDetailsOrNull() ?: unknownErrorMessage
+                _state.update { current -> current.copy(isPostingNotification = false) }
+                showFeedbackMessageResource(
+                    messageRes = Res.string.notifications_error_post_with_details,
+                    isError = true,
+                    details,
+                )
+            }
+        }
+    }
 
     override fun onOpenInPackages(packageName: String) {
         onOpenInPackages.invoke(packageName)
@@ -276,99 +426,116 @@ class DefaultNotificationsComponent(
         onOpenInDeepLinks.invoke(uri)
     }
 
-    // ── Обратная связь ───────────────────────────────────────────────────────
-
     override fun onDismissFeedback() {
         feedbackJob?.cancel()
         _state.update { it.copy(feedback = null) }
     }
 
-    // ── Вспомогательные функции ──────────────────────────────────────────────
-
-    /**
-     * Пересчитать [NotificationsState.displayedNotifications] на основе текущих фильтров.
-     */
     private fun NotificationsState.withDisplayed(): NotificationsState =
-        copy(displayedNotifications = applyFiltersAndSort(this))
+        copy(displayedNotifications = calculateDisplayedNotifications(this))
 
     /**
-     * Применить фильтры и сортировку к источнику записей.
+     * Убедиться, что refresh-ответ все еще относится к актуальному устройству.
      */
-    private fun applyFiltersAndSort(st: NotificationsState): List<NotificationRecord> {
-        val source: List<NotificationRecord> = when (st.filter) {
-            NotificationsFilter.ALL -> {
-                val currentKeys = st.currentNotifications.map { it.key }.toSet()
-                val historicalOnly = st.snapshotHistory.filter { it.key !in currentKeys }
-                (st.currentNotifications + historicalOnly).distinctBy { it.key }
-            }
-            NotificationsFilter.CURRENT -> st.currentNotifications
-            NotificationsFilter.HISTORICAL -> {
-                val currentKeys = st.currentNotifications.map { it.key }.toSet()
-                st.snapshotHistory.filter { it.key !in currentKeys }
-            }
-            NotificationsFilter.SAVED -> st.savedNotifications.map { it.record }
-        }
-
-        val filtered = source
-            .filter { st.searchQuery.isBlank() || it.matchesQuery(st.searchQuery) }
-            .filter { st.packageFilter.isBlank() || it.packageName.contains(st.packageFilter, ignoreCase = true) }
-
-        return when (st.sortOrder) {
-            NotificationsSortOrder.NEWEST_FIRST -> filtered.sortedByDescending { it.postedAt ?: 0L }
-            NotificationsSortOrder.OLDEST_FIRST -> filtered.sortedBy { it.postedAt ?: Long.MAX_VALUE }
-            NotificationsSortOrder.BY_PACKAGE   -> filtered.sortedBy { it.packageName }
-        }
+    private fun isDeviceRequestStillActual(deviceId: String): Boolean {
+        val selectedDevice = deviceManager.selectedDeviceFlow.value
+        return selectedDevice != null &&
+            selectedDevice.state == DeviceState.DEVICE &&
+            selectedDevice.deviceId == deviceId &&
+            _state.value.activeDeviceId == deviceId
     }
 
-    /**
-     * Проверить, совпадает ли запись с поисковой строкой.
-     * Ищет в packageName, title и text.
-     */
-    private fun NotificationRecord.matchesQuery(query: String): Boolean {
-        val q = query.trim()
-        if (q.isBlank()) return true
-        return packageName.contains(q, ignoreCase = true) ||
-            title?.contains(q, ignoreCase = true) == true ||
-            text?.contains(q, ignoreCase = true) == true
-    }
-
-    /**
-     * Скопировать текст в системный буфер обмена.
-     */
-    private fun copyToClipboard(text: String) {
-        runCatching {
-            val selection = StringSelection(text)
-            Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, null)
-        }
-    }
-
-    /**
-     * Показать временный баннер обратной связи.
-     * Автоматически скрывается через 3 секунды.
-     */
-    private fun showFeedback(message: String, isError: Boolean = false) {
-        feedbackJob?.cancel()
-        _state.update { it.copy(feedback = NotificationFeedback(message = message, isError = isError)) }
-        feedbackJob = scope.launch {
-            delay(3000)
-            _state.update { it.copy(feedback = null) }
-        }
-    }
-
-    /**
-     * Асинхронно сохранить текущий список saved в хранилище.
-     */
-    private fun persistAsync() {
+    private fun copyToClipboardWithFeedback(
+        text: String,
+        successRes: StringResource,
+        successArgs: Array<Any> = emptyArray(),
+    ) {
         scope.launch {
-            storage.save(_state.value.savedNotifications)
+            val unknownErrorMessage = getString(Res.string.notifications_error_unknown)
+            val copyResult = copyToClipboard(text)
+
+            copyResult.onSuccess {
+                showFeedbackMessageResource(
+                    messageRes = successRes,
+                    isError = false,
+                    *successArgs,
+                )
+            }.onFailure { error ->
+                val details = error.readableDetailsOrNull() ?: unknownErrorMessage
+                showFeedbackMessageResource(
+                    messageRes = Res.string.notifications_error_clipboard_with_details,
+                    isError = true,
+                    details,
+                )
+            }
+        }
+    }
+
+    private fun copyToClipboard(text: String): Result<Unit> = runCatching {
+        val selection = StringSelection(text)
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, null)
+    }
+
+    /**
+     * Показывает временный feedback-баннер на 3 секунды.
+     */
+    private fun showFeedback(message: String, isError: Boolean) {
+        feedbackJob?.cancel()
+        _state.update {
+            it.copy(feedback = NotificationFeedback(message = message, isError = isError))
+        }
+
+        feedbackJob = scope.launch {
+            delay(FEEDBACK_HIDE_DELAY_MS)
+            _state.update { current ->
+                if (current.feedback?.message == message) current.copy(feedback = null) else current
+            }
+        }
+    }
+
+    private fun Throwable.readableDetailsOrNull(): String? = message?.takeIf { it.isNotBlank() }
+
+    private fun showFeedbackResource(
+        messageRes: StringResource,
+        isError: Boolean,
+        vararg args: Any,
+    ) {
+        scope.launch {
+            showFeedbackMessageResource(messageRes = messageRes, isError = isError, *args)
+        }
+    }
+
+    private suspend fun showFeedbackMessageResource(
+        messageRes: StringResource,
+        isError: Boolean,
+        vararg args: Any,
+    ) {
+        feedbackMutex.withLock {
+            val message = getString(messageRes, *args)
+            showFeedback(message = message, isError = isError)
+        }
+    }
+
+    private fun persistSavedNotificationsAsync() {
+        val snapshot = _state.value.savedNotifications
+        scope.launch {
+            val unknownErrorMessage = getString(Res.string.notifications_error_unknown)
+            storage.save(snapshot).onFailure { error ->
+                val details = error.readableDetailsOrNull() ?: unknownErrorMessage
+                showFeedbackMessageResource(
+                    messageRes = Res.string.notifications_feedback_storage_save_failed,
+                    isError = true,
+                    details,
+                )
+            }
         }
     }
 
     private companion object {
-        /** Максимальное количество записей в runtime-истории. */
+        val EXPORT_JSON: Json = Json { prettyPrint = true }
         const val MAX_HISTORY = 500
-
-        /** Максимальное количество сохранённых пользователем уведомлений. */
         const val MAX_SAVED = 200
+        const val FEEDBACK_HIDE_DELAY_MS = 3_000L
+        const val ADB_EXECUTABLE_DEFAULT = "adb"
     }
 }

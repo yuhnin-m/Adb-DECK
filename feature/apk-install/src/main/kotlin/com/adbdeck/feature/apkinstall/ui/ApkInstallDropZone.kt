@@ -174,10 +174,10 @@ private class ApkDropTargetPanel : JPanel(BorderLayout()) {
     }
 }
 
-/** Извлекает путь к первому `.apk` из drop-transfer. */
+/** Извлекает путь к первому поддерживаемому install target из drop-transfer. */
 private fun extractDroppedApkPath(transferable: Transferable): String? {
     val files = extractDroppedFiles(transferable)
-    return files.firstOrNull { it.isFile && it.name.endsWith(".apk", ignoreCase = true) }?.absolutePath
+    return files.firstOrNull(::isSupportedInstallTarget)?.absolutePath
 }
 
 /** Извлекает файлы из drop-transfer (java file list + uri-list fallback). */
@@ -244,6 +244,22 @@ private fun parseDroppedLineToFile(line: String): File? {
 /** Проверяет, поддерживает ли transfer хотя бы один ожидаемый drop flavor. */
 private fun hasSupportedTransferFlavor(transferable: Transferable): Boolean =
     hasSupportedTransferFlavor(transferable.transferDataFlavors)
+
+/** Проверяет, поддерживается ли файл/папка для установки из drop зоны. */
+private fun isSupportedInstallTarget(file: File): Boolean {
+    if (!file.exists()) return false
+    if (file.isDirectory) {
+        return file.walkTopDown()
+            .maxDepth(3)
+            .any { child ->
+                child.isFile && child.name.endsWith(".apk", ignoreCase = true)
+            }
+    }
+    if (!file.isFile) return false
+
+    val extension = file.extension.lowercase()
+    return extension in setOf("apk", "aab", "apks", "xapk")
+}
 
 /** Проверяет список DnD flavor-ов на наличие поддерживаемых. */
 private fun hasSupportedTransferFlavor(flavors: Array<DataFlavor>): Boolean =

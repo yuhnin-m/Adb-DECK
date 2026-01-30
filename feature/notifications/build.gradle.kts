@@ -13,6 +13,7 @@ dependencies {
     implementation(compose.materialIconsExtended)
     implementation(compose.ui)
     implementation(compose.components.uiToolingPreview)
+    implementation(compose.components.resources)
 
     implementation(libs.decompose)
     implementation(libs.decompose.extensions.compose)
@@ -25,4 +26,7 @@ dependencies {
     implementation(project(":core:adb-api"))
     implementation(project(":core:settings"))
     implementation(project(":core:utils"))
+    implementation(project(":core:i18n"))
+
+    testImplementation(kotlin("test"))
 }

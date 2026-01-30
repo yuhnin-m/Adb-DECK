@@ -1,6 +1,7 @@
 package com.adbdeck.feature.notifications.storage
 
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.notifications.SavedNotification
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -69,14 +70,14 @@ class NotificationsStorage {
 
     /**
      * Загрузить список сохранённых уведомлений из файла.
-     * При отсутствии файла или ошибке чтения возвращает пустой список.
+     * При отсутствии файла возвращает пустой список.
      */
-    suspend fun load(): List<SavedNotification> = withContext(Dispatchers.IO) {
-        if (!storageFile.exists()) return@withContext emptyList()
-        runCatching {
+    suspend fun load(): Result<List<SavedNotification>> = withContext(Dispatchers.IO) {
+        if (!storageFile.exists()) return@withContext Result.success(emptyList())
+        runCatchingPreserveCancellation {
             val data = json.decodeFromString<NotificationsStorageData>(storageFile.readText())
             data.saved.map { it.toDomain() }
-        }.getOrDefault(emptyList())
+        }
     }
 
     /**
@@ -84,8 +85,8 @@ class NotificationsStorage {
      *
      * @param saved Актуальный список сохранённых уведомлений.
      */
-    suspend fun save(saved: List<SavedNotification>) = withContext(Dispatchers.IO) {
-        runCatching {
+    suspend fun save(saved: List<SavedNotification>): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatchingPreserveCancellation {
             storageFile.parentFile?.mkdirs()
             val data = NotificationsStorageData(saved = saved.map { it.toStorage() })
             storageFile.writeText(json.encodeToString(data))

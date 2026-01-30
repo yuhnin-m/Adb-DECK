@@ -1,6 +1,7 @@
 package com.adbdeck.feature.notifications.ui
 
 import androidx.compose.runtime.Composable
+import com.adbdeck.core.adb.api.notifications.NotificationPostRequest
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.feature.notifications.*
@@ -95,6 +96,7 @@ class PreviewNotificationsComponent(
     override fun onSaveNotification(record: NotificationRecord) = Unit
     override fun onDeleteSaved(id: String) = Unit
     override fun onExportToJson(record: NotificationRecord, path: String) = Unit
+    override fun onPostNotification(request: NotificationPostRequest) = Unit
     override fun onOpenInPackages(packageName: String) = Unit
     override fun onOpenInDeepLinks(uri: String) = Unit
     override fun onDismissFeedback() = Unit
