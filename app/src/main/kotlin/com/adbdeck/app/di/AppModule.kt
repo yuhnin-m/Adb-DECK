@@ -26,6 +26,9 @@ import com.adbdeck.core.adb.impl.device.SystemDeviceManager
 import com.adbdeck.core.adb.impl.logcat.SystemLogcatStreamer
 import com.adbdeck.core.adb.impl.packages.SystemPackageClient
 import com.adbdeck.core.adb.impl.screen.SystemScreenToolsClient
+import com.adbdeck.core.process.InMemoryProcessHistoryStore
+import com.adbdeck.core.process.LoggingProcessRunner
+import com.adbdeck.core.process.ProcessHistoryStore
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.process.SystemProcessRunner
 import com.adbdeck.core.settings.FileSettingsRepository
@@ -49,8 +52,15 @@ import java.io.File
  */
 val appModule = module {
 
-    // ── ProcessRunner ────────────────────────────────────────────
-    singleOf(::SystemProcessRunner) bind ProcessRunner::class
+    // ── ProcessRunner + in-memory history ───────────────────────
+    single<ProcessHistoryStore> { InMemoryProcessHistoryStore(capacity = 500) }
+    singleOf(::SystemProcessRunner)
+    single<ProcessRunner> {
+        LoggingProcessRunner(
+            delegate = get<SystemProcessRunner>(),
+            historyStore = get<ProcessHistoryStore>(),
+        )
+    }
 
     // ── SettingsRepository ───────────────────────────────────────
     single<SettingsRepository> {

@@ -4,15 +4,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
+import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.process.ProcessHistoryStore
 import com.adbdeck.feature.contacts.ui.ContactsScreen
 import com.adbdeck.feature.dashboard.ui.DashboardScreen
 import com.adbdeck.feature.deviceinfo.ui.DeviceInfoScreen
@@ -43,6 +50,7 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
  * @param isDarkTheme            Текущий режим темы (для Sidebar).
  * @param onToggleTheme          Callback переключения темы.
  * @param deviceSelectorComponent Компонент выбора устройства для TopBar.
+ * @param processHistoryStore    In-memory история команд ProcessRunner.
  */
 @Composable
 fun AppContent(
@@ -50,11 +58,14 @@ fun AppContent(
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
     deviceSelectorComponent: DeviceSelectorComponent,
+    processHistoryStore: ProcessHistoryStore,
 ) {
     // subscribeAsState() возвращает Compose State<ChildStack>
     val childStack by rootComponent.childStack.subscribeAsState()
     val activeChild = childStack.active.instance
     val devices by deviceSelectorComponent.devices.collectAsState()
+    val processHistoryEntries by processHistoryStore.entries.collectAsState()
+    var isHistoryPanelOpen by remember { mutableStateOf(false) }
 
     val logcatComponent = childStack.items
         .asSequence()
@@ -136,7 +147,11 @@ fun AppContent(
                     },
                 )
 
-                Box(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                ) {
                     // Рендерим активный экран напрямую по типу активного Child
                     when (val instance = activeChild) {
                         is RootComponent.Child.Dashboard -> DashboardScreen(instance.component)
@@ -156,7 +171,22 @@ fun AppContent(
                     }
                 }
 
-                StatusBar()
+                if (isHistoryPanelOpen) {
+                    ProcessHistoryPanel(
+                        entries = processHistoryEntries,
+                        onClose = { isHistoryPanelOpen = false },
+                        onClear = processHistoryStore::clear,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(Dimensions.sidebarWidth + Dimensions.paddingSmall),
+                    )
+                }
+
+                StatusBar(
+                    historyCount = processHistoryEntries.size,
+                    isHistoryOpen = isHistoryPanelOpen,
+                    onToggleHistory = { isHistoryPanelOpen = !isHistoryPanelOpen },
+                )
             }
         }
     }

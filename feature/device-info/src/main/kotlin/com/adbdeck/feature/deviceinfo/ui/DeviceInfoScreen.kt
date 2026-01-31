@@ -65,6 +65,11 @@ import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.selection.AdbMultiSelectionState
+import com.adbdeck.core.ui.selection.clearSelection
+import com.adbdeck.core.ui.selection.onItemSelectionRequested
+import com.adbdeck.core.ui.selection.retainVisible
+import com.adbdeck.core.ui.selection.selectAll
 import com.adbdeck.feature.deviceinfo.DeviceInfoComponent
 import com.adbdeck.feature.deviceinfo.DeviceInfoRow
 import com.adbdeck.feature.deviceinfo.DeviceInfoSection
@@ -87,22 +92,21 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
     val state by component.state.collectAsState()
     val clipboard = LocalClipboardManager.current
 
-    var selectedRowIds by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var selectionAnchorId by remember { mutableStateOf<String?>(null) }
+    var selectionState by remember { mutableStateOf(AdbMultiSelectionState<String>()) }
     var selectionModifiers by remember { mutableStateOf(DeviceInfoSelectionModifiers()) }
 
     val sectionTitles = rememberSectionTitles()
-    val selectedRowIdsBySection = remember(selectedRowIds) { groupSelectionBySection(selectedRowIds) }
+    val selectedRowIdsBySection = remember(selectionState.selectedIds) {
+        groupSelectionBySection(selectionState.selectedIds)
+    }
     val selectableRows = remember(state.sections) { flattenSelectableRows(state.sections) }
     val exportDialogTitle = stringResource(Res.string.device_info_export_dialog_title)
     val exportDialogFilter = stringResource(Res.string.device_info_export_dialog_filter)
 
     LaunchedEffect(selectableRows) {
-        val visibleIds = selectableRows.asSequence().map { it.id }.toHashSet()
-        selectedRowIds = selectedRowIds.filterTo(mutableSetOf()) { it in visibleIds }
-        if (selectionAnchorId != null && selectionAnchorId !in visibleIds) {
-            selectionAnchorId = null
-        }
+        selectionState = selectionState.retainVisible(
+            visibleIds = selectableRows.map { row -> row.id },
+        )
     }
 
     fun copyText(value: String) {
@@ -111,12 +115,11 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
     }
 
     fun clearSelection() {
-        selectedRowIds = emptySet()
-        selectionAnchorId = null
+        selectionState = selectionState.clearSelection()
     }
 
     fun copySelectedRows() {
-        val rows = selectableRows.filter { it.id in selectedRowIds }
+        val rows = selectableRows.filter { it.id in selectionState.selectedIds }
         if (rows.isEmpty()) return
         copyText(rows.joinToString(separator = "\n") { "${it.key}: ${it.value}" })
     }
@@ -144,8 +147,9 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
 
     fun selectAllRows() {
         if (selectableRows.isEmpty()) return
-        selectedRowIds = selectableRows.map { it.id }.toSet()
-        selectionAnchorId = selectableRows.first().id
+        selectionState = selectionState.selectAll(
+            visibleIds = selectableRows.map { row -> row.id },
+        )
     }
 
     fun onRowSelectionRequested(
@@ -153,34 +157,12 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
         addToSelection: Boolean,
         selectRange: Boolean,
     ) {
-        if (selectableRows.isEmpty()) return
-
-        val visibleIds = selectableRows.map { it.id }
-        if (selectRange && selectionAnchorId != null) {
-            val anchorIndex = visibleIds.indexOf(selectionAnchorId)
-            val targetIndex = visibleIds.indexOf(rowId)
-            if (anchorIndex != -1 && targetIndex != -1) {
-                val rangeIds = if (anchorIndex <= targetIndex) {
-                    visibleIds.subList(anchorIndex, targetIndex + 1)
-                } else {
-                    visibleIds.subList(targetIndex, anchorIndex + 1)
-                }
-
-                selectedRowIds = if (addToSelection) {
-                    selectedRowIds + rangeIds
-                } else {
-                    rangeIds.toSet()
-                }
-                return
-            }
-        }
-
-        selectedRowIds = when {
-            addToSelection && rowId in selectedRowIds -> selectedRowIds - rowId
-            addToSelection -> selectedRowIds + rowId
-            else -> setOf(rowId)
-        }
-        selectionAnchorId = rowId
+        selectionState = selectionState.onItemSelectionRequested(
+            itemId = rowId,
+            visibleIds = selectableRows.map { row -> row.id },
+            additiveSelection = addToSelection,
+            rangeSelection = selectRange,
+        )
     }
 
     val hasAnyRows by remember(selectableRows) {
@@ -193,7 +175,7 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
                 isDeviceAvailable = state.isDeviceAvailable,
                 isRefreshing = state.isRefreshing,
                 isExporting = state.isExportingJson,
-                selectedCount = selectedRowIds.size,
+                selectedCount = selectionState.selectedIds.size,
                 hasAnyRows = hasAnyRows,
                 lastUpdatedAtMillis = state.lastUpdatedAtMillis,
                 onRefresh = component::onRefresh,
@@ -293,7 +275,7 @@ fun DeviceInfoScreen(component: DeviceInfoComponent) {
                                     section = section,
                                     title = sectionTitles[section.kind].orEmpty(),
                                     selectedRowIds = selectedRowIdsBySection[section.kind].orEmpty(),
-                                    hasAnySelection = selectedRowIds.isNotEmpty(),
+                                    hasAnySelection = selectionState.selectedIds.isNotEmpty(),
                                     onRowClick = { rowId ->
                                         listFocusRequester.requestFocus()
                                         onRowSelectionRequested(

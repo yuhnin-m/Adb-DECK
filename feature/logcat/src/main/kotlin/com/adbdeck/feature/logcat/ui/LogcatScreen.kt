@@ -65,6 +65,11 @@ import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.selection.AdbMultiSelectionState
+import com.adbdeck.core.ui.selection.clearSelection
+import com.adbdeck.core.ui.selection.onItemSelectionRequested
+import com.adbdeck.core.ui.selection.retainVisible
+import com.adbdeck.core.ui.selection.selectAll
 import com.adbdeck.core.ui.textfields.AdbOutlinedAutocompleteTextField
 import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
 import com.adbdeck.core.ui.textfields.AdbTextFieldSize
@@ -94,28 +99,24 @@ import org.jetbrains.compose.resources.stringResource
 fun LogcatScreen(component: LogcatComponent) {
     val state by component.state.collectAsState()
     var isSettingsOpen by remember { mutableStateOf(false) }
-    var selectedEntryIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var selectionAnchorId by remember { mutableStateOf<Long?>(null) }
+    var selectionState by remember { mutableStateOf(AdbMultiSelectionState<Long>()) }
     val clipboard = LocalClipboardManager.current
 
     LaunchedEffect(state.filteredEntries) {
-        val visibleIds = state.filteredEntries.asSequence().map { it.id }.toHashSet()
-        selectedEntryIds = selectedEntryIds.filterTo(mutableSetOf()) { it in visibleIds }
-        if (selectionAnchorId != null && selectionAnchorId !in visibleIds) {
-            selectionAnchorId = null
-        }
+        selectionState = selectionState.retainVisible(
+            visibleIds = state.filteredEntries.map { entry -> entry.id },
+        )
     }
 
     fun clearSelection() {
-        selectedEntryIds = emptySet()
-        selectionAnchorId = null
+        selectionState = selectionState.clearSelection()
     }
 
     fun copySelectedEntries() {
-        if (selectedEntryIds.isEmpty()) return
+        if (selectionState.selectedIds.isEmpty()) return
         val text = state.filteredEntries
             .asSequence()
-            .filter { it.id in selectedEntryIds }
+            .filter { it.id in selectionState.selectedIds }
             .map { it.raw }
             .joinToString(separator = "\n")
         if (text.isNotBlank()) {
@@ -130,8 +131,9 @@ fun LogcatScreen(component: LogcatComponent) {
 
     fun selectAllFilteredEntries() {
         if (state.filteredEntries.isEmpty()) return
-        selectedEntryIds = state.filteredEntries.map { it.id }.toSet()
-        selectionAnchorId = state.filteredEntries.first().id
+        selectionState = selectionState.selectAll(
+            visibleIds = state.filteredEntries.map { entry -> entry.id },
+        )
     }
 
     fun onEntrySelectionRequested(
@@ -139,40 +141,19 @@ fun LogcatScreen(component: LogcatComponent) {
         addToSelection: Boolean,
         selectRange: Boolean,
     ) {
-        val visibleIds = state.filteredEntries.map { it.id }
-        if (visibleIds.isEmpty()) return
-
-        if (selectRange && selectionAnchorId != null) {
-            val anchorIndex = visibleIds.indexOf(selectionAnchorId)
-            val targetIndex = visibleIds.indexOf(entryId)
-            if (anchorIndex != -1 && targetIndex != -1) {
-                val rangeIds = if (anchorIndex <= targetIndex) {
-                    visibleIds.subList(anchorIndex, targetIndex + 1)
-                } else {
-                    visibleIds.subList(targetIndex, anchorIndex + 1)
-                }
-                selectedEntryIds = if (addToSelection) {
-                    selectedEntryIds + rangeIds
-                } else {
-                    rangeIds.toSet()
-                }
-                return
-            }
-        }
-
-        selectedEntryIds = when {
-            addToSelection && entryId in selectedEntryIds -> selectedEntryIds - entryId
-            addToSelection -> selectedEntryIds + entryId
-            else -> setOf(entryId)
-        }
-        selectionAnchorId = entryId
+        selectionState = selectionState.onItemSelectionRequested(
+            itemId = entryId,
+            visibleIds = state.filteredEntries.map { entry -> entry.id },
+            additiveSelection = addToSelection,
+            rangeSelection = selectRange,
+        )
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
         LogcatToolbar(
             state = state,
             component = component,
-            selectedCount = selectedEntryIds.size,
+            selectedCount = selectionState.selectedIds.size,
             onCopySelected = ::copySelectedEntries,
             onResetSelection = ::clearSelection,
             onClearAndResetSelection = {
@@ -191,7 +172,7 @@ fun LogcatScreen(component: LogcatComponent) {
                 LogList(
                     state = state,
                     component = component,
-                    selectedEntryIds = selectedEntryIds,
+                    selectedEntryIds = selectionState.selectedIds,
                     onEntrySelectionRequested = ::onEntrySelectionRequested,
                     onCopySelected = ::copySelectedEntries,
                     onCopyLine = ::copySingleEntry,

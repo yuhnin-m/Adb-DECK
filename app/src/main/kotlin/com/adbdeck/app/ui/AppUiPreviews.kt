@@ -23,6 +23,7 @@ import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.adb.api.contacts.PhoneType
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.process.InMemoryProcessHistoryStore
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.feature.dashboard.DashboardComponent
 import com.adbdeck.feature.dashboard.DashboardState
@@ -736,12 +737,14 @@ private fun AppComponentPreviewContainer(
 private fun AppContentPreviewBody(isDarkTheme: Boolean) {
     val root = remember { PreviewRootComponent(Screen.Dashboard) }
     val selector = remember { PreviewDeviceSelectorComponent() }
+    val processHistoryStore = remember { InMemoryProcessHistoryStore() }
     AppComponentPreviewContainer(isDarkTheme = isDarkTheme) {
         AppContent(
             rootComponent = root,
             isDarkTheme = isDarkTheme,
             onToggleTheme = {},
             deviceSelectorComponent = selector,
+            processHistoryStore = processHistoryStore,
         )
     }
 }
