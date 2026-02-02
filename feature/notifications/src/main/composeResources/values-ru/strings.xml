@@ -73,16 +73,6 @@
     <string name="notifications_composer_host_image_selected">Картинка выбрана: %1$s</string>
     <string name="notifications_composer_host_image_encode_failed">Не удалось закодировать картинку: %1$s</string>
     <string name="notifications_composer_host_image_file_not_found">Файл картинки не найден на хосте: %1$s</string>
-    <string name="notifications_composer_section_actions">Кнопки действий</string>
-    <string name="notifications_composer_enable_actions">Включить кнопки действий</string>
-    <string name="notifications_composer_actions_support_note">ADB cmd notification post не поддерживает action-кнопки напрямую. Intent первой кнопки используется как fallback для content-intent.</string>
-    <string name="notifications_composer_field_action_label">Текст кнопки</string>
-    <string name="notifications_composer_field_action_intent">Действие кнопки (intent)</string>
-    <string name="notifications_composer_actions_add">Добавить кнопку</string>
-    <string name="notifications_composer_actions_remove">Удалить кнопку</string>
-    <string name="notifications_composer_field_actions">Кнопки (Название => intent)</string>
-    <string name="notifications_composer_hint_actions">Формат: Open app => activity -n com.example/.Main | Web => activity -a android.intent.action.VIEW -d https://example.com</string>
-
     <string name="notifications_status_shown">Показано: %1$d</string>
     <string name="notifications_status_current">Текущих: %1$d</string>
     <string name="notifications_status_history">В истории: %1$d</string>
@@ -155,6 +145,8 @@
     <string name="notifications_error_unknown">Неизвестная ошибка</string>
     <string name="notifications_error_post_no_device">Нельзя отправить уведомление без активного устройства.</string>
     <string name="notifications_error_post_invalid_input">Нужно заполнить tag и text.</string>
+    <string name="notifications_error_post_content_intent_unsupported">Content intent заблокирован этой Android-сборкой для shell-уведомлений. Попробуйте отправку без intent.</string>
+    <string name="notifications_error_post_bigpicture_invalid_bitmap">BigPicture требует bitmap-данные. Используйте выбор изображения с хоста или формат data:base64,...</string>
     <string name="notifications_error_post_with_details">Не удалось отправить уведомление: %1$s</string>
     <string name="notifications_error_export_with_details">Ошибка экспорта: %1$s</string>
     <string name="notifications_error_clipboard_with_details">Ошибка буфера обмена: %1$s</string>

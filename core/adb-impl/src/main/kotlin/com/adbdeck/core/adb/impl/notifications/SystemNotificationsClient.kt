@@ -8,6 +8,11 @@ import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.net.URI
+import java.nio.file.Paths
+import java.util.Base64
+import java.util.UUID
 import kotlin.collections.iterator
 
 /**
@@ -67,57 +72,418 @@ class SystemNotificationsClient(
         require(tag.isNotEmpty()) { "Tag уведомления не должен быть пустым." }
         require(text.isNotEmpty()) { "Текст уведомления не должен быть пустым." }
 
-        val command = mutableListOf(
-            adbPath,
-            "-s",
-            deviceId,
-            "shell",
-            "cmd",
-            "notification",
-            "post",
+        val preparedRequest = preparePostRequest(
+            deviceId = deviceId,
+            adbPath = adbPath,
+            request = request.copy(tag = tag, text = text),
         )
 
-        if (request.verbose) {
-            command += "--verbose"
-        }
+        var postedSuccessfully = false
+        try {
+            val shellCommandTokens = mutableListOf("cmd", "notification", "post")
 
-        request.title?.trim()?.takeIf { it.isNotEmpty() }?.let { title ->
-            command += "--title"
-            command += title
-        }
-
-        request.iconSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { icon ->
-            command += "--icon"
-            command += icon
-        }
-
-        request.largeIconSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { icon ->
-            command += "--large-icon"
-            command += icon
-        }
-
-        appendStyleArguments(command = command, request = request)
-
-        request.contentIntentSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { rawIntentSpec ->
-            val intentTokens = parseShellTokens(rawIntentSpec)
-            require(intentTokens.isNotEmpty()) {
-                "Intent spec для --content-intent не должен быть пустым."
+            if (preparedRequest.request.verbose) {
+                shellCommandTokens += "-v"
             }
-            command += "--content-intent"
-            command += intentTokens
-        }
 
-        command += tag
-        command += text
+            preparedRequest.request.title?.trim()?.takeIf { it.isNotEmpty() }?.let { title ->
+                shellCommandTokens += "-t"
+                shellCommandTokens += title
+            }
 
-        val result = processRunner.run(command)
-        if (!result.isSuccess) {
-            val reason = result.stderr
-                .ifBlank { result.stdout }
-                .ifBlank { "Не удалось выполнить cmd notification post." }
-            error("Не удалось отправить уведомление: ${reason.take(400)}")
+            preparedRequest.request.iconSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { icon ->
+                shellCommandTokens += "-i"
+                shellCommandTokens += icon
+            }
+
+            preparedRequest.request.largeIconSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { icon ->
+                shellCommandTokens += "-I"
+                shellCommandTokens += icon
+            }
+
+            appendStyleArguments(command = shellCommandTokens, request = preparedRequest.request)
+
+            preparedRequest.request.contentIntentSpec?.trim()?.takeIf { it.isNotEmpty() }?.let { rawIntentSpec ->
+                val intentTokens = parseShellTokens(rawIntentSpec)
+                require(intentTokens.isNotEmpty()) {
+                    "Intent spec для --content-intent не должен быть пустым."
+                }
+                shellCommandTokens += "-c"
+                shellCommandTokens += intentTokens
+            }
+
+            shellCommandTokens += tag
+            shellCommandTokens += text
+
+            val shellCommand = buildShellCommand(shellCommandTokens)
+            val command = listOf(
+                adbPath,
+                "-s",
+                deviceId,
+                "shell",
+                shellCommand,
+            )
+
+            val result = processRunner.run(command)
+            if (!result.isSuccess) {
+                val reason = result.stderr
+                    .ifBlank { result.stdout }
+                    .ifBlank { "Не удалось выполнить cmd notification post." }
+                error("Не удалось отправить уведомление: ${reason.take(400)}")
+            }
+            postedSuccessfully = true
+        } finally {
+            cleanupPreparedPostRequest(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                prepared = preparedRequest,
+                keepStagedDeviceFiles = postedSuccessfully,
+            )
         }
     }
+
+    /**
+     * Подготовка параметров перед отправкой:
+     * - переносит host-файлы и `data:base64,...` изображения во временные device-файлы;
+     * - подменяет spec на `file://...`, чтобы не передавать payload inline через argv.
+     */
+    private suspend fun preparePostRequest(
+        deviceId: String,
+        adbPath: String,
+        request: NotificationPostRequest,
+    ): PreparedPostRequest {
+        val stagedDevicePaths = mutableListOf<String>()
+        val temporaryHostFiles = mutableListOf<File>()
+
+        suspend fun prepareVisualSpec(rawSpec: String?, specKind: String): String? {
+            val trimmed = rawSpec?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+            val preparedSpec = stageImageSpecIfNeeded(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                spec = trimmed,
+                specKind = specKind,
+            )
+            preparedSpec.stagedDevicePath?.let { stagedDevicePaths += it }
+            preparedSpec.temporaryHostFile?.let { temporaryHostFiles += it }
+            return preparedSpec.value
+        }
+        return try {
+            val preparedRequest = request.copy(
+                iconSpec = prepareVisualSpec(rawSpec = request.iconSpec, specKind = "icon"),
+                largeIconSpec = prepareVisualSpec(rawSpec = request.largeIconSpec, specKind = "large_icon"),
+                pictureSpec = if (request.style == NotificationPostStyle.BIGPICTURE) {
+                    prepareVisualSpec(rawSpec = request.pictureSpec, specKind = "picture")
+                } else {
+                    request.pictureSpec
+                },
+            )
+
+            PreparedPostRequest(
+                request = preparedRequest,
+                stagedDevicePaths = stagedDevicePaths,
+                temporaryHostFiles = temporaryHostFiles,
+            )
+        } catch (error: Throwable) {
+            cleanupStagedArtifacts(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                stagedDevicePaths = stagedDevicePaths,
+                temporaryHostFiles = temporaryHostFiles,
+            )
+            throw error
+        }
+    }
+
+    /**
+     * Если spec ссылается на host-файл или содержит `data:base64,...`, staging-ит его на device.
+     */
+    private suspend fun stageImageSpecIfNeeded(
+        deviceId: String,
+        adbPath: String,
+        spec: String,
+        specKind: String,
+    ): PreparedImageSpec {
+        resolveHostImageFile(spec)?.let { hostFile ->
+            val devicePath = pushImageToDevice(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                hostFile = hostFile,
+                specKind = specKind,
+            )
+            return PreparedImageSpec(
+                value = toDeviceFileSpec(devicePath),
+                stagedDevicePath = devicePath,
+            )
+        }
+
+        val dataPayload = parseDataBase64Payload(spec) ?: return PreparedImageSpec(value = spec)
+        val tempHostFile = createTemporaryImageFileFromDataPayload(
+            payload = dataPayload,
+            specKind = specKind,
+        )
+
+        return try {
+            val devicePath = pushImageToDevice(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                hostFile = tempHostFile,
+                specKind = specKind,
+            )
+            PreparedImageSpec(
+                value = toDeviceFileSpec(devicePath),
+                stagedDevicePath = devicePath,
+                temporaryHostFile = tempHostFile,
+            )
+        } catch (error: Throwable) {
+            withContext(Dispatchers.IO) {
+                runCatching { tempHostFile.delete() }
+            }
+            throw error
+        }
+    }
+
+    /**
+     * Распознает payload из data-uri вида `data:...;base64,<payload>`.
+     */
+    private fun parseDataBase64Payload(spec: String): String? =
+        DATA_BASE64_URI_RE.matchEntire(spec)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+
+    /**
+     * Декодирует data:base64 payload во временный host-файл.
+     */
+    private suspend fun createTemporaryImageFileFromDataPayload(
+        payload: String,
+        specKind: String,
+    ): File = withContext(Dispatchers.IO) {
+        val normalizedPayload = payload.filterNot { character -> character.isWhitespace() }
+        val bytes = runCatching { Base64.getDecoder().decode(normalizedPayload) }
+            .getOrElse { error ->
+                error("Некорректный base64 для $specKind: ${error.message ?: "decode error"}")
+            }
+        require(bytes.isNotEmpty()) {
+            "Пустой payload base64 для $specKind."
+        }
+
+        val tempFile = File.createTempFile("adbdeck_notification_${specKind}_", ".img")
+        tempFile.writeBytes(bytes)
+        tempFile
+    }
+
+    /**
+     * Загружает host-файл изображения на устройство и возвращает путь на device.
+     */
+    private suspend fun pushImageToDevice(
+        deviceId: String,
+        adbPath: String,
+        hostFile: File,
+        specKind: String,
+    ): String {
+        val verifiedHostFile = withContext(Dispatchers.IO) {
+            require(hostFile.isFile) {
+                "Файл изображения для $specKind не найден: ${hostFile.absolutePath}"
+            }
+            require(hostFile.length() > 0L) {
+                "Файл изображения для $specKind пустой: ${hostFile.absolutePath}"
+            }
+            hostFile.absoluteFile
+        }
+
+        ensureNotificationTempDir(deviceId = deviceId, adbPath = adbPath)
+
+        val fileName = "adbdeck_${specKind}_${UUID.randomUUID().toString().replace("-", "")}.img"
+        val devicePath = "$NOTIFICATION_TEMP_DIR/$fileName"
+        val pushResult = processRunner.run(
+            listOf(
+                adbPath,
+                "-s",
+                deviceId,
+                "push",
+                verifiedHostFile.absolutePath,
+                devicePath,
+            )
+        )
+
+        if (!pushResult.isSuccess) {
+            val reason = pushResult.stderr
+                .ifBlank { pushResult.stdout }
+                .lineSequence()
+                .firstOrNull { line -> line.isNotBlank() }
+                ?.trim()
+                .orEmpty()
+            error(
+                "Не удалось загрузить изображение ($specKind) на устройство: ${
+                    reason.ifBlank { "adb push failed" }
+                }"
+            )
+        }
+        ensureDeviceImageReadable(
+            deviceId = deviceId,
+            adbPath = adbPath,
+            devicePath = devicePath,
+        )
+        return devicePath
+    }
+
+    /**
+     * Создает директорию для временных изображений на устройстве.
+     */
+    private suspend fun ensureNotificationTempDir(
+        deviceId: String,
+        adbPath: String,
+    ) {
+        val mkdirResult = processRunner.run(
+            listOf(
+                adbPath,
+                "-s",
+                deviceId,
+                "shell",
+                "mkdir",
+                "-p",
+                NOTIFICATION_TEMP_DIR,
+            )
+        )
+        if (!mkdirResult.isSuccess) {
+            val reason = mkdirResult.stderr
+                .ifBlank { mkdirResult.stdout }
+                .lineSequence()
+                .firstOrNull { line -> line.isNotBlank() }
+                ?.trim()
+                .orEmpty()
+            error(
+                "Не удалось подготовить временную директорию изображений на устройстве: ${
+                    reason.ifBlank { NOTIFICATION_TEMP_DIR }
+                }"
+            )
+        }
+    }
+
+    /**
+     * Делает staged-файл читаемым для системных процессов (например, SystemUI).
+     */
+    private suspend fun ensureDeviceImageReadable(
+        deviceId: String,
+        adbPath: String,
+        devicePath: String,
+    ) {
+        val chmodResult = processRunner.run(
+            listOf(
+                adbPath,
+                "-s",
+                deviceId,
+                "shell",
+                "chmod",
+                "0644",
+                devicePath,
+            )
+        )
+        if (!chmodResult.isSuccess) {
+            val reason = chmodResult.stderr
+                .ifBlank { chmodResult.stdout }
+                .lineSequence()
+                .firstOrNull { line -> line.isNotBlank() }
+                ?.trim()
+                .orEmpty()
+            error(
+                "Не удалось выставить права на изображение ($devicePath): ${
+                    reason.ifBlank { "adb chmod failed" }
+                }"
+            )
+        }
+    }
+
+    /**
+     * Освобождает временные device/host файлы после отправки.
+     */
+    private suspend fun cleanupPreparedPostRequest(
+        deviceId: String,
+        adbPath: String,
+        prepared: PreparedPostRequest,
+        keepStagedDeviceFiles: Boolean,
+    ) {
+        if (keepStagedDeviceFiles) {
+            cleanupTemporaryHostFiles(prepared.temporaryHostFiles)
+        } else {
+            cleanupStagedArtifacts(
+                deviceId = deviceId,
+                adbPath = adbPath,
+                stagedDevicePaths = prepared.stagedDevicePaths,
+                temporaryHostFiles = prepared.temporaryHostFiles,
+            )
+        }
+    }
+
+    private suspend fun cleanupStagedArtifacts(
+        deviceId: String,
+        adbPath: String,
+        stagedDevicePaths: List<String>,
+        temporaryHostFiles: List<File>,
+    ) {
+        stagedDevicePaths.forEach { devicePath ->
+            runCatching {
+                processRunner.run(
+                    listOf(
+                        adbPath,
+                        "-s",
+                        deviceId,
+                        "shell",
+                        "rm",
+                        "-f",
+                        devicePath,
+                    )
+                )
+            }
+        }
+        cleanupTemporaryHostFiles(temporaryHostFiles)
+    }
+
+    private suspend fun cleanupTemporaryHostFiles(
+        temporaryHostFiles: List<File>,
+    ) {
+        withContext(Dispatchers.IO) {
+            temporaryHostFiles.forEach { tempFile ->
+                runCatching {
+                    if (tempFile.exists()) {
+                        tempFile.delete()
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Определить локальный файл изображения на хосте из `pictureSpec`.
+     */
+    private fun resolveHostImageFile(pictureSpec: String): File? {
+        if (pictureSpec.startsWith("file://", ignoreCase = true)) {
+            val uriFile = runCatching {
+                val uri = URI(pictureSpec)
+                Paths.get(uri).toFile()
+            }.getOrNull()
+            if (uriFile?.isFile == true) return uriFile
+            return null
+        }
+
+        val plainPathFile = File(pictureSpec)
+        return plainPathFile.takeIf { it.isFile }
+    }
+
+    /**
+     * Собирает безопасную shell-команду с экранированием всех токенов.
+     *
+     * Такой формат корректно сохраняет пробелы/Unicode в значениях (`title`, `text` и т.д.).
+     */
+    private fun buildShellCommand(tokens: List<String>): String =
+        tokens.joinToString(separator = " ") { token -> shellQuote(token) }
+
+    /** Экранирует один токен для POSIX shell. */
+    private fun shellQuote(value: String): String =
+        "'" + value.replace("'", "'\"'\"'") + "'"
+
+    private fun toDeviceFileSpec(devicePath: String): String = "file://$devicePath"
 
     // ── Парсинг дампа ────────────────────────────────────────────────────────
 
@@ -405,7 +771,7 @@ class SystemNotificationsClient(
             NotificationPostStyle.NONE -> Unit
 
             NotificationPostStyle.BIGTEXT -> {
-                command += "--style"
+                command += "-S"
                 command += "bigtext"
                 request.bigText?.trim()?.takeIf { it.isNotEmpty() }?.let { bigText ->
                     command += bigText
@@ -418,7 +784,7 @@ class SystemNotificationsClient(
                     ?.takeIf { it.isNotEmpty() }
                     ?: error("Для стиля BIGPICTURE требуется pictureSpec.")
 
-                command += "--style"
+                command += "-S"
                 command += "bigpicture"
                 command += "--picture"
                 command += pictureSpec
@@ -434,7 +800,7 @@ class SystemNotificationsClient(
                     "Для стиля INBOX требуется минимум одна строка."
                 }
 
-                command += "--style"
+                command += "-S"
                 command += "inbox"
                 inboxLines.forEach { line ->
                     command += "--line"
@@ -457,7 +823,7 @@ class SystemNotificationsClient(
                     "Для стиля MESSAGING требуется минимум одно сообщение."
                 }
 
-                command += "--style"
+                command += "-S"
                 command += "messaging"
 
                 request.messagingConversationTitle
@@ -475,7 +841,7 @@ class SystemNotificationsClient(
             }
 
             NotificationPostStyle.MEDIA -> {
-                command += "--style"
+                command += "-S"
                 command += "media"
             }
         }
@@ -504,6 +870,18 @@ class SystemNotificationsClient(
             .filter { it.isNotEmpty() }
             .toList()
 
+    private data class PreparedPostRequest(
+        val request: NotificationPostRequest,
+        val stagedDevicePaths: List<String>,
+        val temporaryHostFiles: List<File>,
+    )
+
+    private data class PreparedImageSpec(
+        val value: String,
+        val stagedDevicePath: String? = null,
+        val temporaryHostFile: File? = null,
+    )
+
     // ── Константы ────────────────────────────────────────────────────────────
 
     private companion object {
@@ -512,8 +890,14 @@ class SystemNotificationsClient(
             val text: String,
         )
 
+        const val NOTIFICATION_TEMP_DIR = "/data/local/tmp/adbdeck_notifications"
+
         // Разбор аргументов в стиле shell: bare tokens + "quoted" + 'quoted'.
         val SHELL_TOKEN_RE = Regex("""[^\s"']+|"([^"\\]|\\.)*"|'([^'\\]|\\.)*'""")
+        val DATA_BASE64_URI_RE = Regex(
+            pattern = """^data:(?:[^,]*;)?base64,(.+)$""",
+            options = setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
+        )
 
         // Regex-паттерны для первой строки блока и дополнительных полей
         val PKG_RE     = Regex("""pkg=(\S+)""")

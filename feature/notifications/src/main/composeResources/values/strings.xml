@@ -73,16 +73,6 @@
     <string name="notifications_composer_host_image_selected">Image selected: %1$s</string>
     <string name="notifications_composer_host_image_encode_failed">Failed to encode image: %1$s</string>
     <string name="notifications_composer_host_image_file_not_found">Host image file not found: %1$s</string>
-    <string name="notifications_composer_section_actions">Action buttons</string>
-    <string name="notifications_composer_enable_actions">Enable action buttons</string>
-    <string name="notifications_composer_actions_support_note">ADB cmd notification post does not support action buttons directly. First action intent is used as content-intent fallback.</string>
-    <string name="notifications_composer_field_action_label">Button text</string>
-    <string name="notifications_composer_field_action_intent">Button action (intent)</string>
-    <string name="notifications_composer_actions_add">Add button</string>
-    <string name="notifications_composer_actions_remove">Remove button</string>
-    <string name="notifications_composer_field_actions">Actions (Label => intent)</string>
-    <string name="notifications_composer_hint_actions">Format: Open app => activity -n com.example/.Main | Web => activity -a android.intent.action.VIEW -d https://example.com</string>
-
     <string name="notifications_status_shown">Shown: %1$d</string>
     <string name="notifications_status_current">Current: %1$d</string>
     <string name="notifications_status_history">History: %1$d</string>
@@ -155,6 +145,8 @@
     <string name="notifications_error_unknown">Unknown error</string>
     <string name="notifications_error_post_no_device">Cannot send notification without an active device.</string>
     <string name="notifications_error_post_invalid_input">Tag and text are required.</string>
+    <string name="notifications_error_post_content_intent_unsupported">Content intent is blocked by this Android build for shell notifications. Try sending without intent.</string>
+    <string name="notifications_error_post_bigpicture_invalid_bitmap">BigPicture requires bitmap payload. Use host image picker or provide picture as data:base64,...</string>
     <string name="notifications_error_post_with_details">Failed to send notification: %1$s</string>
     <string name="notifications_error_export_with_details">Export failed: %1$s</string>
     <string name="notifications_error_clipboard_with_details">Clipboard operation failed: %1$s</string>

@@ -1,6 +1,7 @@
 package com.adbdeck.feature.notifications.ui
 
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
+import java.awt.EventQueue
 import java.io.File
 import java.time.Instant
 import java.time.ZoneId
@@ -54,16 +55,30 @@ internal fun showNotificationSaveFileDialog(
         this.fileFilter = FileNameExtensionFilter(filterDescription, extension)
     }
 
-    if (chooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) {
-        return null
+    fun extractSelectedPath(): String {
+        val selectedPath = chooser.selectedFile.absolutePath
+        return if (selectedPath.endsWith(".$extension", ignoreCase = true)) {
+            selectedPath
+        } else {
+            "$selectedPath.$extension"
+        }
     }
 
-    val selectedPath = chooser.selectedFile.absolutePath
-    return if (selectedPath.endsWith(".$extension", ignoreCase = true)) {
-        selectedPath
-    } else {
-        "$selectedPath.$extension"
+    if (EventQueue.isDispatchThread()) {
+        return if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            extractSelectedPath()
+        } else {
+            null
+        }
     }
+
+    var selectedPath: String? = null
+    EventQueue.invokeAndWait {
+        if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+            selectedPath = extractSelectedPath()
+        }
+    }
+    return selectedPath
 }
 
 internal fun showNotificationOpenImageFileDialog(
@@ -81,9 +96,19 @@ internal fun showNotificationOpenImageFileDialog(
         isAcceptAllFileFilterUsed = true
     }
 
-    return if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-        chooser.selectedFile?.absolutePath
-    } else {
-        null
+    if (EventQueue.isDispatchThread()) {
+        return if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            chooser.selectedFile?.absolutePath
+        } else {
+            null
+        }
     }
+
+    var selectedPath: String? = null
+    EventQueue.invokeAndWait {
+        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+            selectedPath = chooser.selectedFile?.absolutePath
+        }
+    }
+    return selectedPath
 }

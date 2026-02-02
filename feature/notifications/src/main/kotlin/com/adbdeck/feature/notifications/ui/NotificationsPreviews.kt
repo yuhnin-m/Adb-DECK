@@ -108,6 +108,29 @@ class PreviewNotificationsComponent(
 
 @Preview
 @Composable
+private fun NotificationsToolbarPreview() {
+    AdbDeckTheme(isDarkTheme = false) {
+        NotificationsToolbar(
+            state = NotificationsState(
+                activeDeviceId = "emulator-5554",
+                isRefreshing = false,
+                searchQuery = "message",
+                filter = NotificationsFilter.ALL,
+                sortOrder = NotificationsSortOrder.NEWEST_FIRST,
+            ),
+            onRefresh = {},
+            isComposerOpen = false,
+            onToggleComposer = {},
+            onSearchChanged = {},
+            onClearSearch = {},
+            onFilterChanged = {},
+            onSortOrderChanged = {},
+        )
+    }
+}
+
+@Preview
+@Composable
 private fun NotificationsListLightPreview() {
     AdbDeckTheme(isDarkTheme = false) {
         NotificationsScreen(

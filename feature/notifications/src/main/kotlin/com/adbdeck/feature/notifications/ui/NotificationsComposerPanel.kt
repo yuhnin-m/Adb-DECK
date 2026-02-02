@@ -1,17 +1,11 @@
 package com.adbdeck.feature.notifications.ui
 
 import adbdeck.feature.notifications.generated.resources.Res
-import adbdeck.feature.notifications.generated.resources.notifications_composer_actions_support_note
-import adbdeck.feature.notifications.generated.resources.notifications_composer_actions_add
-import adbdeck.feature.notifications.generated.resources.notifications_composer_actions_remove
-import adbdeck.feature.notifications.generated.resources.notifications_composer_enable_actions
 import adbdeck.feature.notifications.generated.resources.notifications_composer_enable_content_intent
 import adbdeck.feature.notifications.generated.resources.notifications_composer_enable_deep_link
 import adbdeck.feature.notifications.generated.resources.notifications_composer_enable_icon
 import adbdeck.feature.notifications.generated.resources.notifications_composer_enable_large_icon
 import adbdeck.feature.notifications.generated.resources.notifications_composer_enable_picture
-import adbdeck.feature.notifications.generated.resources.notifications_composer_field_action_intent
-import adbdeck.feature.notifications.generated.resources.notifications_composer_field_action_label
 import adbdeck.feature.notifications.generated.resources.notifications_composer_field_big_text
 import adbdeck.feature.notifications.generated.resources.notifications_composer_field_content_intent
 import adbdeck.feature.notifications.generated.resources.notifications_composer_field_conversation
@@ -37,7 +31,6 @@ import adbdeck.feature.notifications.generated.resources.notifications_composer_
 import adbdeck.feature.notifications.generated.resources.notifications_composer_no_device
 import adbdeck.feature.notifications.generated.resources.notifications_composer_pick_host_image
 import adbdeck.feature.notifications.generated.resources.notifications_composer_saved_placeholder
-import adbdeck.feature.notifications.generated.resources.notifications_composer_section_actions
 import adbdeck.feature.notifications.generated.resources.notifications_composer_section_base
 import adbdeck.feature.notifications.generated.resources.notifications_composer_section_intent
 import adbdeck.feature.notifications.generated.resources.notifications_composer_section_source
@@ -58,21 +51,21 @@ import adbdeck.feature.notifications.generated.resources.notifications_composer_
 import adbdeck.feature.notifications.generated.resources.notifications_composer_subtitle_device
 import adbdeck.feature.notifications.generated.resources.notifications_composer_switch_verbose
 import adbdeck.feature.notifications.generated.resources.notifications_composer_title
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -80,7 +73,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,10 +95,6 @@ import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
 import com.adbdeck.core.ui.textfields.AdbTextFieldSize
 import com.adbdeck.feature.notifications.NotificationsState
 import com.adbdeck.feature.notifications.SavedNotification
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import java.io.File
 import java.util.Base64
@@ -117,8 +105,10 @@ import java.util.Base64
  * Содержит расширенный набор настроек `cmd notification post` и инструменты автозаполнения:
  * - prefill из выбранного/сохранённого уведомления;
  * - выбор изображения с ФС хоста с преобразованием в `data:base64` iconspec;
- * - отдельные поля для intent/deep link;
- * - секцию action-кнопок с безопасным fallback.
+ * - отдельные поля для intent/deep link.
+ *
+ * Примечание: `cmd notification post` не поддерживает action-кнопки.
+ * Для открытия приложения при тапе используйте поле content intent или deep link.
  */
 @Composable
 internal fun NotificationsComposerPanel(
@@ -127,8 +117,6 @@ internal fun NotificationsComposerPanel(
     onDismissRequest: () -> Unit,
     onSend: (NotificationPostRequest) -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
-
     val initialRecord = remember(state.selectedRecord, state.savedNotifications) {
         state.selectedRecord ?: state.savedNotifications.firstOrNull()?.record
     }
@@ -146,7 +134,6 @@ internal fun NotificationsComposerPanel(
     var messagingMessagesRaw by remember { mutableStateOf("") }
     var contentIntentSpec by remember { mutableStateOf("") }
     var deepLink by remember { mutableStateOf("") }
-    var actionDrafts by remember { mutableStateOf(defaultActionDrafts(initialRecord)) }
     var verbose by remember { mutableStateOf(false) }
     var selectedSavedId by remember { mutableStateOf<String?>(null) }
 
@@ -155,7 +142,6 @@ internal fun NotificationsComposerPanel(
     var isPictureEnabled by remember { mutableStateOf(false) }
     var isContentIntentEnabled by remember { mutableStateOf(false) }
     var isDeepLinkEnabled by remember { mutableStateOf(false) }
-    var areActionsEnabled by remember { mutableStateOf(false) }
 
     var imageStatusMessage by remember { mutableStateOf<String?>(null) }
     var isPickingIcon by remember { mutableStateOf(false) }
@@ -180,7 +166,6 @@ internal fun NotificationsComposerPanel(
     val parsedMessagingMessages = remember(messagingMessagesRaw) {
         parseMessagingMessages(messagingMessagesRaw)
     }
-    val parsedActionSpecs = remember(actionDrafts) { actionDrafts.toActionSpecs() }
 
     val styleValidationError = remember(
         style,
@@ -214,6 +199,19 @@ internal fun NotificationsComposerPanel(
         tag.isNotBlank() &&
         text.isNotBlank() &&
         styleValidationError == null
+    val pickDialogTitleText = stringResource(Res.string.notifications_composer_pick_host_image)
+    val hostImageSelectedPattern = stringResource(
+        Res.string.notifications_composer_host_image_selected,
+        IMAGE_PATH_PLACEHOLDER,
+    )
+    val hostImageNotFoundPattern = stringResource(
+        Res.string.notifications_composer_host_image_file_not_found,
+        IMAGE_PATH_PLACEHOLDER,
+    )
+    val hostImageEncodeFailedPattern = stringResource(
+        Res.string.notifications_composer_host_image_encode_failed,
+        IMAGE_PATH_PLACEHOLDER,
+    )
 
     fun prefillFromRecord(record: NotificationRecord) {
         val prefilled = prefillComposerFromRecord(record)
@@ -221,8 +219,6 @@ internal fun NotificationsComposerPanel(
         title = prefilled.title
         text = prefilled.text
         bigText = prefilled.bigText
-        actionDrafts = prefilled.actionDrafts
-        areActionsEnabled = prefilled.actionDrafts.isNotEmpty()
     }
 
     fun resetAllFields() {
@@ -240,7 +236,6 @@ internal fun NotificationsComposerPanel(
         messagingMessagesRaw = ""
         contentIntentSpec = ""
         deepLink = ""
-        actionDrafts = defaultActionDrafts(defaultRecord)
         verbose = false
         selectedSavedId = null
         imageStatusMessage = null
@@ -250,7 +245,6 @@ internal fun NotificationsComposerPanel(
         isPictureEnabled = false
         isContentIntentEnabled = false
         isDeepLinkEnabled = false
-        areActionsEnabled = false
     }
 
     fun pickImageTo(
@@ -259,41 +253,32 @@ internal fun NotificationsComposerPanel(
     ) {
         if (!hasDevice) return
 
-        scope.launch {
-            setLoading(true)
-            imageStatusMessage = null
-
-            val pickDialogTitle = getString(Res.string.notifications_composer_pick_host_image)
-            val selectedPath = withContext(Dispatchers.IO) {
-                showNotificationOpenImageFileDialog(pickDialogTitle)
-            }
+        setLoading(true)
+        imageStatusMessage = null
+        try {
+            val selectedPath = showNotificationOpenImageFileDialog(pickDialogTitleText)
 
             if (selectedPath.isNullOrBlank()) {
-                setLoading(false)
-                return@launch
+                return
             }
 
             val encodedResult = encodeImageAsDataUri(path = selectedPath)
             encodedResult.onSuccess { spec ->
                 onValueReady(spec)
-                imageStatusMessage = getString(
-                    Res.string.notifications_composer_host_image_selected,
-                    selectedPath,
-                )
+                imageStatusMessage = hostImageSelectedPattern.replace(IMAGE_PATH_PLACEHOLDER, selectedPath)
             }.onFailure { error ->
-                val messageRes = if (error.message?.contains("not found", ignoreCase = true) == true) {
-                    Res.string.notifications_composer_host_image_file_not_found
+                imageStatusMessage = if (error.message?.contains("not found", ignoreCase = true) == true) {
+                    hostImageNotFoundPattern.replace(IMAGE_PATH_PLACEHOLDER, selectedPath)
                 } else {
-                    Res.string.notifications_composer_host_image_encode_failed
+                    hostImageEncodeFailedPattern.replace(IMAGE_PATH_PLACEHOLDER, selectedPath)
                 }
-                imageStatusMessage = getString(messageRes, selectedPath)
             }
-
+        } finally {
             setLoading(false)
         }
     }
 
-    Column(modifier = modifier) {
+    Column(modifier = modifier.background(MaterialTheme.colorScheme.surface)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -338,6 +323,8 @@ internal fun NotificationsComposerPanel(
                 contentDescription = stringResource(AdbCommonStringRes.actionClose),
             )
         }
+
+        HorizontalDivider()
 
         Column(
             modifier = Modifier
@@ -623,88 +610,11 @@ internal fun NotificationsComposerPanel(
                 }
             }
 
-            AdbSectionCard(
-                title = stringResource(Res.string.notifications_composer_section_actions),
-                titleTextStyle = MaterialTheme.typography.labelMedium,
-            ) {
-                OptionalToggleRow(
-                    label = stringResource(Res.string.notifications_composer_enable_actions),
-                    checked = areActionsEnabled,
-                    onCheckedChange = { enabled ->
-                        areActionsEnabled = enabled
-                        if (enabled && actionDrafts.isEmpty()) {
-                            actionDrafts = listOf(ComposerActionDraft())
-                        }
-                    },
-                )
-
-                if (areActionsEnabled) {
-                    Text(
-                        text = stringResource(Res.string.notifications_composer_actions_support_note),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-
-                    actionDrafts.forEachIndexed { index, draft ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
-                        ) {
-                            AdbOutlinedTextField(
-                                value = draft.title,
-                                onValueChange = { value ->
-                                    actionDrafts = actionDrafts.updateAt(index) {
-                                        it.copy(title = value)
-                                    }
-                                },
-                                modifier = Modifier.weight(0.35f),
-                                placeholder = stringResource(Res.string.notifications_composer_field_action_label),
-                                size = AdbTextFieldSize.SMALL,
-                            )
-                            AdbOutlinedTextField(
-                                value = draft.intentSpec,
-                                onValueChange = { value ->
-                                    actionDrafts = actionDrafts.updateAt(index) {
-                                        it.copy(intentSpec = value)
-                                    }
-                                },
-                                modifier = Modifier.weight(0.65f),
-                                placeholder = stringResource(Res.string.notifications_composer_field_action_intent),
-                                size = AdbTextFieldSize.SMALL,
-                            )
-                            AdbPlainButton(
-                                onClick = {
-                                    actionDrafts = actionDrafts
-                                        .toMutableList()
-                                        .also { mutable -> mutable.removeAt(index) }
-                                },
-                                leadingIcon = Icons.Outlined.Close,
-                                contentDescription = stringResource(
-                                    Res.string.notifications_composer_actions_remove,
-                                ),
-                                type = AdbButtonType.DANGER,
-                            )
-                        }
-                    }
-
-                    AdbOutlinedButton(
-                        onClick = {
-                            actionDrafts = actionDrafts + ComposerActionDraft()
-                        },
-                        text = stringResource(Res.string.notifications_composer_actions_add),
-                        leadingIcon = Icons.Outlined.Add,
-                        size = AdbButtonSize.SMALL,
-                    )
-                }
-            }
-
             AdbFilledButton(
                 onClick = {
                     val resolvedIntentSpec = resolveIntentSpec(
                         explicitIntentSpec = if (isContentIntentEnabled) contentIntentSpec else "",
                         deepLink = if (isDeepLinkEnabled) deepLink else "",
-                        actionSpecs = if (areActionsEnabled) parsedActionSpecs else emptyList(),
                     )
 
                     val request = NotificationPostRequest(
@@ -768,19 +678,14 @@ private data class ComposerPrefill(
     val title: String,
     val text: String,
     val bigText: String,
-    val actionDrafts: List<ComposerActionDraft>,
 )
 
 private fun prefillComposerFromRecord(record: NotificationRecord): ComposerPrefill {
-    val title = record.title.orEmpty()
-    val text = defaultText(record)
-
     return ComposerPrefill(
         tag = defaultTag(record),
-        title = title,
-        text = text,
+        title = record.title.orEmpty(),
+        text = defaultText(record),
         bigText = record.bigText.orEmpty(),
-        actionDrafts = defaultActionDrafts(record),
     )
 }
 
@@ -820,38 +725,9 @@ private fun parseMessagingMessages(raw: String): List<NotificationPostMessage> =
             }
         }
 
-private data class NotificationActionSpec(
-    val title: String,
-    val intentSpec: String,
-)
-
-private data class ComposerActionDraft(
-    val title: String = "",
-    val intentSpec: String = "",
-)
-
-private fun defaultActionDrafts(record: NotificationRecord?): List<ComposerActionDraft> =
-    record?.actionTitles
-        ?.map { actionTitle -> ComposerActionDraft(title = actionTitle) }
-        .orEmpty()
-
-private fun List<ComposerActionDraft>.toActionSpecs(): List<NotificationActionSpec> =
-    asSequence()
-        .mapNotNull { draft ->
-            val title = draft.title.trim()
-            val intentSpec = draft.intentSpec.trim()
-            if (title.isBlank() || intentSpec.isBlank()) {
-                null
-            } else {
-                NotificationActionSpec(title = title, intentSpec = intentSpec)
-            }
-        }
-        .toList()
-
 private fun resolveIntentSpec(
     explicitIntentSpec: String,
     deepLink: String,
-    actionSpecs: List<NotificationActionSpec>,
 ): String? {
     explicitIntentSpec.trim().takeIf { it.isNotBlank() }?.let { return it }
 
@@ -859,7 +735,7 @@ private fun resolveIntentSpec(
         return "activity -a android.intent.action.VIEW -d \"$url\""
     }
 
-    return actionSpecs.firstOrNull()?.intentSpec
+    return null
 }
 
 private fun buildSavedOptionLabel(saved: SavedNotification): String {
@@ -870,15 +746,13 @@ private fun buildSavedOptionLabel(saved: SavedNotification): String {
     return "${saved.record.packageName}$suffix (${formatNotificationFullTime(saved.savedAt)})"
 }
 
-private suspend fun encodeImageAsDataUri(path: String): Result<String> = withContext(Dispatchers.IO) {
-    runCatching {
-        val sourceFile = File(path)
-        require(sourceFile.isFile) { "Host image file not found." }
-        val bytes = sourceFile.readBytes()
-        require(bytes.isNotEmpty()) { "Host image file is empty." }
-        val encoded = Base64.getEncoder().encodeToString(bytes)
-        "data:base64,$encoded"
-    }
+private fun encodeImageAsDataUri(path: String): Result<String> = runCatching {
+    val sourceFile = File(path)
+    require(sourceFile.isFile) { "Host image file not found." }
+    val bytes = sourceFile.readBytes()
+    require(bytes.isNotEmpty()) { "Host image file is empty." }
+    val encoded = Base64.getEncoder().encodeToString(bytes)
+    "data:base64,$encoded"
 }
 
 @Composable
@@ -903,10 +777,4 @@ private fun OptionalToggleRow(
     }
 }
 
-private fun List<ComposerActionDraft>.updateAt(
-    index: Int,
-    transform: (ComposerActionDraft) -> ComposerActionDraft,
-): List<ComposerActionDraft> =
-    mapIndexed { itemIndex, item ->
-        if (itemIndex == index) transform(item) else item
-    }
+private const val IMAGE_PATH_PLACEHOLDER: String = "{path}"

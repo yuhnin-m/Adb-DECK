@@ -23,6 +23,8 @@ class LoggingProcessRunner(
         timeoutMs: Long,
     ): ProcessResult {
         val startedAt = System.currentTimeMillis()
+        val historyCommand = command.sanitizeForHistory()
+        val historyCommandText = historyCommand.toShellLikeString()
 
         return try {
             val result = delegate.run(command = command, timeoutMs = timeoutMs)
@@ -30,8 +32,8 @@ class LoggingProcessRunner(
                 ProcessHistoryEntry(
                     id = nextId.getAndIncrement(),
                     timestampEpochMs = startedAt,
-                    command = command,
-                    commandText = command.toShellLikeString(),
+                    command = historyCommand,
+                    commandText = historyCommandText,
                     timeoutMs = timeoutMs,
                     durationMs = (System.currentTimeMillis() - startedAt).coerceAtLeast(0L),
                     exitCode = result.exitCode,
@@ -56,8 +58,8 @@ class LoggingProcessRunner(
                 ProcessHistoryEntry(
                     id = nextId.getAndIncrement(),
                     timestampEpochMs = startedAt,
-                    command = command,
-                    commandText = command.toShellLikeString(),
+                    command = historyCommand,
+                    commandText = historyCommandText,
                     timeoutMs = timeoutMs,
                     durationMs = (System.currentTimeMillis() - startedAt).coerceAtLeast(0L),
                     exitCode = null,
@@ -92,15 +94,47 @@ class LoggingProcessRunner(
         return getOrNull(markerIndex + 1)?.takeIf { it.isNotBlank() }
     }
 
-    private fun List<String>.toShellLikeString(): String = joinToString(separator = " ") { token ->
-        if (token.any { character -> character.isWhitespace() || character == '"' }) {
-            "\"${token.replace("\"", "\\\"")}\""
-        } else {
-            token
+    private fun List<String>.sanitizeForHistory(): List<String> = map { token ->
+        token.sanitizeTokenForHistory()
+    }
+
+    private fun String.sanitizeTokenForHistory(): String {
+        if (isDataBase64Uri()) {
+            val header = substringBefore(',', missingDelimiterValue = DATA_BASE64_HEADER)
+            return "$header,<omitted $length chars>"
         }
+        if (length <= MAX_HISTORY_TOKEN_LENGTH) return this
+
+        val head = take(MAX_HISTORY_TOKEN_HEAD_LENGTH)
+        val tail = takeLast(MAX_HISTORY_TOKEN_TAIL_LENGTH)
+        val hiddenCount = (length - head.length - tail.length).coerceAtLeast(0)
+        return "$head<...$hiddenCount chars...>$tail"
+    }
+
+    private fun String.isDataBase64Uri(): Boolean {
+        val lower = lowercase()
+        return lower.startsWith("data:base64,") || (lower.startsWith("data:") && lower.contains(";base64,"))
+    }
+
+    private fun List<String>.toShellLikeString(): String {
+        val text = joinToString(separator = " ") { token ->
+            if (token.any { character -> character.isWhitespace() || character == '"' }) {
+                "\"${token.replace("\"", "\\\"")}\""
+            } else {
+                token
+            }
+        }
+        if (text.length <= MAX_HISTORY_COMMAND_TEXT_LENGTH) return text
+        val omitted = text.length - MAX_HISTORY_COMMAND_TEXT_LENGTH
+        return text.take(MAX_HISTORY_COMMAND_TEXT_LENGTH) + "<...$omitted chars omitted...>"
     }
 
     private companion object {
         const val DEFAULT_MAX_SHORT_ERROR_LENGTH: Int = 8 * 1024
+        const val MAX_HISTORY_TOKEN_LENGTH: Int = 1_024
+        const val MAX_HISTORY_TOKEN_HEAD_LENGTH: Int = 320
+        const val MAX_HISTORY_TOKEN_TAIL_LENGTH: Int = 120
+        const val MAX_HISTORY_COMMAND_TEXT_LENGTH: Int = 4 * 1_024
+        const val DATA_BASE64_HEADER: String = "data:base64"
     }
 }

@@ -10,12 +10,12 @@ import adbdeck.feature.notifications.generated.resources.notifications_sort_olde
 import adbdeck.feature.notifications.generated.resources.notifications_sort_package
 import adbdeck.feature.notifications.generated.resources.notifications_toolbar_close_composer
 import adbdeck.feature.notifications.generated.resources.notifications_toolbar_compose
-import adbdeck.feature.notifications.generated.resources.notifications_toolbar_package_placeholder
 import adbdeck.feature.notifications.generated.resources.notifications_toolbar_search_placeholder
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -40,6 +40,7 @@ import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.i18n.AdbCommonStringRes
 import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
@@ -59,8 +60,6 @@ internal fun NotificationsToolbar(
     onToggleComposer: () -> Unit,
     onSearchChanged: (String) -> Unit,
     onClearSearch: () -> Unit,
-    onPackageFilterChanged: (String) -> Unit,
-    onClearPackageFilter: () -> Unit,
     onFilterChanged: (NotificationsFilter) -> Unit,
     onSortOrderChanged: (NotificationsSortOrder) -> Unit,
 ) {
@@ -79,17 +78,29 @@ internal fun NotificationsToolbar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
             ) {
-                AdbOutlinedButton(
+                AdbFilledButton(
                     onClick = onRefresh,
+                    text = stringResource(AdbCommonStringRes.actionRefresh),
                     loading = state.isRefreshing,
                     enabled = state.activeDeviceId != null,
                     leadingIcon = Icons.Outlined.Refresh,
-                    contentDescription = stringResource(AdbCommonStringRes.actionRefresh),
                     size = AdbButtonSize.MEDIUM,
                     cornerRadius = AdbCornerRadius.MEDIUM,
                 )
 
-                AdbOutlinedButton(
+                AdbOutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = onSearchChanged,
+                    modifier = Modifier.width(TOOLBAR_SEARCH_FIELD_WIDTH),
+                    placeholder = stringResource(Res.string.notifications_toolbar_search_placeholder),
+                    size = AdbTextFieldSize.MEDIUM,
+                    trailingIcon = if (state.searchQuery.isNotEmpty()) Icons.Outlined.Clear else null,
+                    onTrailingIconClick = if (state.searchQuery.isNotEmpty()) onClearSearch else null,
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                AdbFilledButton(
                     onClick = onToggleComposer,
                     text = if (isComposerOpen) {
                         stringResource(Res.string.notifications_toolbar_close_composer)
@@ -100,31 +111,6 @@ internal fun NotificationsToolbar(
                     enabled = state.activeDeviceId != null,
                     size = AdbButtonSize.MEDIUM,
                     cornerRadius = AdbCornerRadius.MEDIUM,
-                )
-
-                AdbOutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = onSearchChanged,
-                    modifier = Modifier.weight(1f),
-                    placeholder = stringResource(Res.string.notifications_toolbar_search_placeholder),
-                    size = AdbTextFieldSize.MEDIUM,
-                    trailingIcon = if (state.searchQuery.isNotEmpty()) Icons.Outlined.Clear else null,
-                    onTrailingIconClick = if (state.searchQuery.isNotEmpty()) onClearSearch else null,
-                )
-
-                AdbOutlinedTextField(
-                    value = state.packageFilter,
-                    onValueChange = onPackageFilterChanged,
-                    modifier = Modifier.width(Dimensions.sidebarWidth),
-                    placeholder = stringResource(Res.string.notifications_toolbar_package_placeholder),
-                    size = AdbTextFieldSize.MEDIUM,
-                    trailingIcon = if (state.packageFilter.isNotEmpty()) Icons.Outlined.Clear else null,
-                    onTrailingIconClick = if (state.packageFilter.isNotEmpty()) onClearPackageFilter else null,
-                )
-
-                NotificationsSortMenu(
-                    selectedSortOrder = state.sortOrder,
-                    onSortOrderChanged = onSortOrderChanged,
                 )
             }
 
@@ -158,7 +144,7 @@ internal fun NotificationsToolbar(
                 )
             }
 
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Dimensions.paddingSmall)
@@ -168,9 +154,17 @@ internal fun NotificationsToolbar(
                     options = filterOptions,
                     selectedValue = state.filter,
                     onValueSelected = onFilterChanged,
+                    modifier = Modifier.align(Alignment.Center),
                     size = AdbSegmentedButtonSize.SMALL,
                     cornerRadius = AdbCornerRadius.MEDIUM,
                 )
+
+                Box(modifier = Modifier.align(Alignment.CenterEnd)) {
+                    NotificationsSortMenu(
+                        selectedSortOrder = state.sortOrder,
+                        onSortOrderChanged = onSortOrderChanged,
+                    )
+                }
             }
         }
     }
@@ -226,3 +220,5 @@ private fun sortOrderLabel(order: NotificationsSortOrder): String = when (order)
     NotificationsSortOrder.OLDEST_FIRST -> stringResource(Res.string.notifications_sort_oldest)
     NotificationsSortOrder.BY_PACKAGE -> stringResource(Res.string.notifications_sort_package)
 }
+
+private val TOOLBAR_SEARCH_FIELD_WIDTH = Dimensions.sidebarWidth + Dimensions.paddingXLarge

@@ -59,8 +59,6 @@ fun NotificationsScreen(component: NotificationsComponent) {
                 onToggleComposer = { isComposerPanelOpen = !isComposerPanelOpen },
                 onSearchChanged = component::onSearchChanged,
                 onClearSearch = { component.onSearchChanged("") },
-                onPackageFilterChanged = component::onPackageFilterChanged,
-                onClearPackageFilter = { component.onPackageFilterChanged("") },
                 onFilterChanged = component::onFilterChanged,
                 onSortOrderChanged = component::onSortOrderChanged,
             )
@@ -87,9 +85,7 @@ fun NotificationsScreen(component: NotificationsComponent) {
 
                         is NotificationsListState.Success -> {
                             if (state.displayedNotifications.isEmpty()) {
-                                val emptyMessageRes = if (
-                                    state.searchQuery.isNotBlank() || state.packageFilter.isNotBlank()
-                                ) {
+                                val emptyMessageRes = if (state.searchQuery.isNotBlank()) {
                                     Res.string.notifications_empty_not_found
                                 } else {
                                     Res.string.notifications_empty_none
@@ -129,21 +125,17 @@ fun NotificationsScreen(component: NotificationsComponent) {
                 }
 
                 if (isComposerPanelOpen) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .width(Dimensions.paddingXSmall / 4)
-                            .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)),
-                    )
-
-                    NotificationsComposerPanel(
-                        modifier = Modifier
-                            .width(Dimensions.sidebarWidth * 2)
-                            .fillMaxHeight(),
-                        state = state,
-                        onDismissRequest = { isComposerPanelOpen = false },
-                        onSend = component::onPostNotification,
-                    )
+                    Row {
+                        VerticalDivider()
+                        NotificationsComposerPanel(
+                            modifier = Modifier
+                                .width(Dimensions.sidebarWidth * 2)
+                                .fillMaxHeight(),
+                            state = state,
+                            onDismissRequest = { isComposerPanelOpen = false },
+                            onSend = component::onPostNotification,
+                        )
+                    }
                 }
             }
 

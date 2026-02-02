@@ -407,13 +407,8 @@ class DefaultNotificationsComponent(
                 )
                 onRefresh()
             }.onFailure { error ->
-                val details = error.readableDetailsOrNull() ?: unknownErrorMessage
                 _state.update { current -> current.copy(isPostingNotification = false) }
-                showFeedbackMessageResource(
-                    messageRes = Res.string.notifications_error_post_with_details,
-                    isError = true,
-                    details,
-                )
+                showPostNotificationError(error = error, fallbackDetails = unknownErrorMessage)
             }
         }
     }
@@ -494,6 +489,41 @@ class DefaultNotificationsComponent(
     }
 
     private fun Throwable.readableDetailsOrNull(): String? = message?.takeIf { it.isNotBlank() }
+
+    /**
+     * Нормализует известные ошибки `cmd notification post` в понятные пользователю сообщения.
+     */
+    private suspend fun showPostNotificationError(
+        error: Throwable,
+        fallbackDetails: String,
+    ) {
+        val details = error.readableDetailsOrNull() ?: fallbackDetails
+        val detailsLower = details.lowercase()
+
+        when {
+            detailsLower.contains("permission denial") && detailsLower.contains("getintentsender()") -> {
+                showFeedbackMessageResource(
+                    messageRes = Res.string.notifications_error_post_content_intent_unsupported,
+                    isError = true,
+                )
+            }
+
+            detailsLower.contains("not a bitmap") -> {
+                showFeedbackMessageResource(
+                    messageRes = Res.string.notifications_error_post_bigpicture_invalid_bitmap,
+                    isError = true,
+                )
+            }
+
+            else -> {
+                showFeedbackMessageResource(
+                    messageRes = Res.string.notifications_error_post_with_details,
+                    isError = true,
+                    details,
+                )
+            }
+        }
+    }
 
     private fun showFeedbackResource(
         messageRes: StringResource,
