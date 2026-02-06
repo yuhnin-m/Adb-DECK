@@ -4,6 +4,7 @@ import com.adbdeck.core.adb.api.contacts.Contact
 import com.adbdeck.core.adb.api.contacts.ContactAccount
 import com.adbdeck.core.adb.api.contacts.EmailType
 import com.adbdeck.core.adb.api.contacts.PhoneType
+import com.adbdeck.feature.contacts.models.ContactsState
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -43,10 +44,13 @@ interface ContactsComponent {
     /** Обновить детальную информацию текущего выбранного контакта. */
     fun onRefreshDetail()
 
-    // ── Форма добавления ─────────────────────────────────────────────────────
+    // ── Форма контакта (создание/редактирование) ────────────────────────────
 
     /** Открыть диалог добавления нового контакта. */
     fun onShowAddForm()
+
+    /** Открыть диалог редактирования выбранного контакта (из панели деталей). */
+    fun onShowEditForm()
 
     /** Изменить поле "Имя" в форме добавления. */
     fun onAddFormFirstNameChanged(value: String)
@@ -81,7 +85,7 @@ interface ContactsComponent {
     /** Изменить заметки в форме добавления. */
     fun onAddFormNotesChanged(value: String)
 
-    /** Отправить форму — создать новый контакт на устройстве. */
+    /** Отправить форму — создать или обновить контакт на устройстве. */
     fun onSubmitAddForm()
 
     /** Закрыть диалог добавления без сохранения. */
@@ -146,6 +150,9 @@ interface ContactsComponent {
     fun onCancelOperation()
 
     // ── Feedback ─────────────────────────────────────────────────────────────
+
+    /** Скрыть предупреждающий баннер про ограничения ADB. */
+    fun onDismissSafetyBanner()
 
     /** Скрыть текущее feedback-уведомление. */
     fun onDismissFeedback()

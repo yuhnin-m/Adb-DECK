@@ -5,6 +5,7 @@ import com.adbdeck.core.adb.api.intents.IntentLaunchClient
 import com.adbdeck.core.adb.api.intents.IntentParams
 import com.adbdeck.core.adb.api.intents.LaunchResult
 import com.adbdeck.core.process.ProcessRunner
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 
 /**
  * Реализация [com.adbdeck.core.adb.api.intents.IntentLaunchClient] на основе `adb shell am start`.
@@ -58,7 +59,7 @@ class SystemIntentLaunchClient(
         deviceId: String,
         adbPath: String,
         params: DeepLinkParams,
-    ): Result<LaunchResult> = runCatching {
+    ): Result<LaunchResult> = runCatchingPreserveCancellation {
         val command = buildDeepLinkCommand(deviceId, adbPath, params)
         val result = processRunner.run(buildDeepLinkArgs(adbPath, deviceId, params))
         LaunchResult(
@@ -73,7 +74,7 @@ class SystemIntentLaunchClient(
         deviceId: String,
         adbPath: String,
         params: IntentParams,
-    ): Result<LaunchResult> = runCatching {
+    ): Result<LaunchResult> = runCatchingPreserveCancellation {
         val command = buildIntentCommand(deviceId, adbPath, params)
         val result = processRunner.run(buildIntentArgs(adbPath, deviceId, params))
         LaunchResult(

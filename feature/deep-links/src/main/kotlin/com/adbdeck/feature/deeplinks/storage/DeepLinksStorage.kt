@@ -5,9 +5,12 @@ import com.adbdeck.core.adb.api.intents.ExtraType
 import com.adbdeck.core.adb.api.intents.IntentExtra
 import com.adbdeck.core.adb.api.intents.IntentParams
 import com.adbdeck.core.adb.api.intents.LaunchMode
-import com.adbdeck.feature.deeplinks.IntentTemplate
-import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
+import com.adbdeck.feature.deeplinks.models.IntentTemplate
+import com.adbdeck.feature.deeplinks.models.LaunchHistoryEntry
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -86,37 +89,61 @@ class DeepLinksStorage {
 
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
     private val storageFile = File(System.getProperty("user.home"), ".adbdeck/deep-links.json")
+    private val ioMutex = Mutex()
 
     /**
      * Загрузить данные из файла.
-     * Возвращает пустой [DeepLinksStorageData] при первом запуске или ошибке чтения.
+     * Возвращает пустые коллекции при первом запуске (когда файла еще нет).
+     * Ошибки чтения/декодирования передаются как [Result.failure].
      */
-    suspend fun load(): Pair<List<LaunchHistoryEntry>, List<IntentTemplate>> =
+    suspend fun load(): Result<Pair<List<LaunchHistoryEntry>, List<IntentTemplate>>> =
         withContext(Dispatchers.IO) {
-            if (!storageFile.exists()) return@withContext Pair(emptyList(), emptyList())
-            runCatching {
-                val data = json.decodeFromString<DeepLinksStorageData>(storageFile.readText())
-                Pair(
-                    data.history.map { it.toDomain() },
-                    data.templates.map { it.toDomain() },
-                )
-            }.getOrDefault(Pair(emptyList(), emptyList()))
+            ioMutex.withLock {
+                if (!storageFile.exists()) {
+                    return@withLock Result.success(Pair(emptyList(), emptyList()))
+                }
+                runCatchingPreserveCancellation {
+                    val data = json.decodeFromString<DeepLinksStorageData>(storageFile.readText())
+                    Pair(
+                        data.history.map { it.toDomain() },
+                        data.templates.map { it.toDomain() },
+                    )
+                }
+            }
         }
 
     /**
      * Сохранить историю и шаблоны в файл.
+     * Ошибки записи передаются как [Result.failure].
      */
-    suspend fun save(history: List<LaunchHistoryEntry>, templates: List<IntentTemplate>) =
+    suspend fun save(history: List<LaunchHistoryEntry>, templates: List<IntentTemplate>): Result<Unit> =
         withContext(Dispatchers.IO) {
-            runCatching {
-                storageFile.parentFile?.mkdirs()
-                val data = DeepLinksStorageData(
-                    history = history.map { it.toStorage() },
-                    templates = templates.map { it.toStorage() },
-                )
-                storageFile.writeText(json.encodeToString(data))
+            ioMutex.withLock {
+                runCatchingPreserveCancellation {
+                    storageFile.parentFile?.mkdirs()
+                    val data = DeepLinksStorageData(
+                        history = history.map { it.toStorage() },
+                        templates = templates.map { it.toStorage() },
+                    )
+                    writeAtomically(json.encodeToString(data))
+                }
             }
         }
+
+    private fun writeAtomically(content: String) {
+        val parentDir = storageFile.parentFile
+        val tempFile = if (parentDir != null) {
+            File(parentDir, "${storageFile.name}.tmp")
+        } else {
+            File("${storageFile.path}.tmp")
+        }
+
+        tempFile.writeText(content)
+        if (!tempFile.renameTo(storageFile)) {
+            storageFile.writeText(content)
+            tempFile.delete()
+        }
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

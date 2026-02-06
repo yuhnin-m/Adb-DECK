@@ -96,6 +96,26 @@ interface ContactsClient {
     ): Result<Unit>
 
     /**
+     * Обновить существующий контакт по ID.
+     *
+     * Для совместимости с разными Android-сборками имплементация может выполнять
+     * обновление как последовательность add/delete, если прямой update через provider
+     * недоступен или нестабилен.
+     *
+     * @param deviceId  ID устройства.
+     * @param contactId ID контакта из таблицы `contacts`.
+     * @param contact   Новые данные контакта.
+     * @param adbPath   Путь к adb.
+     * @return [Result.success] при успехе, [Result.failure] — при ошибке.
+     */
+    suspend fun updateContact(
+        deviceId: String,
+        contactId: Long,
+        contact: NewContactData,
+        adbPath: String = "adb",
+    ): Result<Unit>
+
+    /**
      * Удалить контакт по ID.
      *
      * Выполняет `adb shell content delete --uri content://com.android.contacts/contacts/<id>`.

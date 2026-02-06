@@ -2,6 +2,10 @@ package com.adbdeck.feature.deeplinks
 
 import com.adbdeck.core.adb.api.intents.ExtraType
 import com.adbdeck.core.adb.api.intents.LaunchMode
+import com.adbdeck.feature.deeplinks.models.DeepLinksState
+import com.adbdeck.feature.deeplinks.models.DeepLinksTab
+import com.adbdeck.feature.deeplinks.models.IntentTemplate
+import com.adbdeck.feature.deeplinks.models.LaunchHistoryEntry
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -37,6 +41,9 @@ interface DeepLinksComponent {
     fun onItCategoryAdd(category: String)
     fun onItCategoryRemove(index: Int)
     fun onItFlagsChanged(value: String)
+    fun onShowIntentFlagsDialog()
+    fun onDismissIntentFlagsDialog()
+    fun onApplyIntentFlagsSelection(selectedFlagKeys: Set<String>)
     fun onItExtraAdd()
     fun onItExtraRemove(index: Int)
     fun onItExtraKeyChanged(index: Int, key: String)
@@ -86,6 +93,11 @@ interface DeepLinksComponent {
 
     /** Удалить шаблон по ID. */
     fun onDeleteTemplate(id: String)
+
+    // ── Feedback ───────────────────────────────────────────────────────────────
+
+    /** Закрыть текущее feedback-сообщение. */
+    fun onDismissFeedback()
 
     /**
      * Предзаполнить поле URI в форме Deep Link.

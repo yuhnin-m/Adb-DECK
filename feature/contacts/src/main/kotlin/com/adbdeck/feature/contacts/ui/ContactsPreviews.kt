@@ -12,12 +12,12 @@ import com.adbdeck.core.adb.api.contacts.EmailType
 import com.adbdeck.core.adb.api.contacts.PhoneType
 import com.adbdeck.core.adb.api.contacts.RawContactInfo
 import com.adbdeck.core.designsystem.AdbDeckTheme
-import com.adbdeck.feature.contacts.AddContactFormState
-import com.adbdeck.feature.contacts.ContactDetailState
-import com.adbdeck.feature.contacts.ContactFeedback
 import com.adbdeck.feature.contacts.ContactsComponent
-import com.adbdeck.feature.contacts.ContactsListState
-import com.adbdeck.feature.contacts.ContactsState
+import com.adbdeck.feature.contacts.models.AddContactFormState
+import com.adbdeck.feature.contacts.models.ContactDetailState
+import com.adbdeck.feature.contacts.models.ContactFeedback
+import com.adbdeck.feature.contacts.models.ContactsListState
+import com.adbdeck.feature.contacts.models.ContactsState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -81,6 +81,7 @@ private class PreviewContactsComponent(
     override fun onCloseDetail()                         = Unit
     override fun onRefreshDetail()                       = Unit
     override fun onShowAddForm()                         = Unit
+    override fun onShowEditForm()                        = Unit
     override fun onAddFormFirstNameChanged(value: String)  = Unit
     override fun onAddFormLastNameChanged(value: String)   = Unit
     override fun onAddFormAccountChanged(account: ContactAccount) = Unit
@@ -104,6 +105,7 @@ private class PreviewContactsComponent(
     override fun onImportFromJson(path: String)            = Unit
     override fun onImportFromVcf(path: String)             = Unit
     override fun onCancelOperation()                       = Unit
+    override fun onDismissSafetyBanner()                   = Unit
     override fun onDismissFeedback()                       = Unit
 }
 

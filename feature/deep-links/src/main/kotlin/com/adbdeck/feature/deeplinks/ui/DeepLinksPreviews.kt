@@ -5,10 +5,10 @@ import com.adbdeck.core.adb.api.intents.ExtraType
 import com.adbdeck.core.adb.api.intents.LaunchMode
 import com.adbdeck.core.adb.api.intents.LaunchResult
 import com.adbdeck.feature.deeplinks.DeepLinksComponent
-import com.adbdeck.feature.deeplinks.DeepLinksState
-import com.adbdeck.feature.deeplinks.DeepLinksTab
-import com.adbdeck.feature.deeplinks.IntentTemplate
-import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
+import com.adbdeck.feature.deeplinks.models.DeepLinksState
+import com.adbdeck.feature.deeplinks.models.DeepLinksTab
+import com.adbdeck.feature.deeplinks.models.IntentTemplate
+import com.adbdeck.feature.deeplinks.models.LaunchHistoryEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -33,6 +33,9 @@ private class PreviewDeepLinksComponent(
     override fun onItCategoryAdd(category: String) = Unit
     override fun onItCategoryRemove(index: Int) = Unit
     override fun onItFlagsChanged(value: String) = Unit
+    override fun onShowIntentFlagsDialog() = Unit
+    override fun onDismissIntentFlagsDialog() = Unit
+    override fun onApplyIntentFlagsSelection(selectedFlagKeys: Set<String>) = Unit
     override fun onItExtraAdd() = Unit
     override fun onItExtraRemove(index: Int) = Unit
     override fun onItExtraKeyChanged(index: Int, key: String) = Unit
@@ -50,6 +53,7 @@ private class PreviewDeepLinksComponent(
     override fun onLaunchTemplate(template: IntentTemplate) = Unit
     override fun onRestoreFromTemplate(template: IntentTemplate) = Unit
     override fun onDeleteTemplate(id: String) = Unit
+    override fun onDismissFeedback() = Unit
     override fun prefillDeepLinkUri(uri: String) = Unit
 }
 

@@ -2,7 +2,8 @@ package com.adbdeck.core.ui.textfields
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -245,7 +246,8 @@ private fun <T> AdbBaseDropdownTextField(
         // Открываем меню кликом по всей области поля, а не только по стрелке.
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .height(size.height)
                 .clip(RoundedCornerShape(cornerRadius.value))
                 .clickable(enabled = enabled) {
                     expanded = !expanded

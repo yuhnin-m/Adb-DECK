@@ -32,10 +32,10 @@ import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.devices.DevicesState
 import com.adbdeck.feature.apkinstall.ApkInstallComponent
 import com.adbdeck.feature.deeplinks.DeepLinksComponent
-import com.adbdeck.feature.deeplinks.DeepLinksState
-import com.adbdeck.feature.deeplinks.DeepLinksTab
-import com.adbdeck.feature.deeplinks.IntentTemplate
-import com.adbdeck.feature.deeplinks.LaunchHistoryEntry
+import com.adbdeck.feature.deeplinks.models.DeepLinksState
+import com.adbdeck.feature.deeplinks.models.DeepLinksTab
+import com.adbdeck.feature.deeplinks.models.IntentTemplate
+import com.adbdeck.feature.deeplinks.models.LaunchHistoryEntry
 import com.adbdeck.feature.deviceinfo.DeviceInfoComponent
 import com.adbdeck.feature.deviceinfo.DeviceInfoRow
 import com.adbdeck.feature.deviceinfo.DeviceInfoSection
@@ -58,7 +58,7 @@ import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatDisplayMode
 import com.adbdeck.feature.logcat.LogcatState
 import com.adbdeck.feature.contacts.ContactsComponent
-import com.adbdeck.feature.contacts.ContactsState
+import com.adbdeck.feature.contacts.models.ContactsState
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackageSortOrder
 import com.adbdeck.feature.packages.PackagesState
@@ -312,6 +312,7 @@ private class PreviewContactsComponent : ContactsComponent {
     override fun onCloseDetail() = Unit
     override fun onRefreshDetail() = Unit
     override fun onShowAddForm() = Unit
+    override fun onShowEditForm() = Unit
     override fun onAddFormFirstNameChanged(value: String) = Unit
     override fun onAddFormLastNameChanged(value: String) = Unit
     override fun onAddFormAccountChanged(account: ContactAccount) = Unit
@@ -335,6 +336,7 @@ private class PreviewContactsComponent : ContactsComponent {
     override fun onImportFromJson(path: String) = Unit
     override fun onImportFromVcf(path: String) = Unit
     override fun onCancelOperation() = Unit
+    override fun onDismissSafetyBanner() = Unit
     override fun onDismissFeedback() = Unit
 }
 
@@ -353,6 +355,9 @@ private class PreviewDeepLinksComponent : DeepLinksComponent {
     override fun onItCategoryAdd(category: String) = Unit
     override fun onItCategoryRemove(index: Int) = Unit
     override fun onItFlagsChanged(value: String) = Unit
+    override fun onShowIntentFlagsDialog() = Unit
+    override fun onDismissIntentFlagsDialog() = Unit
+    override fun onApplyIntentFlagsSelection(selectedFlagKeys: Set<String>) = Unit
     override fun onItExtraAdd() = Unit
     override fun onItExtraRemove(index: Int) = Unit
     override fun onItExtraKeyChanged(index: Int, key: String) = Unit
@@ -370,6 +375,7 @@ private class PreviewDeepLinksComponent : DeepLinksComponent {
     override fun onLaunchTemplate(template: IntentTemplate) = Unit
     override fun onRestoreFromTemplate(template: IntentTemplate) = Unit
     override fun onDeleteTemplate(id: String) = Unit
+    override fun onDismissFeedback() = Unit
     override fun prefillDeepLinkUri(uri: String) = Unit
 }
 

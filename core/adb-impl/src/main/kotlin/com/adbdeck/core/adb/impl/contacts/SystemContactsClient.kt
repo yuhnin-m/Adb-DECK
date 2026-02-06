@@ -17,6 +17,7 @@ import com.adbdeck.core.adb.api.contacts.RawContactInfo
 import com.adbdeck.core.process.ProcessResult
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.collections.plusAssign
@@ -65,6 +66,7 @@ class SystemContactsClient(
 
     /** Извлекает числовой ID из URI result: «result: uri=.../raw_contacts/123». */
     private val INSERT_ID_REGEX = Regex("""/(\d+)\s*${'$'}""")
+    private val RAW_CONTACT_URI_ID_REGEX = Regex("""raw_contacts/(\d+)""")
 
     // ── Публичный API ─────────────────────────────────────────────────────────
 
@@ -285,82 +287,195 @@ class SystemContactsClient(
         adbPath: String,
     ): Result<Unit> = runCatchingPreserveCancellation {
         withContext(Dispatchers.IO) {
+            val latestRawIdBeforeInsert = queryLatestRawContactId(
+                deviceId = deviceId,
+                adbPath = adbPath,
+            )
+
             // Шаг 1: создать raw_contact в выбранном аккаунте (или локально, если поля пустые)
             val rawResult = processRunner.run(
                 adbPath, "-s", deviceId,
                 "shell", "content", "insert",
                 "--uri", "content://com.android.contacts/raw_contacts",
-                "--bind", "account_type:s:${contact.accountType}",
-                "--bind", "account_name:s:${contact.accountName}",
+                "--bind", shellQuoteAdbBind(
+                    column = "account_type",
+                    type = "s",
+                    value = contact.accountType,
+                ),
+                "--bind", shellQuoteAdbBind(
+                    column = "account_name",
+                    type = "s",
+                    value = contact.accountName,
+                ),
+            )
+            ensureCommandSucceeded(
+                result = rawResult,
+                action = "создания raw contact",
             )
 
-            // Извлекаем rawContactId из вывода «result: uri=.../raw_contacts/123»
-            val rawContactId = INSERT_ID_REGEX
-                .find(rawResult.stdout.trim())
-                ?.groupValues
-                ?.get(1)
-                ?.toLongOrNull()
+            // На части Android-сборок insert может вернуть пустой stdout при exit=0.
+            val rawContactId = extractRawContactIdFromInsertOutput(rawResult)
+                ?: inferRawContactIdAfterInsert(
+                    deviceId = deviceId,
+                    adbPath = adbPath,
+                    latestRawIdBeforeInsert = latestRawIdBeforeInsert,
+                )
                 ?: error(
-                    "Не удалось создать контакт: устройство отклонило вставку raw_contact. " +
-                            "Возможно, устройство запрещает создание локальных контактов — " +
-                            "добавьте контакт вручную на устройстве. Вывод: ${rawResult.stdout.take(300)}"
+                    "Не удалось определить ID созданного raw_contact. " +
+                            "stdout=${rawResult.stdout.take(200)}, stderr=${rawResult.stderr.take(200)}"
                 )
 
-            // Шаг 2: вставить строку с именем
-            insertDataRow(
-                deviceId, adbPath, rawContactId,
-                mimetype = "vnd.android.cursor.item/name",
-                data1 = contact.displayName,
-                data2 = contact.firstName,
-                data3 = contact.lastName,
-            )
-
-            // Шаг 3: вставить телефоны
-            if (contact.phone1.isNotBlank()) {
+            try {
+                // Шаг 2: вставить строку с именем
                 insertDataRow(
                     deviceId, adbPath, rawContactId,
-                    mimetype = "vnd.android.cursor.item/phone_v2",
-                    data1 = contact.phone1,
-                    data2 = contact.phone1Type.adbInt.toString(),
+                    mimetype = "vnd.android.cursor.item/name",
+                    data1 = contact.displayName,
+                    data2 = contact.firstName,
+                    data3 = contact.lastName,
+                )
+
+                // Шаг 3: вставить телефоны
+                if (contact.phone1.isNotBlank()) {
+                    insertDataRow(
+                        deviceId, adbPath, rawContactId,
+                        mimetype = "vnd.android.cursor.item/phone_v2",
+                        data1 = contact.phone1,
+                        data2 = contact.phone1Type.adbInt.toString(),
+                    )
+                }
+                if (contact.phone2.isNotBlank()) {
+                    insertDataRow(
+                        deviceId, adbPath, rawContactId,
+                        mimetype = "vnd.android.cursor.item/phone_v2",
+                        data1 = contact.phone2,
+                        data2 = contact.phone2Type.adbInt.toString(),
+                    )
+                }
+
+                // Шаг 4: вставить email
+                if (contact.email.isNotBlank()) {
+                    insertDataRow(
+                        deviceId, adbPath, rawContactId,
+                        mimetype = "vnd.android.cursor.item/email_v2",
+                        data1 = contact.email,
+                        data2 = contact.emailType.adbInt.toString(),
+                    )
+                }
+
+                // Шаг 5: вставить организацию
+                if (contact.organization.isNotBlank()) {
+                    insertDataRow(
+                        deviceId, adbPath, rawContactId,
+                        mimetype = "vnd.android.cursor.item/organization",
+                        data1 = contact.organization,
+                    )
+                }
+
+                // Шаг 6: вставить заметку
+                if (contact.notes.isNotBlank()) {
+                    insertDataRow(
+                        deviceId, adbPath, rawContactId,
+                        mimetype = "vnd.android.cursor.item/note",
+                        data1 = contact.notes,
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Throwable) {
+                // Не оставляем "пустой" raw_contact, если вставка данных не удалась.
+                runCatching {
+                    processRunner.run(
+                        adbPath, "-s", deviceId,
+                        "shell", "content", "delete",
+                        "--uri", "content://com.android.contacts/raw_contacts/$rawContactId",
+                    )
+                }
+                throw error
+            }
+        }
+    }
+
+    override suspend fun updateContact(
+        deviceId: String,
+        contactId: Long,
+        contact: NewContactData,
+        adbPath: String,
+    ): Result<Unit> = runCatchingPreserveCancellation {
+        withContext(Dispatchers.IO) {
+            addContact(
+                deviceId = deviceId,
+                contact = contact,
+                adbPath = adbPath,
+            ).getOrElse { addError ->
+                throw IllegalStateException(
+                    "Не удалось сохранить изменения контакта: ${addError.message ?: "неизвестная ошибка"}",
+                    addError,
                 )
             }
-            if (contact.phone2.isNotBlank()) {
-                insertDataRow(
-                    deviceId, adbPath, rawContactId,
-                    mimetype = "vnd.android.cursor.item/phone_v2",
-                    data1 = contact.phone2,
-                    data2 = contact.phone2Type.adbInt.toString(),
-                )
-            }
 
-            // Шаг 4: вставить email
-            if (contact.email.isNotBlank()) {
-                insertDataRow(
-                    deviceId, adbPath, rawContactId,
-                    mimetype = "vnd.android.cursor.item/email_v2",
-                    data1 = contact.email,
-                    data2 = contact.emailType.adbInt.toString(),
-                )
-            }
-
-            // Шаг 5: вставить организацию
-            if (contact.organization.isNotBlank()) {
-                insertDataRow(
-                    deviceId, adbPath, rawContactId,
-                    mimetype = "vnd.android.cursor.item/organization",
-                    data1 = contact.organization,
-                )
-            }
-
-            // Шаг 6: вставить заметку
-            if (contact.notes.isNotBlank()) {
-                insertDataRow(
-                    deviceId, adbPath, rawContactId,
-                    mimetype = "vnd.android.cursor.item/note",
-                    data1 = contact.notes,
+            deleteContact(
+                deviceId = deviceId,
+                contactId = contactId,
+                adbPath = adbPath,
+            ).getOrElse { deleteError ->
+                throw IllegalStateException(
+                    "Контакт обновлён частично: новая версия создана, " +
+                        "но удалить старую запись (id=$contactId) не удалось: " +
+                        "${deleteError.message ?: "неизвестная ошибка"}",
+                    deleteError,
                 )
             }
         }
+    }
+
+    private suspend fun queryLatestRawContactId(
+        deviceId: String,
+        adbPath: String,
+    ): Long? {
+        val rows = queryRows(
+            deviceId = deviceId,
+            adbPath = adbPath,
+            uri = "content://com.android.contacts/raw_contacts",
+            projection = "_id",
+        )
+        return rows.asSequence()
+            .mapNotNull { it["_id"]?.toLongOrNull() }
+            .maxOrNull()
+    }
+
+    private suspend fun inferRawContactIdAfterInsert(
+        deviceId: String,
+        adbPath: String,
+        latestRawIdBeforeInsert: Long?,
+    ): Long? {
+        val latestAfterInsert = queryLatestRawContactId(
+            deviceId = deviceId,
+            adbPath = adbPath,
+        ) ?: return null
+
+        return when {
+            latestRawIdBeforeInsert == null -> latestAfterInsert
+            latestAfterInsert > latestRawIdBeforeInsert -> latestAfterInsert
+            else -> null
+        }
+    }
+
+    private fun extractRawContactIdFromInsertOutput(result: ProcessResult): Long? {
+        val combinedOutput = buildString {
+            append(result.stdout)
+            append('\n')
+            append(result.stderr)
+        }
+
+        return RAW_CONTACT_URI_ID_REGEX.find(combinedOutput)
+            ?.groupValues
+            ?.get(1)
+            ?.toLongOrNull()
+            ?: INSERT_ID_REGEX.find(combinedOutput.trim())
+                ?.groupValues
+                ?.get(1)
+                ?.toLongOrNull()
     }
 
     override suspend fun deleteContact(
@@ -374,10 +489,10 @@ class SystemContactsClient(
                 "shell", "content", "delete",
                 "--uri", "content://com.android.contacts/contacts/$contactId",
             )
-            // content delete не всегда возвращает ошибку в stderr при неудаче
-            if (result.exitCode != 0 && result.stderr.isNotBlank()) {
-                error("Ошибка удаления контакта $contactId: ${result.stderr.take(200)}")
-            }
+            ensureCommandSucceeded(
+                result = result,
+                action = "удаления контакта $contactId",
+            )
         }
     }
 
@@ -434,6 +549,7 @@ class SystemContactsClient(
      * @param uri       URI таблицы Contacts Provider.
      * @param projection Список столбцов через двоеточие.
      * @param whereClause Условие WHERE (опционально).
+     * @param sortOrder Сортировка результатов (опционально), например `_id DESC`.
      */
     private suspend fun queryRows(
         deviceId: String,
@@ -441,13 +557,18 @@ class SystemContactsClient(
         uri: String,
         projection: String,
         whereClause: String = "",
+        sortOrder: String = "",
     ): List<Map<String, String>> {
         val baseArgs = buildList {
             add(adbPath); add("-s"); add(deviceId)
             add("shell"); add("content"); add("query")
             add("--uri"); add(uri)
             add("--projection"); add(projection)
+            if (sortOrder.isNotBlank()) {
+                add("--sort"); add(sortOrder)
+            }
         }
+
         val result = runQueryWithWhereFallback(
             baseArgs = baseArgs,
             whereClause = whereClause,
@@ -460,10 +581,7 @@ class SystemContactsClient(
             error("Ошибка чтения контактов через content query ($uri): ${details.take(400)}")
         }
 
-        val hasProviderError =
-            stdout.contains("Error while accessing provider", ignoreCase = true) ||
-                stdout.contains("[ERROR]", ignoreCase = true)
-        if (hasProviderError) {
+        if (containsProviderError(stdout)) {
             val reason = stdout.lineSequence().firstOrNull { it.isNotBlank() }?.take(400).orEmpty()
             error("Ошибка чтения контактов через content query ($uri): $reason")
         }
@@ -549,26 +667,100 @@ class SystemContactsClient(
             add(adbPath); add("-s"); add(deviceId)
             add("shell"); add("content"); add("insert")
             add("--uri"); add("content://com.android.contacts/data")
-            add("--bind"); add("raw_contact_id:i:$rawContactId")
-            add("--bind"); add("mimetype:s:$mimetype")
+            add("--bind")
+            add(
+                shellQuoteAdbBind(
+                    column = "raw_contact_id",
+                    type = "i",
+                    value = rawContactId.toString(),
+                ),
+            )
+            add("--bind")
+            add(
+                shellQuoteAdbBind(
+                    column = "mimetype",
+                    type = "s",
+                    value = mimetype,
+                ),
+            )
 
             // data2 у phone/email — числовой тип
             val isIntData2 = mimetype.contains("phone") || mimetype.contains("email")
 
-            if (data1.isNotBlank()) { add("--bind"); add("data1:s:$data1") }
+            if (data1.isNotBlank()) {
+                add("--bind")
+                add(shellQuoteAdbBind(column = "data1", type = "s", value = data1))
+            }
             if (data2.isNotBlank()) {
                 val bindType = if (isIntData2) "i" else "s"
-                add("--bind"); add("data2:$bindType:$data2")
+                add("--bind")
+                add(shellQuoteAdbBind(column = "data2", type = bindType, value = data2))
             }
-            if (data3.isNotBlank()) { add("--bind"); add("data3:s:$data3") }
-            if (data4.isNotBlank()) { add("--bind"); add("data4:s:$data4") }
-            if (data5.isNotBlank()) { add("--bind"); add("data5:s:$data5") }
-            if (data6.isNotBlank()) { add("--bind"); add("data6:s:$data6") }
+            if (data3.isNotBlank()) {
+                add("--bind")
+                add(shellQuoteAdbBind(column = "data3", type = "s", value = data3))
+            }
+            if (data4.isNotBlank()) {
+                add("--bind")
+                add(shellQuoteAdbBind(column = "data4", type = "s", value = data4))
+            }
+            if (data5.isNotBlank()) {
+                add("--bind")
+                add(shellQuoteAdbBind(column = "data5", type = "s", value = data5))
+            }
+            if (data6.isNotBlank()) {
+                add("--bind")
+                add(shellQuoteAdbBind(column = "data6", type = "s", value = data6))
+            }
         }
 
-        processRunner.run(*args.toTypedArray())
-        // Не бросаем ошибку при неудаче data-строки — raw_contact уже создан,
-        // частичная вставка лучше полного отказа.
+        val result = processRunner.run(*args.toTypedArray())
+        ensureCommandSucceeded(
+            result = result,
+            action = "записи data-строки ($mimetype) для raw_contact=$rawContactId",
+        )
+    }
+
+    private fun ensureCommandSucceeded(
+        result: ProcessResult,
+        action: String,
+    ) {
+        if (
+            result.isSuccess &&
+            !containsProviderError(result.stdout) &&
+            !containsProviderError(result.stderr)
+        ) {
+            return
+        }
+        val details = result.stderr
+            .ifBlank { result.stdout }
+            .lineSequence()
+            .firstOrNull { it.isNotBlank() }
+            .orEmpty()
+            .ifBlank { "неизвестная ошибка" }
+        error("Ошибка $action: ${details.take(400)}")
+    }
+
+    private fun containsProviderError(output: String): Boolean {
+        val normalized = output.lowercase()
+        return normalized.contains("error while accessing provider") ||
+            (normalized.contains("error while") && normalized.contains("provider")) ||
+            normalized.contains("[error]")
+    }
+
+    /**
+     * `adb shell` пересобирает команду в строку для удалённого shell, поэтому bind со
+     * значением с пробелами (например display name) нужно принудительно передавать как
+     * один shell-токен в одинарных кавычках.
+     */
+    private fun shellQuoteAdbBind(
+        column: String,
+        type: String,
+        value: String,
+    ): String {
+        val bindValue = "$column:$type:$value"
+        val escaped = bindValue.replace("'", "'\\''")
+        return "'$escaped'"
     }
 
     // ── Вспомогательные построители карт ─────────────────────────────────────

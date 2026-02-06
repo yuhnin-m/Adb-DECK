@@ -21,19 +21,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Sort
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.adbdeck.core.designsystem.AdbCornerRadius
@@ -41,7 +35,8 @@ import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.i18n.AdbCommonStringRes
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbFilledButton
-import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.menubuttons.AdbMenuButtonOption
+import com.adbdeck.core.ui.menubuttons.AdbOutlinedMenuButton
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
 import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
@@ -175,43 +170,33 @@ private fun NotificationsSortMenu(
     selectedSortOrder: NotificationsSortOrder,
     onSortOrderChanged: (NotificationsSortOrder) -> Unit,
 ) {
-    var sortMenuOpen by remember { mutableStateOf(false) }
     val selectedLabel = sortOrderLabel(selectedSortOrder)
-
-    Box {
-        AdbOutlinedButton(
-            onClick = { sortMenuOpen = true },
-            text = selectedLabel,
-            leadingIcon = Icons.AutoMirrored.Outlined.Sort,
-            size = AdbButtonSize.MEDIUM,
-            cornerRadius = AdbCornerRadius.MEDIUM,
-        )
-
-        DropdownMenu(
-            expanded = sortMenuOpen,
-            onDismissRequest = { sortMenuOpen = false },
-        ) {
-            NotificationsSortOrder.entries.forEach { order ->
-                DropdownMenuItem(
-                    text = { androidx.compose.material3.Text(sortOrderLabel(order)) },
-                    onClick = {
-                        onSortOrderChanged(order)
-                        sortMenuOpen = false
-                    },
-                    leadingIcon = if (selectedSortOrder == order) {
-                        {
-                            androidx.compose.material3.Icon(
-                                imageVector = Icons.Outlined.Check,
-                                contentDescription = null,
-                            )
-                        }
-                    } else {
-                        null
-                    },
-                )
-            }
+    val newestLabel = sortOrderLabel(NotificationsSortOrder.NEWEST_FIRST)
+    val oldestLabel = sortOrderLabel(NotificationsSortOrder.OLDEST_FIRST)
+    val byPackageLabel = sortOrderLabel(NotificationsSortOrder.BY_PACKAGE)
+    val sortOptions = remember(newestLabel, oldestLabel, byPackageLabel) {
+        NotificationsSortOrder.entries.map { order ->
+            AdbMenuButtonOption(
+                value = order,
+                label = when (order) {
+                    NotificationsSortOrder.NEWEST_FIRST -> newestLabel
+                    NotificationsSortOrder.OLDEST_FIRST -> oldestLabel
+                    NotificationsSortOrder.BY_PACKAGE -> byPackageLabel
+                },
+            )
         }
     }
+
+    AdbOutlinedMenuButton(
+        text = selectedLabel,
+        leadingIcon = Icons.AutoMirrored.Outlined.Sort,
+        size = AdbButtonSize.MEDIUM,
+        cornerRadius = AdbCornerRadius.MEDIUM,
+        options = sortOptions,
+        selectedOption = selectedSortOrder,
+        showSelectedCheckmark = true,
+        onOptionSelected = onSortOrderChanged,
+    )
 }
 
 @Composable

@@ -1,4 +1,4 @@
-package com.adbdeck.feature.deeplinks
+package com.adbdeck.feature.deeplinks.models
 
 import com.adbdeck.core.adb.api.intents.DeepLinkParams
 import com.adbdeck.core.adb.api.intents.IntentExtra
@@ -64,6 +64,17 @@ data class IntentTemplate(
     val createdAt: Long = System.currentTimeMillis(),
 )
 
+/**
+ * Краткое feedback-сообщение для баннера.
+ *
+ * @param message Текст сообщения.
+ * @param isError `true`, если сообщение об ошибке.
+ */
+data class DeepLinksFeedback(
+    val message: String,
+    val isError: Boolean = false,
+)
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Агрегированное состояние экрана
 // ──────────────────────────────────────────────────────────────────────────────
@@ -82,7 +93,9 @@ data class IntentTemplate(
  * @param itPackage             Package для intent.
  * @param itComponent           Component для intent.
  * @param itCategories          Список categories для intent.
- * @param itFlags               Flags для intent (hex-строка).
+ * @param itFlags               Flags для intent (hex-строка, по умолчанию `0x10000000` / `NEW_TASK`).
+ * @param itSelectedFlags       Выбранные флаги intent (для диалога Pick flags).
+ * @param itFlagsValidationMessage Ошибка валидации/парсинга флагов (если есть).
  * @param itExtras              Typed extras для intent.
  * @param commandPreview        Текущий предпросмотр команды.
  * @param isLaunching           `true` во время выполнения запуска.
@@ -92,7 +105,11 @@ data class IntentTemplate(
  * @param templates             Сохранённые шаблоны.
  * @param isSaveTemplateDialogOpen Диалог сохранения шаблона открыт.
  * @param saveTemplateName      Имя в диалоге сохранения шаблона.
+ * @param isIntentFlagsDialogOpen Диалог выбора флагов открыт.
  * @param activeDeviceId        ID активного ADB-устройства.
+ * @param packageSuggestions    Подсказки установленных пакетов активного устройства.
+ * @param isPackageSuggestionsLoading `true` во время загрузки подсказок пакетов.
+ * @param feedback              Временное сообщение для баннера.
  */
 data class DeepLinksState(
     val mode: LaunchMode = LaunchMode.DEEP_LINK,
@@ -110,7 +127,9 @@ data class DeepLinksState(
     val itPackage: String = "",
     val itComponent: String = "",
     val itCategories: List<String> = emptyList(),
-    val itFlags: String = "",
+    val itFlags: String = DEFAULT_INTENT_FLAGS_MASK,
+    val itSelectedFlags: Set<String> = DefaultIntentFlagsSelection,
+    val itFlagsValidationMessage: String? = null,
     val itExtras: List<IntentExtra> = emptyList(),
 
     // Предпросмотр и результат
@@ -128,7 +147,13 @@ data class DeepLinksState(
     // Диалог сохранения шаблона
     val isSaveTemplateDialogOpen: Boolean = false,
     val saveTemplateName: String = "",
+    val isIntentFlagsDialogOpen: Boolean = false,
 
     // Активное устройство
     val activeDeviceId: String? = null,
+    val packageSuggestions: List<String> = emptyList(),
+    val isPackageSuggestionsLoading: Boolean = false,
+
+    // Feedback
+    val feedback: DeepLinksFeedback? = null,
 )

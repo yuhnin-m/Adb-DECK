@@ -282,6 +282,7 @@ class DefaultRootComponent(
             DefaultDeepLinksComponent(
                 componentContext   = componentContext,
                 deviceManager      = deviceManager,
+                packageClient      = packageClient,
                 intentLaunchClient = intentLaunchClient,
                 settingsRepository = settingsRepository,
                 initialDeepLinkUri = pendingDeepLinkUri.also { pendingDeepLinkUri = null },
