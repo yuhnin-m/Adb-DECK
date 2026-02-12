@@ -151,6 +151,6 @@ private fun StorageSavedNotification.toDomain() = SavedNotification(
         actionsCount   = actionsCount,
         actionTitles   = actionTitles,
         imageParameters = imageParameters,
-        rawBlock       = "", 
+        rawBlock       = "",
     ),
 )

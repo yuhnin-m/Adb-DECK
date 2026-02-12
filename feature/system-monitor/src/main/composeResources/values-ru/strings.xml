@@ -1,0 +1,91 @@
+<resources>
+    <string name="system_monitor_tab_processes">Процессы</string>
+    <string name="system_monitor_tab_storage">Хранилище</string>
+
+    <string name="system_monitor_empty_no_device">Устройство не подключено</string>
+    <string name="system_monitor_empty_processes_not_found">Процессы не найдены</string>
+    <string name="system_monitor_empty_storage_no_data">Нет данных о хранилище</string>
+
+    <string name="system_monitor_toolbar_start_monitoring">Мониторинг</string>
+    <string name="system_monitor_toolbar_stop_monitoring">Стоп</string>
+    <string name="system_monitor_toolbar_refresh_content_desc">Обновить</string>
+    <string name="system_monitor_toolbar_search_placeholder">Поиск процессов...</string>
+
+    <string name="system_monitor_sort_cpu">CPU</string>
+    <string name="system_monitor_sort_memory">MEM</string>
+    <string name="system_monitor_sort_name">Имя</string>
+    <string name="system_monitor_sort_pid">PID</string>
+
+    <string name="system_monitor_metric_cpu">CPU</string>
+    <string name="system_monitor_metric_ram">RAM</string>
+
+    <string name="system_monitor_list_header_pid">PID</string>
+    <string name="system_monitor_list_header_name">Имя</string>
+    <string name="system_monitor_list_header_user">Польз.</string>
+    <string name="system_monitor_list_header_cpu">CPU%</string>
+    <string name="system_monitor_list_header_rss">RSS</string>
+    <string name="system_monitor_list_action_kill_process">Убить процесс</string>
+
+    <string name="system_monitor_detail_close">Закрыть</string>
+    <string name="system_monitor_detail_pid_format">PID %1$d</string>
+    <string name="system_monitor_detail_actions_title">ДЕЙСТВИЯ</string>
+    <string name="system_monitor_detail_action_kill">Kill</string>
+    <string name="system_monitor_detail_action_force_stop">Force Stop</string>
+    <string name="system_monitor_detail_action_open_packages">В Packages</string>
+
+    <string name="system_monitor_detail_section_metrics">Метрики</string>
+    <string name="system_monitor_detail_section_memory_detailed">Память (детально)</string>
+    <string name="system_monitor_detail_section_process">Процесс</string>
+    <string name="system_monitor_detail_section_command_line">Командная строка</string>
+    <string name="system_monitor_detail_section_identification">Идентификация</string>
+
+    <string name="system_monitor_detail_label_cpu">CPU</string>
+    <string name="system_monitor_detail_label_mem_percent">MEM%</string>
+    <string name="system_monitor_detail_label_rss">RSS</string>
+    <string name="system_monitor_detail_label_vsz">VSZ</string>
+    <string name="system_monitor_detail_label_state">Состояние</string>
+    <string name="system_monitor_detail_label_pss">PSS</string>
+    <string name="system_monitor_detail_label_uss">USS</string>
+    <string name="system_monitor_detail_label_heap_size">Размер кучи</string>
+    <string name="system_monitor_detail_label_heap_alloc">Выделено в куче</string>
+    <string name="system_monitor_detail_label_heap_free">Свободно в куче</string>
+    <string name="system_monitor_detail_label_native_heap">Нативная куча</string>
+    <string name="system_monitor_detail_label_native_alloc">Выделено (native)</string>
+    <string name="system_monitor_detail_label_pid">PID</string>
+    <string name="system_monitor_detail_label_ppid">PPID</string>
+    <string name="system_monitor_detail_label_threads">Потоки</string>
+    <string name="system_monitor_detail_label_user">Пользователь</string>
+    <string name="system_monitor_detail_label_open_files">Открытые файлы</string>
+    <string name="system_monitor_detail_label_package">Пакет</string>
+    <string name="system_monitor_detail_unavailable_format">Детали недоступны: %1$s</string>
+
+    <string name="system_monitor_storage_title_filesystems">Файловые системы</string>
+    <string name="system_monitor_storage_summary_title">Итого по хранилищу</string>
+    <string name="system_monitor_storage_stat_used">Использовано</string>
+    <string name="system_monitor_storage_stat_free">Свободно</string>
+    <string name="system_monitor_storage_stat_total">Всего</string>
+    <string name="system_monitor_storage_stat_percent">%</string>
+    <string name="system_monitor_storage_category_system">Система</string>
+    <string name="system_monitor_storage_category_data">Данные</string>
+    <string name="system_monitor_storage_category_external">Внешнее</string>
+    <string name="system_monitor_storage_category_other">Прочее</string>
+    <string name="system_monitor_storage_used_format">Использовано: %1$s</string>
+    <string name="system_monitor_storage_free_format">Свободно: %1$s</string>
+    <string name="system_monitor_storage_total_format">Всего: %1$s</string>
+
+    <string name="system_monitor_error_no_active_device">Нет активного устройства</string>
+    <string name="system_monitor_error_device_unavailable">Устройство недоступно (%1$s)</string>
+    <string name="system_monitor_error_process_list_empty">ADB не вернул список процессов</string>
+    <string name="system_monitor_error_process_fetch_failed">Ошибка получения процессов</string>
+    <string name="system_monitor_error_process_not_android_app">Процесс "%1$s" не является Android-приложением</string>
+    <string name="system_monitor_error_process_package_missing">Для этого процесса нет Android package</string>
+    <string name="system_monitor_error_action_failed">Ошибка выполнения действия</string>
+    <string name="system_monitor_error_process_details_failed">Ошибка загрузки деталей</string>
+    <string name="system_monitor_error_storage_data_empty">ADB не вернул данные о хранилище</string>
+    <string name="system_monitor_error_storage_no_relevant_partitions">Нет релевантных разделов хранилища</string>
+    <string name="system_monitor_error_storage_fetch_failed">Ошибка получения данных хранилища</string>
+
+    <string name="system_monitor_feedback_monitoring_stopped">Мониторинг остановлен: %1$s</string>
+    <string name="system_monitor_feedback_kill_success">kill -9 %1$d выполнен</string>
+    <string name="system_monitor_feedback_force_stop_success">Force-stop выполнен: %1$s</string>
+</resources>

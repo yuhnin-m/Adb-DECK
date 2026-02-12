@@ -324,10 +324,15 @@ class DefaultSystemMonitorClient(
         }
         val total = map["MemTotal"] ?: 0L
         val free = map["MemFree"] ?: 0L
-        val available = map["MemAvailable"] ?: free
+        val available = map["MemAvailable"]
         val buffers = map["Buffers"] ?: 0L
         val cached = map["Cached"] ?: 0L
-        val used = (total - available - buffers - cached).coerceAtLeast(0L)
+        val used = if (available != null) {
+            // MemAvailable уже учитывает reclaimable memory: повторно вычитать buffers/cached нельзя.
+            (total - available).coerceAtLeast(0L)
+        } else {
+            (total - free - buffers - cached).coerceAtLeast(0L)
+        }
         return Triple(total, used, free)
     }
 
@@ -342,6 +347,12 @@ class DefaultSystemMonitorClient(
         val statusResult = processRunner.run(
             adbPath, "-s", deviceId, "shell", "cat", "/proc/$pid/status",
         )
+        if (!statusResult.isSuccess || statusResult.stdout.isBlank()) {
+            val detail = statusResult.stderr.trim()
+                .ifBlank { "процесс завершился или доступ к /proc/$pid/status недоступен" }
+                .take(200)
+            error("Не удалось получить детали процесса $pid: $detail")
+        }
 
         // Читаем /proc/<pid>/cmdline
         val cmdlineResult = processRunner.run(
@@ -353,7 +364,7 @@ class DefaultSystemMonitorClient(
             adbPath, "-s", deviceId, "shell", "dumpsys", "meminfo", pid.toString(),
         )
 
-        val status = if (statusResult.isSuccess) parseProcessStatus(statusResult.stdout) else emptyMap()
+        val status = parseProcessStatus(statusResult.stdout)
         val cmdline = cmdlineResult.stdout.replace('\u0000', ' ').trim()
         val memInfo = if (memInfoResult.isSuccess) parseDumpsysMemInfo(memInfoResult.stdout) else emptyMap()
 

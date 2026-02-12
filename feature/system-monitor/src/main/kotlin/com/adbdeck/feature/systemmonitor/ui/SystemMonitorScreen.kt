@@ -1,5 +1,8 @@
 package com.adbdeck.feature.systemmonitor.ui
 
+import adbdeck.feature.system_monitor.generated.resources.Res
+import adbdeck.feature.system_monitor.generated.resources.system_monitor_tab_processes
+import adbdeck.feature.system_monitor.generated.resources.system_monitor_tab_storage
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.HorizontalDivider
@@ -12,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
 import com.adbdeck.feature.systemmonitor.SystemMonitorTab
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Корневой composable экрана System Monitor.
@@ -27,6 +31,8 @@ import com.adbdeck.feature.systemmonitor.SystemMonitorTab
 @Composable
 fun SystemMonitorScreen(component: SystemMonitorComponent) {
     val activeTab by component.activeTab.collectAsState()
+    val processesTabLabel = stringResource(Res.string.system_monitor_tab_processes)
+    val storageTabLabel = stringResource(Res.string.system_monitor_tab_storage)
 
     Column(modifier = Modifier.fillMaxSize()) {
         // ── Tab selector ─────────────────────────────────────────────
@@ -38,8 +44,8 @@ fun SystemMonitorScreen(component: SystemMonitorComponent) {
                     text = {
                         Text(
                             text = when (tab) {
-                                SystemMonitorTab.PROCESSES -> "Processes"
-                                SystemMonitorTab.STORAGE   -> "Storage"
+                                SystemMonitorTab.PROCESSES -> processesTabLabel
+                                SystemMonitorTab.STORAGE   -> storageTabLabel
                             }
                         )
                     }

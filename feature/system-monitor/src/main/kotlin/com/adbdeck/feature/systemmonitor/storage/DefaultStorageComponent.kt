@@ -1,5 +1,10 @@
 package com.adbdeck.feature.systemmonitor.storage
 
+import adbdeck.feature.system_monitor.generated.resources.Res
+import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_device_unavailable
+import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_storage_data_empty
+import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_storage_fetch_failed
+import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_storage_no_relevant_partitions
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
@@ -15,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 
 /**
  * Реализация [StorageComponent] с защитой от stale-ответов при смене устройства.
@@ -105,16 +111,18 @@ class DefaultStorageComponent(
         result.fold(
             onSuccess = { partitions ->
                 if (partitions.isEmpty()) {
+                    val message = getString(Res.string.system_monitor_error_storage_data_empty)
                     _state.update {
-                        StorageState(listState = StorageListState.Error("ADB не вернул данные о хранилище"))
+                        StorageState(listState = StorageListState.Error(message))
                     }
                     return@fold
                 }
 
                 val relevant = partitions.filter { it.isRelevant }
                 if (relevant.isEmpty()) {
+                    val message = getString(Res.string.system_monitor_error_storage_no_relevant_partitions)
                     _state.update {
-                        StorageState(listState = StorageListState.Error("Нет релевантных разделов хранилища"))
+                        StorageState(listState = StorageListState.Error(message))
                     }
                     return@fold
                 }
@@ -130,10 +138,11 @@ class DefaultStorageComponent(
                 }
             },
             onFailure = { e ->
+                val fallback = getString(Res.string.system_monitor_error_storage_fetch_failed)
                 _state.update {
                     StorageState(
                         listState = StorageListState.Error(
-                            e.message ?: "Ошибка получения данных хранилища",
+                            e.message ?: fallback,
                         ),
                     )
                 }
@@ -147,9 +156,19 @@ class DefaultStorageComponent(
     }
 
     private fun resetDeviceError(device: AdbDevice) {
-        activeDeviceId = device.deviceId
-        _state.update {
-            StorageState(listState = StorageListState.Error("Устройство недоступно (${device.state.rawValue})"))
+        scope.launch {
+            val message = getString(
+                Res.string.system_monitor_error_device_unavailable,
+                device.state.rawValue,
+            )
+            val selected = deviceManager.selectedDeviceFlow.value
+            if (selected == null || selected.deviceId != device.deviceId || selected.state == DeviceState.DEVICE) {
+                return@launch
+            }
+            activeDeviceId = device.deviceId
+            _state.update {
+                StorageState(listState = StorageListState.Error(message))
+            }
         }
     }
 

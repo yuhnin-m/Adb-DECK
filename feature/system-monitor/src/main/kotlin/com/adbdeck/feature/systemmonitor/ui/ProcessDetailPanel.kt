@@ -1,6 +1,8 @@
 package com.adbdeck.feature.systemmonitor.ui
 
+import adbdeck.feature.system_monitor.generated.resources.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,9 +19,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.adbdeck.core.adb.api.monitoring.process.ProcessDetails
 import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
+import com.adbdeck.core.designsystem.AdbCornerRadius
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.core.utils.formatKb
 import com.adbdeck.feature.systemmonitor.processes.ProcessDetailState
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Боковая панель деталей выбранного процесса.
@@ -49,6 +57,30 @@ fun ProcessDetailPanel(
     onOpenPackageDetails: (ProcessInfo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val sectionMetrics = stringResource(Res.string.system_monitor_detail_section_metrics)
+    val labelCpu = stringResource(Res.string.system_monitor_detail_label_cpu)
+    val labelMemPercent = stringResource(Res.string.system_monitor_detail_label_mem_percent)
+    val labelRss = stringResource(Res.string.system_monitor_detail_label_rss)
+    val labelVsz = stringResource(Res.string.system_monitor_detail_label_vsz)
+    val labelState = stringResource(Res.string.system_monitor_detail_label_state)
+    val sectionMemoryDetailed = stringResource(Res.string.system_monitor_detail_section_memory_detailed)
+    val labelPss = stringResource(Res.string.system_monitor_detail_label_pss)
+    val labelUss = stringResource(Res.string.system_monitor_detail_label_uss)
+    val labelHeapSize = stringResource(Res.string.system_monitor_detail_label_heap_size)
+    val labelHeapAlloc = stringResource(Res.string.system_monitor_detail_label_heap_alloc)
+    val labelHeapFree = stringResource(Res.string.system_monitor_detail_label_heap_free)
+    val labelNativeHeap = stringResource(Res.string.system_monitor_detail_label_native_heap)
+    val labelNativeAlloc = stringResource(Res.string.system_monitor_detail_label_native_alloc)
+    val sectionProcess = stringResource(Res.string.system_monitor_detail_section_process)
+    val labelPid = stringResource(Res.string.system_monitor_detail_label_pid)
+    val labelPpid = stringResource(Res.string.system_monitor_detail_label_ppid)
+    val labelThreads = stringResource(Res.string.system_monitor_detail_label_threads)
+    val labelUser = stringResource(Res.string.system_monitor_detail_label_user)
+    val labelOpenFiles = stringResource(Res.string.system_monitor_detail_label_open_files)
+    val sectionCommandLine = stringResource(Res.string.system_monitor_detail_section_command_line)
+    val sectionIdentification = stringResource(Res.string.system_monitor_detail_section_identification)
+    val labelPackage = stringResource(Res.string.system_monitor_detail_label_package)
+
     Column(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surface),
@@ -73,12 +105,12 @@ fun ProcessDetailPanel(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Базовые метрики (всегда доступны из ProcessInfo)
-            DetailSection(title = "Метрики") {
-                InfoRow("CPU",      "%.2f%%".format(process.cpuPercent))
-                InfoRow("MEM%",     "%.2f%%".format(process.memPercent))
-                InfoRow("RSS",      process.rssKb.formatKb())
-                InfoRow("VSZ",      process.vszKb.formatKb())
-                InfoRow("State",    "${process.state.symbol} — ${process.state.displayName}")
+            DetailSection(title = sectionMetrics) {
+                InfoRow(labelCpu, "%.2f%%".format(process.cpuPercent))
+                InfoRow(labelMemPercent, "%.2f%%".format(process.memPercent))
+                InfoRow(labelRss, process.rssKb.formatKb())
+                InfoRow(labelVsz, process.vszKb.formatKb())
+                InfoRow(labelState, "${process.state.symbol} — ${process.state.displayName}")
             }
 
             // Детальная информация (из /proc + dumpsys)
@@ -88,7 +120,10 @@ fun ProcessDetailPanel(
 
                 is ProcessDetailState.Error ->
                     Text(
-                        text  = "Детали недоступны: ${detailState.message}",
+                        text = stringResource(
+                            Res.string.system_monitor_detail_unavailable_format,
+                            detailState.message,
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -97,27 +132,27 @@ fun ProcessDetailPanel(
                     val d = detailState.details
                     // Разбивка памяти
                     if (d.pssKb > 0L || d.ussKb > 0L || d.heapSizeKb > 0L) {
-                        DetailSection(title = "Память (детально)") {
-                            if (d.pssKb > 0L)           InfoRow("PSS",          d.pssKb.formatKb())
-                            if (d.ussKb > 0L)           InfoRow("USS",          d.ussKb.formatKb())
-                            if (d.heapSizeKb > 0L)      InfoRow("Heap size",    d.heapSizeKb.formatKb())
-                            if (d.heapAllocKb > 0L)     InfoRow("Heap alloc",   d.heapAllocKb.formatKb())
-                            if (d.heapFreeKb > 0L)      InfoRow("Heap free",    d.heapFreeKb.formatKb())
-                            if (d.nativeHeapSizeKb > 0L) InfoRow("Native heap", d.nativeHeapSizeKb.formatKb())
-                            if (d.nativeHeapAllocKb > 0L) InfoRow("Native alloc", d.nativeHeapAllocKb.formatKb())
+                        DetailSection(title = sectionMemoryDetailed) {
+                            if (d.pssKb > 0L) InfoRow(labelPss, d.pssKb.formatKb())
+                            if (d.ussKb > 0L) InfoRow(labelUss, d.ussKb.formatKb())
+                            if (d.heapSizeKb > 0L) InfoRow(labelHeapSize, d.heapSizeKb.formatKb())
+                            if (d.heapAllocKb > 0L) InfoRow(labelHeapAlloc, d.heapAllocKb.formatKb())
+                            if (d.heapFreeKb > 0L) InfoRow(labelHeapFree, d.heapFreeKb.formatKb())
+                            if (d.nativeHeapSizeKb > 0L) InfoRow(labelNativeHeap, d.nativeHeapSizeKb.formatKb())
+                            if (d.nativeHeapAllocKb > 0L) InfoRow(labelNativeAlloc, d.nativeHeapAllocKb.formatKb())
                         }
                     }
                     // Системная информация
-                    DetailSection(title = "Процесс") {
-                        InfoRow("PID",     d.pid.toString())
-                        InfoRow("PPID",    d.ppid.toString())
-                        InfoRow("Threads", d.threads.toString())
-                        if (d.user.isNotEmpty()) InfoRow("User", d.user)
-                        if (d.openFiles > 0)     InfoRow("Open files", d.openFiles.toString())
+                    DetailSection(title = sectionProcess) {
+                        InfoRow(labelPid, d.pid.toString())
+                        InfoRow(labelPpid, d.ppid.toString())
+                        InfoRow(labelThreads, d.threads.toString())
+                        if (d.user.isNotEmpty()) InfoRow(labelUser, d.user)
+                        if (d.openFiles > 0) InfoRow(labelOpenFiles, d.openFiles.toString())
                     }
                     // Командная строка
                     if (d.cmdline.isNotBlank()) {
-                        DetailSection(title = "Командная строка") {
+                        DetailSection(title = sectionCommandLine) {
                             Text(
                                 text     = d.cmdline,
                                 style    = MaterialTheme.typography.bodySmall.copy(
@@ -136,12 +171,12 @@ fun ProcessDetailPanel(
             }
 
             // Системная инфо всегда (из ProcessInfo)
-            DetailSection(title = "Идентификация") {
-                InfoRow("PID",  process.pid.toString())
-                InfoRow("PPID", process.ppid.takeIf { it > 0 }?.toString() ?: "—")
-                InfoRow("User", process.user.ifEmpty { "—" })
+            DetailSection(title = sectionIdentification) {
+                InfoRow(labelPid, process.pid.toString())
+                InfoRow(labelPpid, process.ppid.takeIf { it > 0 }?.toString() ?: "—")
+                InfoRow(labelUser, process.user.ifEmpty { "—" })
                 if (process.packageName.isNotEmpty()) {
-                    InfoRow("Package", process.packageName)
+                    InfoRow(labelPackage, process.packageName)
                 }
             }
         }
@@ -159,6 +194,12 @@ private fun DetailHeader(
     onForceStop: () -> Unit,
     onOpenPackageDetails: () -> Unit,
 ) {
+    val closeDescription = stringResource(Res.string.system_monitor_detail_close)
+    val pidLabel = stringResource(Res.string.system_monitor_detail_pid_format, process.pid)
+    val actionsTitle = stringResource(Res.string.system_monitor_detail_actions_title)
+    val killLabel = stringResource(Res.string.system_monitor_detail_action_kill)
+    val forceStopLabel = stringResource(Res.string.system_monitor_detail_action_force_stop)
+    val openPackagesLabel = stringResource(Res.string.system_monitor_detail_action_open_packages)
     Column {
         // Верхняя строка: имя + кнопка закрыть
         Row(
@@ -176,57 +217,82 @@ private fun DetailHeader(
                 modifier = Modifier.weight(1f),
             )
             IconButton(onClick = onClose) {
-                Icon(Icons.Outlined.Close, contentDescription = "Закрыть")
+                Icon(Icons.Outlined.Close, contentDescription = closeDescription)
             }
         }
-        // PID + кнопки действий
+
+        // PID процесса
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
-                .padding(bottom = 8.dp),
+                .padding(bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text  = "PID ${process.pid}",
+                text = pidLabel,
                 style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.weight(1f))
-            // Kill button
-            OutlinedButton(
-                onClick = onKill,
-                enabled = !isActionRunning,
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                modifier = Modifier.height(30.dp),
-            ) {
-                Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Kill", fontSize = 12.sp)
-            }
-            // Force Stop (только для пакетов)
-            if (process.looksLikePackage) {
-                OutlinedButton(
-                    onClick = onForceStop,
-                    enabled = !isActionRunning,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    modifier = Modifier.height(30.dp),
-                ) {
-                    Icon(Icons.Outlined.StopCircle, contentDescription = null, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Force Stop", fontSize = 12.sp)
-                }
+        }
 
-                OutlinedButton(
-                    onClick = onOpenPackageDetails,
+        // Действия в отдельном вертикальном блоке
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .padding(bottom = 8.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+            ),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = actionsTitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                AdbOutlinedButton(
+                    onClick = onKill,
+                    text = killLabel,
+                    leadingIcon = Icons.Outlined.Delete,
+                    type = AdbButtonType.DANGER,
+                    size = AdbButtonSize.SMALL,
+                    cornerRadius = AdbCornerRadius.MEDIUM,
                     enabled = !isActionRunning,
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    modifier = Modifier.height(30.dp),
-                ) {
-                    Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("В Packages", fontSize = 12.sp)
+                    fullWidth = true,
+                )
+
+                if (process.looksLikePackage) {
+                    AdbFilledButton(
+                        onClick = onForceStop,
+                        text = forceStopLabel,
+                        leadingIcon = Icons.Outlined.StopCircle,
+                        type = AdbButtonType.DANGER,
+                        size = AdbButtonSize.SMALL,
+                        cornerRadius = AdbCornerRadius.MEDIUM,
+                        enabled = !isActionRunning,
+                        fullWidth = true,
+                    )
+
+                    AdbFilledButton(
+                        onClick = onOpenPackageDetails,
+                        text = openPackagesLabel,
+                        leadingIcon = Icons.Outlined.OpenInNew,
+                        size = AdbButtonSize.SMALL,
+                        cornerRadius = AdbCornerRadius.MEDIUM,
+                        enabled = !isActionRunning,
+                        fullWidth = true,
+                    )
                 }
             }
         }

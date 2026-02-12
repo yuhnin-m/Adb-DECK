@@ -1,5 +1,6 @@
 package com.adbdeck.feature.systemmonitor.ui
 
+import adbdeck.feature.system_monitor.generated.resources.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +27,7 @@ import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.core.utils.formatKb
 import com.adbdeck.feature.systemmonitor.storage.StorageComponent
 import com.adbdeck.feature.systemmonitor.storage.StorageListState
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Composable вкладки «Storage» в System Monitor.
@@ -47,6 +49,10 @@ import com.adbdeck.feature.systemmonitor.storage.StorageListState
 @Composable
 fun StorageScreen(component: StorageComponent) {
     val state by component.state.collectAsState()
+    val storageTitle = stringResource(Res.string.system_monitor_storage_title_filesystems)
+    val refreshContentDescription = stringResource(Res.string.system_monitor_toolbar_refresh_content_desc)
+    val emptyNoDevice = stringResource(Res.string.system_monitor_empty_no_device)
+    val emptyNoStorageData = stringResource(Res.string.system_monitor_empty_storage_no_data)
 
     Column(modifier = Modifier.fillMaxSize()) {
         // ── Toolbar ───────────────────────────────────────────────────
@@ -65,12 +71,12 @@ fun StorageScreen(component: StorageComponent) {
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                "Файловые системы",
+                storageTitle,
                 style = MaterialTheme.typography.titleSmall,
             )
             Spacer(Modifier.weight(1f))
             IconButton(onClick = component::onRefresh) {
-                Icon(Icons.Outlined.Refresh, contentDescription = "Обновить")
+                Icon(Icons.Outlined.Refresh, contentDescription = refreshContentDescription)
             }
         }
         HorizontalDivider()
@@ -79,7 +85,7 @@ fun StorageScreen(component: StorageComponent) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when (val listState = state.listState) {
                 is StorageListState.NoDevice ->
-                    EmptyView(message = "Устройство не подключено")
+                    EmptyView(message = emptyNoDevice)
 
                 is StorageListState.Loading ->
                     LoadingView()
@@ -90,7 +96,7 @@ fun StorageScreen(component: StorageComponent) {
                 is StorageListState.Success -> {
                     val relevant = listState.partitions.filter { it.isRelevant }
                     if (relevant.isEmpty()) {
-                        EmptyView(message = "Нет данных о хранилище")
+                        EmptyView(message = emptyNoStorageData)
                     } else {
                         StorageContent(
                             summary    = listState.summary,
@@ -134,6 +140,11 @@ private fun StorageContent(
 
 @Composable
 private fun StorageSummaryCard(summary: StorageSummary) {
+    val summaryTitle = stringResource(Res.string.system_monitor_storage_summary_title)
+    val statUsed = stringResource(Res.string.system_monitor_storage_stat_used)
+    val statFree = stringResource(Res.string.system_monitor_storage_stat_free)
+    val statTotal = stringResource(Res.string.system_monitor_storage_stat_total)
+    val statPercent = stringResource(Res.string.system_monitor_storage_stat_percent)
     Surface(
         shape          = RoundedCornerShape(12.dp),
         tonalElevation = 3.dp,
@@ -144,7 +155,7 @@ private fun StorageSummaryCard(summary: StorageSummary) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                "Итого по хранилищу",
+                summaryTitle,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -160,10 +171,10 @@ private fun StorageSummaryCard(summary: StorageSummary) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                StorageStat("Использовано", summary.usedKb.formatKb(), MaterialTheme.colorScheme.primary)
-                StorageStat("Свободно",    summary.freeKb.formatKb(),  MaterialTheme.colorScheme.secondary)
-                StorageStat("Всего",       summary.totalKb.formatKb(), MaterialTheme.colorScheme.onSurface)
-                StorageStat("%",           "${summary.usedPercent}%",   progressColor(summary.usedPercent))
+                StorageStat(statUsed, summary.usedKb.formatKb(), MaterialTheme.colorScheme.primary)
+                StorageStat(statFree, summary.freeKb.formatKb(), MaterialTheme.colorScheme.secondary)
+                StorageStat(statTotal, summary.totalKb.formatKb(), MaterialTheme.colorScheme.onSurface)
+                StorageStat(statPercent, "${summary.usedPercent}%", progressColor(summary.usedPercent))
             }
         }
     }
@@ -199,6 +210,13 @@ private fun StorageStat(label: String, value: String, color: androidx.compose.ui
 
 @Composable
 private fun StoragePartitionRow(partition: StoragePartition) {
+    val categorySystem = stringResource(Res.string.system_monitor_storage_category_system)
+    val categoryData = stringResource(Res.string.system_monitor_storage_category_data)
+    val categoryExternal = stringResource(Res.string.system_monitor_storage_category_external)
+    val categoryOther = stringResource(Res.string.system_monitor_storage_category_other)
+    val usedFormat = stringResource(Res.string.system_monitor_storage_used_format, partition.usedKb.formatKb())
+    val freeFormat = stringResource(Res.string.system_monitor_storage_free_format, partition.freeKb.formatKb())
+    val totalFormat = stringResource(Res.string.system_monitor_storage_total_format, partition.totalKb.formatKb())
     val categoryColor = when (partition.category) {
         StorageCategory.SYSTEM   -> MaterialTheme.colorScheme.secondary
         StorageCategory.DATA     -> MaterialTheme.colorScheme.primary
@@ -206,10 +224,10 @@ private fun StoragePartitionRow(partition: StoragePartition) {
         StorageCategory.OTHER    -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val categoryLabel = when (partition.category) {
-        StorageCategory.SYSTEM   -> "System"
-        StorageCategory.DATA     -> "Data"
-        StorageCategory.EXTERNAL -> "External"
-        StorageCategory.OTHER    -> "Other"
+        StorageCategory.SYSTEM   -> categorySystem
+        StorageCategory.DATA     -> categoryData
+        StorageCategory.EXTERNAL -> categoryExternal
+        StorageCategory.OTHER    -> categoryOther
     }
 
     Surface(
@@ -266,17 +284,17 @@ private fun StoragePartitionRow(partition: StoragePartition) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text  = "Used: ${partition.usedKb.formatKb()}",
+                    text = usedFormat,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text  = "Free: ${partition.freeKb.formatKb()}",
+                    text = freeFormat,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text  = "Total: ${partition.totalKb.formatKb()}",
+                    text = totalFormat,
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
