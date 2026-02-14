@@ -5,9 +5,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.adbdeck.core.designsystem.AdbDeckTheme
+import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.feature.settings.SettingsComponent
+import com.adbdeck.feature.settings.SettingsFeedback
 import com.adbdeck.feature.settings.SettingsUiState
+import com.adbdeck.feature.settings.ToolCheckState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -17,12 +20,13 @@ private class SettingsPreviewComponent : SettingsComponent {
         SettingsUiState(
             adbPath = "/opt/homebrew/bin/adb",
             bundletoolPath = "/opt/homebrew/bin/bundletool",
-            adbCheckResult = "✓ Доступен: Android Debug Bridge version 1.0.41",
-            bundletoolCheckResult = "✓ Доступен: 1.18.2",
-            isCheckingAdb = false,
-            isCheckingBundletool = false,
-            isSaved = true,
+            adbCheckState = ToolCheckState.Success("Доступен: Android Debug Bridge version 1.0.41"),
+            bundletoolCheckState = ToolCheckState.Success("Доступен: 1.18.2"),
+            saveFeedback = SettingsFeedback(message = "Настройки сохранены", isError = false),
+            isSaving = false,
+            hasPendingChanges = false,
             currentTheme = AppTheme.SYSTEM,
+            currentLanguage = AppLanguage.SYSTEM,
             logcatCompactMode = true,
             logcatShowDate = false,
             logcatShowTime = true,
@@ -38,7 +42,9 @@ private class SettingsPreviewComponent : SettingsComponent {
     override fun onSave() = Unit
     override fun onCheckAdb() = Unit
     override fun onCheckBundletool() = Unit
+    override fun onDismissFeedback() = Unit
     override fun onThemeChanged(theme: AppTheme) = Unit
+    override fun onLanguageChanged(language: AppLanguage) = Unit
     override fun onLogcatCompactModeChanged(value: Boolean) = Unit
     override fun onLogcatShowDateChanged(value: Boolean) = Unit
     override fun onLogcatShowTimeChanged(value: Boolean) = Unit

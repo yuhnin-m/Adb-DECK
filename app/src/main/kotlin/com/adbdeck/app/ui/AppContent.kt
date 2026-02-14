@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,8 +17,10 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
+import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.process.ProcessHistoryStore
+import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.feature.contacts.ui.ContactsScreen
 import com.adbdeck.feature.dashboard.ui.DashboardScreen
 import com.adbdeck.feature.deviceinfo.ui.DeviceInfoScreen
@@ -49,6 +50,8 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
  * @param rootComponent          Корневой навигационный компонент.
  * @param isDarkTheme            Текущий режим темы (для Sidebar).
  * @param onToggleTheme          Callback переключения темы.
+ * @param currentLanguage        Текущий язык интерфейса.
+ * @param onToggleLanguage       Callback переключения языка.
  * @param deviceSelectorComponent Компонент выбора устройства для TopBar.
  * @param processHistoryStore    In-memory история команд ProcessRunner.
  */
@@ -57,6 +60,8 @@ fun AppContent(
     rootComponent: RootComponent,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    currentLanguage: AppLanguage,
+    onToggleLanguage: () -> Unit,
     deviceSelectorComponent: DeviceSelectorComponent,
     processHistoryStore: ProcessHistoryStore,
 ) {
@@ -86,7 +91,7 @@ fun AppContent(
         .firstOrNull()
     val hasUnsavedSettings = settingsComponent?.let {
         val settingsState by it.state.collectAsState()
-        !settingsState.isSaved
+        settingsState.hasPendingChanges
     } ?: false
 
     // Получаем флаг мониторинга процессов из SystemMonitor-компонента (для badge в Sidebar)
@@ -122,7 +127,7 @@ fun AppContent(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        color = AdbTheme.colorScheme.surface,
     ) {
         Row(modifier = Modifier.fillMaxSize()) {
             // ── Sidebar ─────────────────────────────────────────
@@ -131,6 +136,8 @@ fun AppContent(
                 onNavigate = rootComponent::navigate,
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme,
+                currentLanguage = currentLanguage,
+                onToggleLanguage = onToggleLanguage,
                 devicesCount = devices.size,
                 isLogcatRunning = isLogcatRunning,
                 hasUnsavedSettings = hasUnsavedSettings,
@@ -153,21 +160,21 @@ fun AppContent(
                         .fillMaxWidth(),
                 ) {
                     // Рендерим активный экран напрямую по типу активного Child
-                    when (val instance = activeChild) {
-                        is RootComponent.Child.Dashboard -> DashboardScreen(instance.component)
-                        is RootComponent.Child.Devices -> DevicesScreen(instance.component)
-                        is RootComponent.Child.Logcat -> LogcatScreen(instance.component)
-                        is RootComponent.Child.Settings -> SettingsScreen(instance.component)
-                        is RootComponent.Child.Packages -> PackagesScreen(instance.component)
-                        is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(instance.component)
-                        is RootComponent.Child.FileExplorer -> FileExplorerScreen(instance.component)
-                        is RootComponent.Child.Contacts -> ContactsScreen(instance.component)
-                        is RootComponent.Child.ScreenTools -> ScreenToolsScreen(instance.component)
-                        is RootComponent.Child.ApkInstall -> ApkInstallScreen(instance.component)
-                        is RootComponent.Child.DeepLinks -> DeepLinksScreen(instance.component)
-                        is RootComponent.Child.Notifications -> NotificationsScreen(instance.component)
-                        is RootComponent.Child.DeviceInfo -> DeviceInfoScreen(instance.component)
-                        is RootComponent.Child.QuickToggles -> QuickTogglesScreen(instance.component)
+                    when (activeChild) {
+                        is RootComponent.Child.Dashboard -> DashboardScreen(activeChild.component)
+                        is RootComponent.Child.Devices -> DevicesScreen(activeChild.component)
+                        is RootComponent.Child.Logcat -> LogcatScreen(activeChild.component)
+                        is RootComponent.Child.Settings -> SettingsScreen(activeChild.component)
+                        is RootComponent.Child.Packages -> PackagesScreen(activeChild.component)
+                        is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(activeChild.component)
+                        is RootComponent.Child.FileExplorer -> FileExplorerScreen(activeChild.component)
+                        is RootComponent.Child.Contacts -> ContactsScreen(activeChild.component)
+                        is RootComponent.Child.ScreenTools -> ScreenToolsScreen(activeChild.component)
+                        is RootComponent.Child.ApkInstall -> ApkInstallScreen(activeChild.component)
+                        is RootComponent.Child.DeepLinks -> DeepLinksScreen(activeChild.component)
+                        is RootComponent.Child.Notifications -> NotificationsScreen(activeChild.component)
+                        is RootComponent.Child.DeviceInfo -> DeviceInfoScreen(activeChild.component)
+                        is RootComponent.Child.QuickToggles -> QuickTogglesScreen(activeChild.component)
                     }
                 }
 

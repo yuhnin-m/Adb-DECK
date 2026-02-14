@@ -25,6 +25,7 @@ import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.process.InMemoryProcessHistoryStore
 import com.adbdeck.core.settings.AppTheme
+import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.feature.dashboard.DashboardComponent
 import com.adbdeck.feature.dashboard.DashboardState
 import com.adbdeck.feature.devices.DeviceListState
@@ -72,7 +73,9 @@ import com.adbdeck.feature.screentools.ScreenshotSectionState
 import com.adbdeck.feature.screentools.ScreenrecordQualityPreset
 import com.adbdeck.feature.screentools.ScreenrecordSectionState
 import com.adbdeck.feature.settings.SettingsComponent
+import com.adbdeck.feature.settings.SettingsFeedback
 import com.adbdeck.feature.settings.SettingsUiState
+import com.adbdeck.feature.settings.ToolCheckState
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
 import com.adbdeck.feature.systemmonitor.SystemMonitorTab
 import com.adbdeck.feature.systemmonitor.processes.ProcessesComponent
@@ -220,11 +223,13 @@ private class PreviewSettingsComponent : SettingsComponent {
         SettingsUiState(
             adbPath = "/opt/homebrew/bin/adb",
             bundletoolPath = "/opt/homebrew/bin/bundletool",
-            adbCheckResult = "✓ Доступен: Android Debug Bridge version 1.0.41",
-            bundletoolCheckResult = "✓ Доступен: 1.18.2",
-            isCheckingBundletool = false,
-            isSaved = true,
+            adbCheckState = ToolCheckState.Success("Доступен: Android Debug Bridge version 1.0.41"),
+            bundletoolCheckState = ToolCheckState.Success("Доступен: 1.18.2"),
+            saveFeedback = SettingsFeedback(message = "Настройки сохранены", isError = false),
+            isSaving = false,
+            hasPendingChanges = false,
             currentTheme = AppTheme.DARK,
+            currentLanguage = AppLanguage.SYSTEM,
             logcatCompactMode = true,
             logcatShowDate = false,
             logcatShowTime = true,
@@ -240,7 +245,9 @@ private class PreviewSettingsComponent : SettingsComponent {
     override fun onSave() = Unit
     override fun onCheckAdb() = Unit
     override fun onCheckBundletool() = Unit
+    override fun onDismissFeedback() = Unit
     override fun onThemeChanged(theme: AppTheme) = Unit
+    override fun onLanguageChanged(language: AppLanguage) = Unit
     override fun onLogcatCompactModeChanged(value: Boolean) = Unit
     override fun onLogcatShowDateChanged(value: Boolean) = Unit
     override fun onLogcatShowTimeChanged(value: Boolean) = Unit
@@ -749,6 +756,8 @@ private fun AppContentPreviewBody(isDarkTheme: Boolean) {
             rootComponent = root,
             isDarkTheme = isDarkTheme,
             onToggleTheme = {},
+            currentLanguage = AppLanguage.RUSSIAN,
+            onToggleLanguage = {},
             deviceSelectorComponent = selector,
             processHistoryStore = processHistoryStore,
         )
@@ -775,6 +784,8 @@ private fun SidebarPreviewBody(isDarkTheme: Boolean) {
             onNavigate = {},
             isDarkTheme = isDarkTheme,
             onToggleTheme = {},
+            currentLanguage = AppLanguage.RUSSIAN,
+            onToggleLanguage = {},
             devicesCount = 3,
             isLogcatRunning = true,
             hasUnsavedSettings = true,

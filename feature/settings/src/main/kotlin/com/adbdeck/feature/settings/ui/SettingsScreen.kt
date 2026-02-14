@@ -1,5 +1,6 @@
 package com.adbdeck.feature.settings.ui
 
+import adbdeck.feature.settings.generated.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,486 +9,589 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.adbdeck.core.designsystem.AdbDeckGreen
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.core.settings.AppTheme
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerType
+import com.adbdeck.core.ui.buttons.AdbButtonSize
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.sectioncards.AdbSectionCard
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
+import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
+import com.adbdeck.core.ui.segmentedbuttons.AdbSingleSegmentedButtons
+import com.adbdeck.core.ui.settings.AdbIntStepper
+import com.adbdeck.core.ui.settings.AdbSettingRow
+import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
+import com.adbdeck.core.ui.textfields.AdbTextFieldSize
 import com.adbdeck.feature.settings.SettingsComponent
+import com.adbdeck.feature.settings.SettingsUiState
+import com.adbdeck.feature.settings.ToolCheckState
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import org.jetbrains.compose.resources.stringResource
 
 /**
- * Экран настроек приложения ADB Deck.
- *
- * Секции:
- * - ADB — путь к исполняемому файлу adb + проверка.
- * - Тема — выбор светлой/темной/системной темы.
- * - Logcat — настройки отображения и производительности потокового лога.
- *
- * @param component Компонент настроек.
+ * Экран настроек приложения.
  */
 @Composable
 fun SettingsScreen(component: SettingsComponent) {
-    val state by component.state.collectAsState()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(Dimensions.paddingLarge),
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surface,
     ) {
-        Text(
-            text = "Настройки",
-            style = MaterialTheme.typography.headlineMedium,
-        )
-
-        Spacer(Modifier.height(Dimensions.paddingLarge))
-        HorizontalDivider()
-        Spacer(Modifier.height(Dimensions.paddingLarge))
-
-        // ── Секция ADB ──────────────────────────────────────────
-        SettingsSection(title = "ADB") {
-            OutlinedTextField(
-                value = state.adbPath,
-                onValueChange = component::onAdbPathChanged,
-                label = { Text("Путь к adb") },
-                placeholder = { Text("adb") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                supportingText = {
-                    Text(
-                        text = "Оставьте 'adb', если исполняемый файл находится в PATH системы.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                },
-            )
-
-            Spacer(Modifier.height(Dimensions.paddingMedium))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-            ) {
-                OutlinedButton(
-                    onClick = component::onCheckAdb,
-                    enabled = !state.isCheckingAdb,
-                ) {
-                    if (state.isCheckingAdb) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .width(16.dp)
-                                .height(16.dp),
-                            strokeWidth = 2.dp,
-                        )
-                        Spacer(Modifier.width(Dimensions.paddingSmall))
-                        Text("Проверяется…")
-                    } else {
-                        Text("Проверить ADB")
-                    }
-                }
-            }
-
-            if (state.adbCheckResult.isNotBlank()) {
-                Spacer(Modifier.height(Dimensions.paddingSmall))
-                val isSuccess = state.adbCheckResult.startsWith("✓")
-                Text(
-                    text = state.adbCheckResult,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSuccess) AdbDeckGreen else MaterialTheme.colorScheme.error,
-                )
-            }
-
-            Spacer(Modifier.height(Dimensions.paddingLarge))
-
-            OutlinedTextField(
-                value = state.bundletoolPath,
-                onValueChange = component::onBundletoolPathChanged,
-                label = { Text("Путь к bundletool") },
-                placeholder = { Text("bundletool") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                supportingText = {
-                    Text(
-                        text = "Можно указать путь к исполняемому файлу bundletool или к bundletool-all.jar.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                },
-            )
-
-            Spacer(Modifier.height(Dimensions.paddingMedium))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-            ) {
-                OutlinedButton(
-                    onClick = component::onCheckBundletool,
-                    enabled = !state.isCheckingBundletool,
-                ) {
-                    if (state.isCheckingBundletool) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .width(16.dp)
-                                .height(16.dp),
-                            strokeWidth = 2.dp,
-                        )
-                        Spacer(Modifier.width(Dimensions.paddingSmall))
-                        Text("Проверяется…")
-                    } else {
-                        Text("Проверить bundletool")
-                    }
-                }
-            }
-
-            if (state.bundletoolCheckResult.isNotBlank()) {
-                Spacer(Modifier.height(Dimensions.paddingSmall))
-                val isSuccess = state.bundletoolCheckResult.startsWith("✓")
-                Text(
-                    text = state.bundletoolCheckResult,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSuccess) AdbDeckGreen else MaterialTheme.colorScheme.error,
-                )
-            }
-
-            Spacer(Modifier.height(Dimensions.paddingSmall))
-
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(Dimensions.paddingLarge),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
+        ) {
             Text(
-                text = "Скачать bundletool: https://github.com/google/bundletool/releases",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = stringResource(Res.string.settings_title),
+                style = MaterialTheme.typography.headlineMedium,
             )
-            Text(
-                text = "macOS: /opt/homebrew/bin/bundletool или ~/Tools/bundletool/bundletool-all.jar",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "Linux: /usr/local/bin/bundletool или ~/tools/bundletool/bundletool-all.jar",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "Windows: C:\\tools\\bundletool\\bundletool.bat или C:\\tools\\bundletool\\bundletool-all.jar",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+
+            SaveFeedbackHost(component = component)
+            ToolsSectionHost(component = component)
+            ThemeSectionHost(component = component)
+            LogcatSectionHost(component = component)
+            SaveActionHost(component = component)
         }
+    }
+}
 
-        Spacer(Modifier.height(Dimensions.paddingLarge))
-        HorizontalDivider()
-        Spacer(Modifier.height(Dimensions.paddingLarge))
+private data class ToolsSectionUiState(
+    val adbPath: String,
+    val bundletoolPath: String,
+    val adbCheckState: ToolCheckState,
+    val bundletoolCheckState: ToolCheckState,
+)
 
-        // ── Секция темы ──────────────────────────────────────────
-        SettingsSection(title = "Тема") {
-            ThemeSelector(
-                currentTheme = state.currentTheme,
-                onThemeSelected = component::onThemeChanged,
-            )
-        }
+private data class ThemeSectionUiState(
+    val currentTheme: AppTheme,
+    val currentLanguage: AppLanguage,
+)
 
-        Spacer(Modifier.height(Dimensions.paddingLarge))
-        HorizontalDivider()
-        Spacer(Modifier.height(Dimensions.paddingLarge))
+private data class LogcatSectionUiState(
+    val logcatCompactMode: Boolean,
+    val logcatShowDate: Boolean,
+    val logcatShowTime: Boolean,
+    val logcatShowMillis: Boolean,
+    val logcatColoredLevels: Boolean,
+    val logcatMaxBufferedLines: Int,
+    val logcatAutoScroll: Boolean,
+    val logcatFontFamily: String,
+    val logcatFontSizeSp: Int,
+)
 
-        // ── Секция Logcat ────────────────────────────────────────
-        SettingsSection(title = "Logcat") {
-            Text(
-                text = "Настройки применяются при следующем запуске захвата лога.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+private data class SaveActionUiState(
+    val isSaving: Boolean,
+    val hasPendingChanges: Boolean,
+)
 
-            Spacer(Modifier.height(Dimensions.paddingMedium))
+@Composable
+private fun SaveFeedbackHost(component: SettingsComponent) {
+    val initialFeedback = remember(component) { component.state.value.saveFeedback }
+    val feedback by remember(component) {
+        component.state
+            .map { it.saveFeedback }
+            .distinctUntilChanged()
+    }.collectAsState(initial = initialFeedback)
 
-            // Режим отображения
-            SettingsRow(label = "Компактный режим") {
-                Switch(
-                    checked = state.logcatCompactMode,
-                    onCheckedChange = component::onLogcatCompactModeChanged,
-                )
-            }
-
-            SettingsRow(label = "Показывать дату (MM-DD)") {
-                Switch(
-                    checked = state.logcatShowDate,
-                    onCheckedChange = component::onLogcatShowDateChanged,
-                )
-            }
-
-            SettingsRow(label = "Показывать время (HH:MM:SS)") {
-                Switch(
-                    checked = state.logcatShowTime,
-                    onCheckedChange = component::onLogcatShowTimeChanged,
-                )
-            }
-
-            SettingsRow(label = "Показывать миллисекунды") {
-                Switch(
-                    checked = state.logcatShowMillis,
-                    onCheckedChange = component::onLogcatShowMillisChanged,
-                )
-            }
-
-            SettingsRow(label = "Цветовая подсветка уровней") {
-                Switch(
-                    checked = state.logcatColoredLevels,
-                    onCheckedChange = component::onLogcatColoredLevelsChanged,
-                )
-            }
-
-            SettingsRow(label = "Автоскролл по умолчанию") {
-                Switch(
-                    checked = state.logcatAutoScroll,
-                    onCheckedChange = component::onLogcatAutoScrollChanged,
-                )
-            }
-
-            Spacer(Modifier.height(Dimensions.paddingMedium))
-
-            // Размер буфера
-            MaxBufferLinesField(
-                value = state.logcatMaxBufferedLines,
-                onValueChange = component::onLogcatMaxBufferedLinesChanged,
-            )
-
-            Spacer(Modifier.height(Dimensions.paddingMedium))
-
-            // Шрифт
-            FontFamilySelector(
-                current = state.logcatFontFamily,
-                onSelected = component::onLogcatFontFamilyChanged,
-            )
-
-            Spacer(Modifier.height(Dimensions.paddingSmall))
-
-            FontSizePicker(
-                value = state.logcatFontSizeSp,
-                onValueChange = component::onLogcatFontSizeChanged,
-            )
-        }
-
-        Spacer(Modifier.height(Dimensions.paddingLarge))
-        HorizontalDivider()
-        Spacer(Modifier.height(Dimensions.paddingMedium))
-
-        Row(
+    feedback?.let { banner ->
+        AdbBanner(
+            message = banner.message,
+            type = if (banner.isError) AdbBannerType.ERROR else AdbBannerType.SUCCESS,
+            onDismiss = component::onDismissFeedback,
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            Button(onClick = component::onSave) {
-                if (state.isSaved) {
-                    Icon(Icons.Outlined.Check, contentDescription = null)
-                    Spacer(Modifier.width(Dimensions.paddingXSmall))
-                    Text("Сохранено")
-                } else {
-                    Text("Сохранить")
-                }
-            }
-        }
-    }
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Обертка для именованной секции настроек.
- */
-@Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable () -> Unit,
-) {
-    Column {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
         )
-        Spacer(Modifier.height(Dimensions.paddingMedium))
-        content()
     }
 }
 
-/**
- * Строка настройки: метка слева, элемент управления справа.
- */
 @Composable
-private fun SettingsRow(
-    label: String,
-    control: @Composable () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = Dimensions.paddingXSmall),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
+private fun ToolsSectionHost(component: SettingsComponent) {
+    val initialUi = remember(component) {
+        val initial = component.state.value
+        ToolsSectionUiState(
+            adbPath = initial.adbPath,
+            bundletoolPath = initial.bundletoolPath,
+            adbCheckState = initial.adbCheckState,
+            bundletoolCheckState = initial.bundletoolCheckState,
         )
-        control()
     }
-}
-
-/**
- * Поле для ввода максимального числа строк в буфере logcat.
- */
-@Composable
-private fun MaxBufferLinesField(
-    value: Int,
-    onValueChange: (Int) -> Unit,
-) {
-    // Локальное текстовое состояние для плавного ввода
-    var text by remember(value) { mutableStateOf(value.toString()) }
-
-    OutlinedTextField(
-        value = text,
-        onValueChange = { raw ->
-            text = raw
-            raw.toIntOrNull()?.let { parsed -> onValueChange(parsed) }
-        },
-        label = { Text("Макс. строк в буфере") },
-        supportingText = {
-            Text(
-                text = "Минимум 100. Старые строки удаляются (FIFO) при переполнении.",
-                style = MaterialTheme.typography.bodySmall,
-            )
-        },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-    )
-}
-
-/**
- * Выбор темы через набор FilterChip.
- */
-@Composable
-private fun ThemeSelector(
-    currentTheme: AppTheme,
-    onThemeSelected: (AppTheme) -> Unit,
-) {
-    val themes = listOf(
-        AppTheme.LIGHT to "Светлая",
-        AppTheme.DARK to "Темная",
-        AppTheme.SYSTEM to "Системная",
-    )
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        themes.forEach { (theme, label) ->
-            FilterChip(
-                selected = currentTheme == theme,
-                onClick = { onThemeSelected(theme) },
-                label = { Text(label) },
-                leadingIcon = if (currentTheme == theme) {
-                    { Icon(Icons.Outlined.Check, contentDescription = null) }
-                } else null,
-            )
-        }
-    }
-}
-
-/**
- * Выбор шрифтового семейства для строк logcat.
- */
-@Composable
-private fun FontFamilySelector(
-    current: String,
-    onSelected: (String) -> Unit,
-) {
-    val families = listOf(
-        "MONOSPACE" to "Monospace",
-        "SANS_SERIF" to "Sans Serif",
-        "SERIF" to "Serif",
-        "DEFAULT" to "System",
-    )
-
-    Column {
-        Text(
-            text = "Шрифт logcat",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Spacer(Modifier.height(Dimensions.paddingXSmall))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            families.forEach { (key, label) ->
-                FilterChip(
-                    selected = current == key,
-                    onClick = { onSelected(key) },
-                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                    leadingIcon = if (current == key) {
-                        { Icon(Icons.Outlined.Check, contentDescription = null) }
-                    } else null,
+    val uiState by remember(component) {
+        component.state
+            .map {
+                ToolsSectionUiState(
+                    adbPath = it.adbPath,
+                    bundletoolPath = it.bundletoolPath,
+                    adbCheckState = it.adbCheckState,
+                    bundletoolCheckState = it.bundletoolCheckState,
                 )
             }
+            .distinctUntilChanged()
+    }.collectAsState(initial = initialUi)
+
+    ToolsSection(
+        state = uiState,
+        onAdbPathChanged = component::onAdbPathChanged,
+        onCheckAdb = component::onCheckAdb,
+        onBundletoolPathChanged = component::onBundletoolPathChanged,
+        onCheckBundletool = component::onCheckBundletool,
+    )
+}
+
+@Composable
+private fun ThemeSectionHost(component: SettingsComponent) {
+    val initialUi = remember(component) {
+        ThemeSectionUiState(
+            currentTheme = component.state.value.currentTheme,
+            currentLanguage = component.state.value.currentLanguage,
+        )
+    }
+    val uiState by remember(component) {
+        component.state
+            .map {
+                ThemeSectionUiState(
+                    currentTheme = it.currentTheme,
+                    currentLanguage = it.currentLanguage,
+                )
+            }
+            .distinctUntilChanged()
+    }.collectAsState(initial = initialUi)
+
+    ThemeSection(
+        state = uiState,
+        onThemeChanged = component::onThemeChanged,
+        onLanguageChanged = component::onLanguageChanged,
+    )
+}
+
+@Composable
+private fun LogcatSectionHost(component: SettingsComponent) {
+    val initialUi = remember(component) {
+        component.state.value.toLogcatSectionUiState()
+    }
+    val uiState by remember(component) {
+        component.state
+            .map { it.toLogcatSectionUiState() }
+            .distinctUntilChanged()
+    }.collectAsState(initial = initialUi)
+
+    LogcatSection(
+        state = uiState,
+        onCompactModeChanged = component::onLogcatCompactModeChanged,
+        onShowDateChanged = component::onLogcatShowDateChanged,
+        onShowTimeChanged = component::onLogcatShowTimeChanged,
+        onShowMillisChanged = component::onLogcatShowMillisChanged,
+        onColoredLevelsChanged = component::onLogcatColoredLevelsChanged,
+        onAutoScrollChanged = component::onLogcatAutoScrollChanged,
+        onMaxBufferedLinesChanged = component::onLogcatMaxBufferedLinesChanged,
+        onFontFamilyChanged = component::onLogcatFontFamilyChanged,
+        onFontSizeChanged = component::onLogcatFontSizeChanged,
+    )
+}
+
+@Composable
+private fun SaveActionHost(component: SettingsComponent) {
+    val initialUi = remember(component) {
+        SaveActionUiState(
+            isSaving = component.state.value.isSaving,
+            hasPendingChanges = component.state.value.hasPendingChanges,
+        )
+    }
+    val uiState by remember(component) {
+        component.state
+            .map {
+                SaveActionUiState(
+                    isSaving = it.isSaving,
+                    hasPendingChanges = it.hasPendingChanges,
+                )
+            }
+            .distinctUntilChanged()
+    }.collectAsState(initial = initialUi)
+
+    SaveActionSection(
+        state = uiState,
+        onSave = component::onSave,
+    )
+}
+
+@Composable
+private fun ToolsSection(
+    state: ToolsSectionUiState,
+    onAdbPathChanged: (String) -> Unit,
+    onCheckAdb: () -> Unit,
+    onBundletoolPathChanged: (String) -> Unit,
+    onCheckBundletool: () -> Unit,
+) {
+    val sectionTitle = stringResource(Res.string.settings_section_tools)
+    val adbLabel = stringResource(Res.string.settings_field_adb_label)
+    val adbPlaceholder = stringResource(Res.string.settings_field_adb_placeholder)
+    val adbHelp = stringResource(Res.string.settings_field_adb_help)
+    val checkAdbLabel = stringResource(Res.string.settings_action_check_adb)
+
+    val bundletoolLabel = stringResource(Res.string.settings_field_bundletool_label)
+    val bundletoolPlaceholder = stringResource(Res.string.settings_field_bundletool_placeholder)
+    val bundletoolHelp = stringResource(Res.string.settings_field_bundletool_help)
+    val checkBundletoolLabel = stringResource(Res.string.settings_action_check_bundletool)
+
+    val downloadLabel = stringResource(Res.string.settings_bundletool_download)
+    val macosExample = stringResource(Res.string.settings_bundletool_examples_macos)
+    val linuxExample = stringResource(Res.string.settings_bundletool_examples_linux)
+    val windowsExample = stringResource(Res.string.settings_bundletool_examples_windows)
+    val checkingLabel = stringResource(Res.string.settings_action_checking)
+
+    AdbSectionCard(
+        title = sectionTitle,
+        titleUppercase = true,
+    ) {
+        Text(
+            text = adbLabel,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        AdbOutlinedTextField(
+            value = state.adbPath,
+            onValueChange = onAdbPathChanged,
+            placeholder = adbPlaceholder,
+            supportingText = adbHelp,
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            size = AdbTextFieldSize.MEDIUM,
+            trailingIcon = if (state.adbPath.isNotBlank()) Icons.Outlined.Clear else null,
+            onTrailingIconClick = if (state.adbPath.isNotBlank()) {
+                { onAdbPathChanged("") }
+            } else {
+                null
+            },
+        )
+        AdbOutlinedButton(
+            onClick = onCheckAdb,
+            text = if (state.adbCheckState is ToolCheckState.Checking) checkingLabel else checkAdbLabel,
+            loading = state.adbCheckState is ToolCheckState.Checking,
+            enabled = state.adbCheckState !is ToolCheckState.Checking,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+        )
+        ToolCheckStateView(state = state.adbCheckState)
+
+        Spacer(modifier = Modifier.height(Dimensions.paddingSmall))
+
+        Text(
+            text = bundletoolLabel,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        AdbOutlinedTextField(
+            value = state.bundletoolPath,
+            onValueChange = onBundletoolPathChanged,
+            placeholder = bundletoolPlaceholder,
+            supportingText = bundletoolHelp,
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            size = AdbTextFieldSize.MEDIUM,
+            trailingIcon = if (state.bundletoolPath.isNotBlank()) Icons.Outlined.Clear else null,
+            onTrailingIconClick = if (state.bundletoolPath.isNotBlank()) {
+                { onBundletoolPathChanged("") }
+            } else {
+                null
+            },
+        )
+        AdbOutlinedButton(
+            onClick = onCheckBundletool,
+            text = if (state.bundletoolCheckState is ToolCheckState.Checking) checkingLabel else checkBundletoolLabel,
+            loading = state.bundletoolCheckState is ToolCheckState.Checking,
+            enabled = state.bundletoolCheckState !is ToolCheckState.Checking,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+        )
+        ToolCheckStateView(state = state.bundletoolCheckState)
+
+        Text(
+            text = downloadLabel,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = macosExample,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = linuxExample,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = windowsExample,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun ThemeSection(
+    state: ThemeSectionUiState,
+    onThemeChanged: (AppTheme) -> Unit,
+    onLanguageChanged: (AppLanguage) -> Unit,
+) {
+    val sectionTitle = stringResource(Res.string.settings_section_theme)
+    val lightLabel = stringResource(Res.string.settings_theme_light)
+    val darkLabel = stringResource(Res.string.settings_theme_dark)
+    val systemLabel = stringResource(Res.string.settings_theme_system)
+    val languageTitle = stringResource(Res.string.settings_language_title)
+    val languageSystemLabel = stringResource(Res.string.settings_language_system)
+    val languageEnglishLabel = stringResource(Res.string.settings_language_english)
+    val languageRussianLabel = stringResource(Res.string.settings_language_russian)
+
+    val options = remember(lightLabel, darkLabel, systemLabel) {
+        listOf(
+            AdbSegmentedOption(value = AppTheme.LIGHT, label = lightLabel),
+            AdbSegmentedOption(value = AppTheme.DARK, label = darkLabel),
+            AdbSegmentedOption(value = AppTheme.SYSTEM, label = systemLabel),
+        )
+    }
+    val languageOptions = remember(
+        languageSystemLabel,
+        languageEnglishLabel,
+        languageRussianLabel,
+    ) {
+        listOf(
+            AdbSegmentedOption(value = AppLanguage.SYSTEM, label = languageSystemLabel),
+            AdbSegmentedOption(value = AppLanguage.ENGLISH, label = languageEnglishLabel),
+            AdbSegmentedOption(value = AppLanguage.RUSSIAN, label = languageRussianLabel),
+        )
+    }
+
+    AdbSectionCard(
+        title = sectionTitle,
+        titleUppercase = true,
+    ) {
+        AdbSingleSegmentedButtons(
+            options = options,
+            selectedValue = state.currentTheme,
+            onValueSelected = onThemeChanged,
+            size = AdbSegmentedButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+        )
+
+        Spacer(modifier = Modifier.height(Dimensions.paddingSmall))
+
+        Text(
+            text = languageTitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        AdbSingleSegmentedButtons(
+            options = languageOptions,
+            selectedValue = state.currentLanguage,
+            onValueSelected = onLanguageChanged,
+            size = AdbSegmentedButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+        )
+    }
+}
+
+@Composable
+private fun LogcatSection(
+    state: LogcatSectionUiState,
+    onCompactModeChanged: (Boolean) -> Unit,
+    onShowDateChanged: (Boolean) -> Unit,
+    onShowTimeChanged: (Boolean) -> Unit,
+    onShowMillisChanged: (Boolean) -> Unit,
+    onColoredLevelsChanged: (Boolean) -> Unit,
+    onAutoScrollChanged: (Boolean) -> Unit,
+    onMaxBufferedLinesChanged: (Int) -> Unit,
+    onFontFamilyChanged: (String) -> Unit,
+    onFontSizeChanged: (Int) -> Unit,
+) {
+    val sectionTitle = stringResource(Res.string.settings_section_logcat)
+    val sectionHint = stringResource(Res.string.settings_section_logcat_hint)
+    val compactModeLabel = stringResource(Res.string.settings_logcat_compact_mode)
+    val showDateLabel = stringResource(Res.string.settings_logcat_show_date)
+    val showTimeLabel = stringResource(Res.string.settings_logcat_show_time)
+    val showMillisLabel = stringResource(Res.string.settings_logcat_show_millis)
+    val coloredLevelsLabel = stringResource(Res.string.settings_logcat_colored_levels)
+    val autoScrollLabel = stringResource(Res.string.settings_logcat_auto_scroll)
+    val bufferTitle = stringResource(Res.string.settings_logcat_buffer_title)
+    val bufferHelp = stringResource(Res.string.settings_logcat_buffer_help)
+    val fontFamilyTitle = stringResource(Res.string.settings_logcat_font_family_title)
+    val fontSizeTitle = stringResource(Res.string.settings_logcat_font_size_title)
+    val decreaseLabel = stringResource(Res.string.settings_stepper_decrease)
+    val increaseLabel = stringResource(Res.string.settings_stepper_increase)
+    val fontSizeValue = stringResource(Res.string.settings_logcat_font_size_value, state.logcatFontSizeSp)
+
+    val monospaceLabel = stringResource(Res.string.settings_logcat_font_family_monospace)
+    val sansSerifLabel = stringResource(Res.string.settings_logcat_font_family_sans_serif)
+    val serifLabel = stringResource(Res.string.settings_logcat_font_family_serif)
+    val systemLabel = stringResource(Res.string.settings_logcat_font_family_system)
+    val fontOptions = remember(monospaceLabel, sansSerifLabel, serifLabel, systemLabel) {
+        listOf(
+            AdbSegmentedOption(value = "MONOSPACE", label = monospaceLabel),
+            AdbSegmentedOption(value = "SANS_SERIF", label = sansSerifLabel),
+            AdbSegmentedOption(value = "SERIF", label = serifLabel),
+            AdbSegmentedOption(value = "DEFAULT", label = systemLabel),
+        )
+    }
+
+    AdbSectionCard(
+        title = sectionTitle,
+        titleUppercase = true,
+    ) {
+        Text(
+            text = sectionHint,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        AdbSettingRow(title = compactModeLabel) {
+            Switch(
+                checked = state.logcatCompactMode,
+                onCheckedChange = onCompactModeChanged,
+            )
+        }
+        AdbSettingRow(title = showDateLabel) {
+            Switch(
+                checked = state.logcatShowDate,
+                onCheckedChange = onShowDateChanged,
+            )
+        }
+        AdbSettingRow(title = showTimeLabel) {
+            Switch(
+                checked = state.logcatShowTime,
+                onCheckedChange = onShowTimeChanged,
+            )
+        }
+        AdbSettingRow(title = showMillisLabel) {
+            Switch(
+                checked = state.logcatShowMillis,
+                onCheckedChange = onShowMillisChanged,
+            )
+        }
+        AdbSettingRow(title = coloredLevelsLabel) {
+            Switch(
+                checked = state.logcatColoredLevels,
+                onCheckedChange = onColoredLevelsChanged,
+            )
+        }
+        AdbSettingRow(title = autoScrollLabel) {
+            Switch(
+                checked = state.logcatAutoScroll,
+                onCheckedChange = onAutoScrollChanged,
+            )
+        }
+
+        AdbSettingRow(
+            title = bufferTitle,
+            description = bufferHelp,
+        ) {
+            AdbIntStepper(
+                value = state.logcatMaxBufferedLines,
+                onValueChange = onMaxBufferedLinesChanged,
+                minValue = 100,
+                maxValue = 100_000,
+                valueLabel = state.logcatMaxBufferedLines.toString(),
+                decreaseContentDescription = decreaseLabel,
+                increaseContentDescription = increaseLabel,
+            )
+        }
+
+        Text(
+            text = fontFamilyTitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        AdbSingleSegmentedButtons(
+            options = fontOptions,
+            selectedValue = state.logcatFontFamily,
+            onValueSelected = onFontFamilyChanged,
+            size = AdbSegmentedButtonSize.XSMALL,
+            cornerRadius = AdbCornerRadius.MEDIUM,
+        )
+
+        AdbSettingRow(title = fontSizeTitle) {
+            AdbIntStepper(
+                value = state.logcatFontSizeSp,
+                onValueChange = onFontSizeChanged,
+                minValue = 8,
+                maxValue = 24,
+                valueLabel = fontSizeValue,
+                decreaseContentDescription = decreaseLabel,
+                increaseContentDescription = increaseLabel,
+            )
         }
     }
 }
 
-/**
- * Выбор размера шрифта строк logcat (кнопки − / + с текущим значением).
- */
 @Composable
-private fun FontSizePicker(
-    value: Int,
-    onValueChange: (Int) -> Unit,
+private fun SaveActionSection(
+    state: SaveActionUiState,
+    onSave: () -> Unit,
 ) {
+    val saveLabel = stringResource(Res.string.settings_action_save)
+    val savingLabel = stringResource(Res.string.settings_action_saving)
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End,
     ) {
-        Text(
-            text = "Размер шрифта logcat",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
+        AdbFilledButton(
+            onClick = onSave,
+            text = if (state.isSaving) savingLabel else saveLabel,
+            loading = state.isSaving,
+            enabled = state.hasPendingChanges && !state.isSaving,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.MEDIUM,
         )
-        IconButton(
-            onClick = { onValueChange(value - 1) },
-            enabled = value > 8,
-            modifier = Modifier.size(32.dp),
-        ) {
-            Icon(Icons.Outlined.Remove, contentDescription = "Уменьшить")
-        }
-        Text(
-            text = "$value sp",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.width(40.dp),
-        )
-        IconButton(
-            onClick = { onValueChange(value + 1) },
-            enabled = value < 24,
-            modifier = Modifier.size(32.dp),
-        ) {
-            Icon(Icons.Outlined.Add, contentDescription = "Увеличить")
-        }
     }
 }
+
+@Composable
+private fun ToolCheckStateView(state: ToolCheckState) {
+    when (state) {
+        is ToolCheckState.Success -> AdbBanner(
+            message = state.message,
+            type = AdbBannerType.SUCCESS,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        is ToolCheckState.Error -> AdbBanner(
+            message = state.message,
+            type = AdbBannerType.ERROR,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        ToolCheckState.Checking,
+        ToolCheckState.Idle,
+        -> Unit
+    }
+}
+
+private fun SettingsUiState.toLogcatSectionUiState(): LogcatSectionUiState = LogcatSectionUiState(
+    logcatCompactMode = logcatCompactMode,
+    logcatShowDate = logcatShowDate,
+    logcatShowTime = logcatShowTime,
+    logcatShowMillis = logcatShowMillis,
+    logcatColoredLevels = logcatColoredLevels,
+    logcatMaxBufferedLines = logcatMaxBufferedLines,
+    logcatAutoScroll = logcatAutoScroll,
+    logcatFontFamily = logcatFontFamily,
+    logcatFontSizeSp = logcatFontSizeSp,
+)

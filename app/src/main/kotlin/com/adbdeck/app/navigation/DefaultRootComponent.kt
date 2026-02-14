@@ -1,6 +1,7 @@
 package com.adbdeck.app.navigation
 
 import com.adbdeck.core.adb.api.adb.AdbClient
+import com.adbdeck.core.adb.api.adb.BundletoolClient
 import com.adbdeck.core.adb.api.apkinstall.ApkInstallClient
 import com.adbdeck.core.adb.api.contacts.ContactsClient
 import com.adbdeck.core.adb.api.device.DeviceControlClient
@@ -13,7 +14,6 @@ import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.adb.api.screen.ScreenToolsClient
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
-import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.DefaultContactsComponent
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
@@ -58,7 +58,7 @@ import com.arkivanov.decompose.value.Value
  * @param contactsClient       ADB-клиент для работы с контактами.
  * @param screenToolsClient    ADB-клиент для screenshot/screenrecord.
  * @param apkInstallClient     ADB-клиент установки APK.
- * @param processRunner        ProcessRunner для проверочных команд в Settings.
+ * @param bundletoolClient     Клиент проверки bundletool для Settings.
  */
 class DefaultRootComponent(
     componentContext: ComponentContext,
@@ -74,7 +74,7 @@ class DefaultRootComponent(
     private val contactsClient: ContactsClient,
     private val screenToolsClient: ScreenToolsClient,
     private val apkInstallClient: ApkInstallClient,
-    private val processRunner: ProcessRunner,
+    private val bundletoolClient: BundletoolClient,
     private val intentLaunchClient: IntentLaunchClient,
     private val notificationsClient: NotificationsClient,
 ) : RootComponent, ComponentContext by componentContext {
@@ -213,7 +213,7 @@ class DefaultRootComponent(
             DefaultSettingsComponent(
                 componentContext = componentContext,
                 adbClient = adbClient,
-                processRunner = processRunner,
+                bundletoolClient = bundletoolClient,
                 settingsRepository = settingsRepository,
             )
         )

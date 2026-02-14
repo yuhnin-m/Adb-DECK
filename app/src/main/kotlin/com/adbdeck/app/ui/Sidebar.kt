@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.adbdeck.app.navigation.Screen
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.settings.AppLanguage
+import java.util.Locale
 
 /**
  * Боковая навигационная панель (Sidebar) главного окна
@@ -28,6 +30,8 @@ import com.adbdeck.core.designsystem.Dimensions
  * @param onNavigate Callback навигации — вызывается при нажатии на пункт меню
  * @param isDarkTheme Текущий режим темы (для иконки переключателя)
  * @param onToggleTheme Callback переключения светлой / темной темы
+ * @param currentLanguage Текущий язык интерфейса
+ * @param onToggleLanguage Callback переключения языка (RU/EN)
  * @param devicesCount Количество видимых ADB-устройств
  * @param isLogcatRunning Флаг активного захвата logcat
  * @param hasUnsavedSettings Флаг несохраненных настроек
@@ -39,6 +43,8 @@ fun Sidebar(
     onNavigate: (Screen) -> Unit,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    currentLanguage: AppLanguage,
+    onToggleLanguage: () -> Unit,
     devicesCount: Int,
     isLogcatRunning: Boolean,
     hasUnsavedSettings: Boolean,
@@ -152,8 +158,13 @@ fun Sidebar(
         Spacer(Modifier.weight(1f))
         HorizontalDivider()
 
-        // ── Переключатель темы ───────────────────────────────────
-        ThemeToggle(isDarkTheme = isDarkTheme, onToggle = onToggleTheme)
+        // ── Быстрые переключатели ────────────────────────────────
+        SidebarQuickToggles(
+            currentLanguage = currentLanguage,
+            onToggleLanguage = onToggleLanguage,
+            isDarkTheme = isDarkTheme,
+            onToggleTheme = onToggleTheme,
+        )
     }
 
     // Вертикальный разделитель между Sidebar и контентом
@@ -299,34 +310,49 @@ private fun SidebarBadge(
     }
 }
 
-/**
- * Кнопка переключения светлой / темной темы в нижней части Sidebar
- *
- * @param isDarkTheme Текущий режим темы
- * @param onToggle    Callback переключения
- */
 @Composable
-private fun ThemeToggle(isDarkTheme: Boolean, onToggle: () -> Unit) {
+private fun SidebarQuickToggles(
+    currentLanguage: AppLanguage,
+    onToggleLanguage: () -> Unit,
+    isDarkTheme: Boolean,
+    onToggleTheme: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(Dimensions.navItemHeight)
             .padding(horizontal = Dimensions.paddingDefault),
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = if (isDarkTheme) "Темная тема" else "Светлая тема",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        TextButton(
+            onClick = onToggleLanguage,
             modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = onToggle) {
+            contentPadding = PaddingValues(horizontal = 0.dp),
+        ) {
+            Text(
+                text = currentLanguage.toFlagEmoji(),
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+
+        TextButton(
+            onClick = onToggleTheme,
+            modifier = Modifier.weight(1f),
+        ) {
             Icon(
                 imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
                 contentDescription = if (isDarkTheme) "Переключить на светлую тему" else "Переключить на темную тему",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(Dimensions.iconSizeNav),
             )
+            Spacer(Modifier.width(Dimensions.paddingXSmall))
+            Text(text = if (isDarkTheme) "Ночь" else "День")
         }
     }
+}
+
+private fun AppLanguage.toFlagEmoji(): String = when (this) {
+    AppLanguage.SYSTEM -> if (Locale.getDefault().language.equals("ru", ignoreCase = true)) "🇷🇺" else "🇺🇸"
+    AppLanguage.ENGLISH -> "🇺🇸"
+    AppLanguage.RUSSIAN -> "🇷🇺"
 }

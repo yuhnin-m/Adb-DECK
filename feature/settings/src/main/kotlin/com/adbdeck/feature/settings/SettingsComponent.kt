@@ -1,6 +1,7 @@
 package com.adbdeck.feature.settings
 
 import com.adbdeck.core.settings.AppTheme
+import com.adbdeck.core.settings.AppLanguage
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -34,12 +35,22 @@ interface SettingsComponent {
     /** Проверить доступность bundletool по текущему пути и вывести версию. */
     fun onCheckBundletool()
 
+    /** Скрыть баннер обратной связи. */
+    fun onDismissFeedback()
+
     /**
      * Пользователь выбрал другую тему.
      *
      * @param theme Новая тема.
      */
     fun onThemeChanged(theme: AppTheme)
+
+    /**
+     * Пользователь выбрал другой язык интерфейса.
+     *
+     * @param language Новый язык.
+     */
+    fun onLanguageChanged(language: AppLanguage)
 
     // ── Logcat settings (сохраняются немедленно) ────────────────
 

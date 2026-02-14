@@ -1,0 +1,60 @@
+<resources>
+    <string name="settings_title">Settings</string>
+
+    <string name="settings_section_tools">Tools</string>
+    <string name="settings_section_theme">Theme</string>
+    <string name="settings_section_logcat">Logcat</string>
+    <string name="settings_section_logcat_hint">Settings are applied when a new log capture starts.</string>
+
+    <string name="settings_field_adb_label">Path to adb</string>
+    <string name="settings_field_adb_placeholder">adb</string>
+    <string name="settings_field_adb_help">Leave "adb" if executable is available in system PATH.</string>
+
+    <string name="settings_field_bundletool_label">Path to bundletool</string>
+    <string name="settings_field_bundletool_placeholder">bundletool</string>
+    <string name="settings_field_bundletool_help">You can specify bundletool executable path or bundletool-all.jar.</string>
+
+    <string name="settings_action_check_adb">Check ADB</string>
+    <string name="settings_action_check_bundletool">Check bundletool</string>
+    <string name="settings_action_checking">Checking…</string>
+    <string name="settings_action_save">Save</string>
+    <string name="settings_action_saving">Saving…</string>
+
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Russian</string>
+
+    <string name="settings_logcat_compact_mode">Compact mode</string>
+    <string name="settings_logcat_show_date">Show date (MM-DD)</string>
+    <string name="settings_logcat_show_time">Show time (HH:MM:SS)</string>
+    <string name="settings_logcat_show_millis">Show milliseconds</string>
+    <string name="settings_logcat_colored_levels">Colored levels</string>
+    <string name="settings_logcat_auto_scroll">Auto-scroll by default</string>
+    <string name="settings_logcat_buffer_title">Max buffered lines</string>
+    <string name="settings_logcat_buffer_help">Minimum 100. Old lines are dropped (FIFO) when full.</string>
+    <string name="settings_logcat_font_family_title">Logcat font family</string>
+    <string name="settings_logcat_font_size_title">Logcat font size</string>
+    <string name="settings_logcat_font_family_monospace">Monospace</string>
+    <string name="settings_logcat_font_family_sans_serif">Sans Serif</string>
+    <string name="settings_logcat_font_family_serif">Serif</string>
+    <string name="settings_logcat_font_family_system">System</string>
+    <string name="settings_logcat_font_size_value">%1$d sp</string>
+
+    <string name="settings_stepper_decrease">Decrease value</string>
+    <string name="settings_stepper_increase">Increase value</string>
+
+    <string name="settings_bundletool_download">Download bundletool: https://github.com/google/bundletool/releases</string>
+    <string name="settings_bundletool_examples_macos">macOS: /opt/homebrew/bin/bundletool or ~/Tools/bundletool/bundletool-all.jar</string>
+    <string name="settings_bundletool_examples_linux">Linux: /usr/local/bin/bundletool or ~/tools/bundletool/bundletool-all.jar</string>
+    <string name="settings_bundletool_examples_windows">Windows: C:\\tools\\bundletool\\bundletool.bat or C:\\tools\\bundletool\\bundletool-all.jar</string>
+
+    <string name="settings_status_available">Available: %1$s</string>
+    <string name="settings_status_not_found">Not found: %1$s</string>
+    <string name="settings_feedback_saved">Settings saved</string>
+    <string name="settings_feedback_save_failed">Failed to save settings</string>
+    <string name="settings_feedback_logcat_save_failed">Failed to save Logcat settings</string>
+</resources>

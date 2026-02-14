@@ -1,6 +1,7 @@
 package com.adbdeck.app.di
 
 import com.adbdeck.core.adb.api.adb.AdbClient
+import com.adbdeck.core.adb.api.adb.BundletoolClient
 import com.adbdeck.core.adb.api.contacts.ContactsClient
 import com.adbdeck.core.adb.api.intents.IntentLaunchClient
 import com.adbdeck.core.adb.api.notifications.NotificationsClient
@@ -15,6 +16,7 @@ import com.adbdeck.core.adb.api.screen.ScreenToolsClient
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.adb.impl.monitoring.DefaultSystemMonitorClient
 import com.adbdeck.core.adb.impl.adb.SystemAdbClient
+import com.adbdeck.core.adb.impl.adb.SystemBundletoolClient
 import com.adbdeck.core.adb.impl.contacts.SystemContactsClient
 import com.adbdeck.core.adb.impl.intents.SystemIntentLaunchClient
 import com.adbdeck.core.adb.impl.notifications.SystemNotificationsClient
@@ -75,6 +77,14 @@ val appModule = module {
     // ── AdbClient ────────────────────────────────────────────────
     single<AdbClient> {
         SystemAdbClient(
+            processRunner = get(),
+            settingsRepository = get(),
+        )
+    }
+
+    // ── BundletoolClient ──────────────────────────────────────────
+    single<BundletoolClient> {
+        SystemBundletoolClient(
             processRunner = get(),
             settingsRepository = get(),
         )

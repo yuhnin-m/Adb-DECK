@@ -1,219 +1,428 @@
 package com.adbdeck.feature.settings
 
+import adbdeck.feature.settings.generated.resources.Res
+import adbdeck.feature.settings.generated.resources.settings_feedback_logcat_save_failed
+import adbdeck.feature.settings.generated.resources.settings_feedback_save_failed
+import adbdeck.feature.settings.generated.resources.settings_feedback_saved
+import adbdeck.feature.settings.generated.resources.settings_status_available
+import adbdeck.feature.settings.generated.resources.settings_status_not_found
 import com.adbdeck.core.adb.api.adb.AdbCheckResult
 import com.adbdeck.core.adb.api.adb.AdbClient
-import com.adbdeck.core.process.ProcessRunner
+import com.adbdeck.core.adb.api.adb.BundletoolCheckResult
+import com.adbdeck.core.adb.api.adb.BundletoolClient
+import com.adbdeck.core.settings.AppSettings
+import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.jetbrains.compose.resources.getString
 
 /**
  * Реализация [SettingsComponent].
  *
- * Инициализирует состояние из [SettingsRepository] при создании.
- * Настройки logcat сохраняются немедленно при каждом изменении (без кнопки «Сохранить»).
- *
- * @param componentContext   Контекст Decompose-компонента.
- * @param adbClient          ADB-клиент для проверки доступности.
- * @param settingsRepository Репозиторий для чтения и записи настроек.
+ * Что исправлено:
+ * - проверка bundletool вынесена в [BundletoolClient] (feature не работает с ProcessRunner напрямую)
+ * - типизированные статусы проверок (`ToolCheckState`) вместо "✓/✗"-строк
+ * - сериализация сохранений через [saveMutex]
+ * - debounce для авто-сохранения logcat-настроек
+ * - явный флаг [SettingsUiState.hasPendingChanges] для Sidebar
  */
 class DefaultSettingsComponent(
     componentContext: ComponentContext,
     private val adbClient: AdbClient,
-    private val processRunner: ProcessRunner,
+    private val bundletoolClient: BundletoolClient,
     private val settingsRepository: SettingsRepository,
 ) : SettingsComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
 
+    private val saveMutex = Mutex()
+    private var persistedEditable = EditableSettingsSnapshot.from(settingsRepository.getSettings())
+
+    private var adbCheckJob: Job? = null
+    private var bundletoolCheckJob: Job? = null
+    private var logcatSaveJob: Job? = null
+    private var feedbackJob: Job? = null
+
     private val _state = MutableStateFlow(
-        settingsRepository.getSettings().let { s ->
-            SettingsUiState(
-                adbPath = s.adbPath,
-                bundletoolPath = s.bundletoolPath,
-                currentTheme = s.theme,
-                logcatCompactMode = s.logcatCompactMode,
-                logcatShowDate = s.logcatShowDate,
-                logcatShowTime = s.logcatShowTime,
-                logcatShowMillis = s.logcatShowMillis,
-                logcatColoredLevels = s.logcatColoredLevels,
-                logcatMaxBufferedLines = s.logcatMaxBufferedLines,
-                logcatAutoScroll = s.logcatAutoScroll,
-                logcatFontFamily = s.logcatFontFamily,
-                logcatFontSizeSp = s.logcatFontSizeSp,
-            )
-        }
+        settingsRepository.getSettings().toUiState()
     )
     override val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
-    // ── ADB path & theme ────────────────────────────────────────
+    init {
+        observeSettings()
+    }
 
     override fun onAdbPathChanged(path: String) {
-        _state.update { it.copy(adbPath = path, adbCheckResult = "", isSaved = false) }
+        _state.update { current ->
+            current.copy(
+                adbPath = path,
+                adbCheckState = ToolCheckState.Idle,
+                hasPendingChanges = hasPendingChanges(
+                    adbPath = path,
+                    bundletoolPath = current.bundletoolPath,
+                    theme = current.currentTheme,
+                    language = current.currentLanguage,
+                ),
+            )
+        }
     }
 
     override fun onBundletoolPathChanged(path: String) {
-        _state.update {
-            it.copy(
+        _state.update { current ->
+            current.copy(
                 bundletoolPath = path,
-                bundletoolCheckResult = "",
-                isSaved = false,
+                bundletoolCheckState = ToolCheckState.Idle,
+                hasPendingChanges = hasPendingChanges(
+                    adbPath = current.adbPath,
+                    bundletoolPath = path,
+                    theme = current.currentTheme,
+                    language = current.currentLanguage,
+                ),
             )
         }
     }
 
     override fun onSave() {
+        if (_state.value.isSaving) return
         scope.launch {
-            val current = settingsRepository.getSettings()
-            val updated = current.copy(
-                adbPath = _state.value.adbPath,
-                bundletoolPath = _state.value.bundletoolPath,
-                theme = _state.value.currentTheme,
+            _state.update { it.copy(isSaving = true) }
+
+            val result = saveMutex.withLock {
+                runCatching {
+                    val currentRepo = settingsRepository.getSettings()
+                    val currentUi = _state.value
+                    val updated = currentRepo.copy(
+                        adbPath = currentUi.adbPath,
+                        bundletoolPath = currentUi.bundletoolPath,
+                        theme = currentUi.currentTheme,
+                        language = currentUi.currentLanguage,
+                    )
+                    settingsRepository.saveSettings(updated)
+                    persistedEditable = EditableSettingsSnapshot.from(updated)
+                }
+            }
+
+            result.fold(
+                onSuccess = {
+                    _state.update { current ->
+                        current.copy(
+                            isSaving = false,
+                            hasPendingChanges = hasPendingChanges(
+                                adbPath = current.adbPath,
+                                bundletoolPath = current.bundletoolPath,
+                                theme = current.currentTheme,
+                                language = current.currentLanguage,
+                            ),
+                        )
+                    }
+                    showFeedback(
+                        message = getString(Res.string.settings_feedback_saved),
+                        isError = false,
+                    )
+                },
+                onFailure = { error ->
+                    _state.update { it.copy(isSaving = false) }
+                    showFeedback(
+                        message = error.message ?: getString(Res.string.settings_feedback_save_failed),
+                        isError = true,
+                    )
+                },
             )
-            settingsRepository.saveSettings(updated)
-            _state.update { it.copy(isSaved = true) }
         }
     }
 
     override fun onCheckAdb() {
-        if (_state.value.isCheckingAdb) return
-        scope.launch {
-            _state.update { it.copy(isCheckingAdb = true, adbCheckResult = "") }
-            val result = adbClient.checkAvailability(_state.value.adbPath)
+        if (adbCheckJob?.isActive == true) return
+        adbCheckJob = scope.launch {
+            val requestedPath = _state.value.adbPath
+            _state.update { it.copy(adbCheckState = ToolCheckState.Checking) }
 
-            val resultText = when (result) {
-                is AdbCheckResult.Available -> "✓ Доступен: ${result.version}"
-                is AdbCheckResult.NotAvailable -> "✗ Не найден: ${result.reason}"
+            val nextState = when (val result = adbClient.checkAvailability(requestedPath)) {
+                is AdbCheckResult.Available ->
+                    ToolCheckState.Success(
+                        getString(
+                            Res.string.settings_status_available,
+                            result.version,
+                        )
+                    )
+
+                is AdbCheckResult.NotAvailable ->
+                    ToolCheckState.Error(
+                        getString(
+                            Res.string.settings_status_not_found,
+                            result.reason,
+                        )
+                    )
             }
-            _state.update { it.copy(isCheckingAdb = false, adbCheckResult = resultText) }
+
+            _state.update { current ->
+                if (current.adbPath == requestedPath) {
+                    current.copy(adbCheckState = nextState)
+                } else {
+                    current
+                }
+            }
+            adbCheckJob = null
         }
     }
 
     override fun onCheckBundletool() {
-        if (_state.value.isCheckingBundletool) return
-        scope.launch {
-            _state.update { it.copy(isCheckingBundletool = true, bundletoolCheckResult = "") }
-            val path = _state.value.bundletoolPath.trim().ifBlank { "bundletool" }
-            val command = buildBundletoolCommand(path) + "version"
+        if (bundletoolCheckJob?.isActive == true) return
+        bundletoolCheckJob = scope.launch {
+            val requestedPath = _state.value.bundletoolPath
+            _state.update { it.copy(bundletoolCheckState = ToolCheckState.Checking) }
 
-            val result = runCatching { processRunner.run(command) }
-            val resultText = result.fold(
-                onSuccess = { processResult ->
-                    if (processResult.isSuccess) {
-                        val version = processResult.stdout.lineSequence()
-                            .map(String::trim)
-                            .firstOrNull { it.isNotEmpty() }
-                            ?: processResult.stderr.lineSequence()
-                                .map(String::trim)
-                                .firstOrNull { it.isNotEmpty() }
-                                ?: "unknown"
-                        "✓ Доступен: $version"
-                    } else {
-                        val details = processResult.stderr.ifBlank { processResult.stdout }
-                            .lineSequence()
-                            .map(String::trim)
-                            .firstOrNull { it.isNotEmpty() }
-                            ?: "не удалось получить версию"
-                        "✗ Не найден: $details"
-                    }
-                },
-                onFailure = { error ->
-                    "✗ Не найден: ${error.message ?: "не удалось запустить команду"}"
-                },
-            )
-            _state.update {
-                it.copy(
-                    isCheckingBundletool = false,
-                    bundletoolCheckResult = resultText,
-                )
+            val nextState = when (val result = bundletoolClient.checkAvailability(requestedPath)) {
+                is BundletoolCheckResult.Available ->
+                    ToolCheckState.Success(
+                        getString(
+                            Res.string.settings_status_available,
+                            result.version,
+                        )
+                    )
+
+                is BundletoolCheckResult.NotAvailable ->
+                    ToolCheckState.Error(
+                        getString(
+                            Res.string.settings_status_not_found,
+                            result.reason,
+                        )
+                    )
             }
+
+            _state.update { current ->
+                if (current.bundletoolPath == requestedPath) {
+                    current.copy(bundletoolCheckState = nextState)
+                } else {
+                    current
+                }
+            }
+            bundletoolCheckJob = null
         }
     }
 
-    override fun onThemeChanged(theme: AppTheme) {
-        _state.update { it.copy(currentTheme = theme, isSaved = false) }
+    override fun onDismissFeedback() {
+        feedbackJob?.cancel()
+        feedbackJob = null
+        _state.update { it.copy(saveFeedback = null) }
     }
 
-    // ── Logcat settings (immediate save) ────────────────────────
+    override fun onThemeChanged(theme: AppTheme) {
+        _state.update { current ->
+            current.copy(
+                currentTheme = theme,
+                hasPendingChanges = hasPendingChanges(
+                    adbPath = current.adbPath,
+                    bundletoolPath = current.bundletoolPath,
+                    theme = theme,
+                    language = current.currentLanguage,
+                ),
+            )
+        }
+    }
+
+    override fun onLanguageChanged(language: AppLanguage) {
+        _state.update { current ->
+            current.copy(
+                currentLanguage = language,
+                hasPendingChanges = hasPendingChanges(
+                    adbPath = current.adbPath,
+                    bundletoolPath = current.bundletoolPath,
+                    theme = current.currentTheme,
+                    language = language,
+                ),
+            )
+        }
+    }
 
     override fun onLogcatCompactModeChanged(value: Boolean) {
-        _state.update { it.copy(logcatCompactMode = value) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatCompactMode = value) }
     }
 
     override fun onLogcatShowDateChanged(value: Boolean) {
-        _state.update { it.copy(logcatShowDate = value) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatShowDate = value) }
     }
 
     override fun onLogcatShowTimeChanged(value: Boolean) {
-        _state.update { it.copy(logcatShowTime = value) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatShowTime = value) }
     }
 
     override fun onLogcatShowMillisChanged(value: Boolean) {
-        _state.update { it.copy(logcatShowMillis = value) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatShowMillis = value) }
     }
 
     override fun onLogcatColoredLevelsChanged(value: Boolean) {
-        _state.update { it.copy(logcatColoredLevels = value) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatColoredLevels = value) }
     }
 
     override fun onLogcatMaxBufferedLinesChanged(lines: Int) {
         val coerced = lines.coerceAtLeast(100)
-        _state.update { it.copy(logcatMaxBufferedLines = coerced) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatMaxBufferedLines = coerced) }
     }
 
     override fun onLogcatAutoScrollChanged(value: Boolean) {
-        _state.update { it.copy(logcatAutoScroll = value) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatAutoScroll = value) }
     }
 
     override fun onLogcatFontFamilyChanged(family: String) {
-        _state.update { it.copy(logcatFontFamily = family) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatFontFamily = family) }
     }
 
     override fun onLogcatFontSizeChanged(size: Int) {
         val coerced = size.coerceIn(8, 24)
-        _state.update { it.copy(logcatFontSizeSp = coerced) }
-        saveLogcatSettings()
+        updateLogcatAndScheduleSave { it.copy(logcatFontSizeSp = coerced) }
     }
 
-    /** Сохраняет только logcat-поля в [SettingsRepository] асинхронно. */
-    private fun saveLogcatSettings() {
+    private fun observeSettings() {
         scope.launch {
-            val ui = _state.value
-            val current = settingsRepository.getSettings()
-            settingsRepository.saveSettings(
-                current.copy(
-                    logcatCompactMode = ui.logcatCompactMode,
-                    logcatShowDate = ui.logcatShowDate,
-                    logcatShowTime = ui.logcatShowTime,
-                    logcatShowMillis = ui.logcatShowMillis,
-                    logcatColoredLevels = ui.logcatColoredLevels,
-                    logcatMaxBufferedLines = ui.logcatMaxBufferedLines,
-                    logcatAutoScroll = ui.logcatAutoScroll,
-                    logcatFontFamily = ui.logcatFontFamily,
-                    logcatFontSizeSp = ui.logcatFontSizeSp,
+            settingsRepository.settingsFlow.collect { saved ->
+                persistedEditable = EditableSettingsSnapshot.from(saved)
+                _state.update { current ->
+                    val shouldSyncEditable = !current.hasPendingChanges && !current.isSaving
+                    val merged = current.copy(
+                        adbPath = if (shouldSyncEditable) saved.adbPath else current.adbPath,
+                        bundletoolPath = if (shouldSyncEditable) saved.bundletoolPath else current.bundletoolPath,
+                        currentTheme = if (shouldSyncEditable) saved.theme else current.currentTheme,
+                        currentLanguage = if (shouldSyncEditable) saved.language else current.currentLanguage,
+                        logcatCompactMode = saved.logcatCompactMode,
+                        logcatShowDate = saved.logcatShowDate,
+                        logcatShowTime = saved.logcatShowTime,
+                        logcatShowMillis = saved.logcatShowMillis,
+                        logcatColoredLevels = saved.logcatColoredLevels,
+                        logcatMaxBufferedLines = saved.logcatMaxBufferedLines,
+                        logcatAutoScroll = saved.logcatAutoScroll,
+                        logcatFontFamily = saved.logcatFontFamily,
+                        logcatFontSizeSp = saved.logcatFontSizeSp,
+                    )
+                    merged.copy(
+                        hasPendingChanges = hasPendingChanges(
+                            adbPath = merged.adbPath,
+                            bundletoolPath = merged.bundletoolPath,
+                            theme = merged.currentTheme,
+                            language = merged.currentLanguage,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun updateLogcatAndScheduleSave(update: (SettingsUiState) -> SettingsUiState) {
+        _state.update(update)
+        scheduleLogcatSave()
+    }
+
+    private fun scheduleLogcatSave() {
+        logcatSaveJob?.cancel()
+        logcatSaveJob = scope.launch {
+            delay(LOGCAT_SAVE_DEBOUNCE_MS)
+            persistLogcatSettings()
+        }
+    }
+
+    private suspend fun persistLogcatSettings() {
+        val snapshot = _state.value
+        val result = saveMutex.withLock {
+            runCatching {
+                val current = settingsRepository.getSettings()
+                settingsRepository.saveSettings(
+                    current.copy(
+                        logcatCompactMode = snapshot.logcatCompactMode,
+                        logcatShowDate = snapshot.logcatShowDate,
+                        logcatShowTime = snapshot.logcatShowTime,
+                        logcatShowMillis = snapshot.logcatShowMillis,
+                        logcatColoredLevels = snapshot.logcatColoredLevels,
+                        logcatMaxBufferedLines = snapshot.logcatMaxBufferedLines,
+                        logcatAutoScroll = snapshot.logcatAutoScroll,
+                        logcatFontFamily = snapshot.logcatFontFamily,
+                        logcatFontSizeSp = snapshot.logcatFontSizeSp,
+                    ),
                 )
+            }
+        }
+
+        result.onFailure { error ->
+            showFeedback(
+                message = error.message ?: getString(Res.string.settings_feedback_logcat_save_failed),
+                isError = true,
             )
         }
     }
 
-    /** Собирает команду запуска bundletool из пути к бинарнику или `.jar`. */
-    private fun buildBundletoolCommand(path: String): List<String> =
-        when {
-            path.endsWith(".jar", ignoreCase = true) -> listOf("java", "-jar", path)
-            else -> listOf(path)
+    private fun hasPendingChanges(
+        adbPath: String,
+        bundletoolPath: String,
+        theme: AppTheme,
+        language: AppLanguage,
+    ): Boolean {
+        return adbPath != persistedEditable.adbPath ||
+            bundletoolPath != persistedEditable.bundletoolPath ||
+            theme != persistedEditable.theme ||
+            language != persistedEditable.language
+    }
+
+    private fun showFeedback(message: String, isError: Boolean) {
+        feedbackJob?.cancel()
+        _state.update { it.copy(saveFeedback = SettingsFeedback(message = message, isError = isError)) }
+        feedbackJob = scope.launch {
+            delay(FEEDBACK_AUTO_HIDE_MS)
+            _state.update { current ->
+                if (current.saveFeedback?.message == message) {
+                    current.copy(saveFeedback = null)
+                } else {
+                    current
+                }
+            }
         }
+    }
+
+    private fun AppSettings.toUiState(): SettingsUiState = SettingsUiState(
+        adbPath = adbPath,
+        bundletoolPath = bundletoolPath,
+        currentTheme = theme,
+        currentLanguage = language,
+        hasPendingChanges = false,
+        logcatCompactMode = logcatCompactMode,
+        logcatShowDate = logcatShowDate,
+        logcatShowTime = logcatShowTime,
+        logcatShowMillis = logcatShowMillis,
+        logcatColoredLevels = logcatColoredLevels,
+        logcatMaxBufferedLines = logcatMaxBufferedLines,
+        logcatAutoScroll = logcatAutoScroll,
+        logcatFontFamily = logcatFontFamily,
+        logcatFontSizeSp = logcatFontSizeSp,
+    )
+
+    private data class EditableSettingsSnapshot(
+        val adbPath: String,
+        val bundletoolPath: String,
+        val theme: AppTheme,
+        val language: AppLanguage,
+    ) {
+        companion object {
+            fun from(settings: AppSettings): EditableSettingsSnapshot = EditableSettingsSnapshot(
+                adbPath = settings.adbPath,
+                bundletoolPath = settings.bundletoolPath,
+                theme = settings.theme,
+                language = settings.language,
+            )
+        }
+    }
+
+    private companion object {
+        const val LOGCAT_SAVE_DEBOUNCE_MS = 350L
+        const val FEEDBACK_AUTO_HIDE_MS = 3_000L
+    }
 }

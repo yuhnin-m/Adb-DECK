@@ -1,0 +1,60 @@
+<resources>
+    <string name="settings_title">Настройки</string>
+
+    <string name="settings_section_tools">Инструменты</string>
+    <string name="settings_section_theme">Тема</string>
+    <string name="settings_section_logcat">Logcat</string>
+    <string name="settings_section_logcat_hint">Настройки применяются при следующем запуске захвата лога.</string>
+
+    <string name="settings_field_adb_label">Путь к adb</string>
+    <string name="settings_field_adb_placeholder">adb</string>
+    <string name="settings_field_adb_help">Оставьте "adb", если исполняемый файл находится в PATH системы.</string>
+
+    <string name="settings_field_bundletool_label">Путь к bundletool</string>
+    <string name="settings_field_bundletool_placeholder">bundletool</string>
+    <string name="settings_field_bundletool_help">Можно указать путь к исполняемому файлу bundletool или к bundletool-all.jar.</string>
+
+    <string name="settings_action_check_adb">Проверить ADB</string>
+    <string name="settings_action_check_bundletool">Проверить bundletool</string>
+    <string name="settings_action_checking">Проверяется…</string>
+    <string name="settings_action_save">Сохранить</string>
+    <string name="settings_action_saving">Сохранение…</string>
+
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Темная</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_language_title">Язык</string>
+    <string name="settings_language_system">Системный</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_russian">Русский</string>
+
+    <string name="settings_logcat_compact_mode">Компактный режим</string>
+    <string name="settings_logcat_show_date">Показывать дату (MM-DD)</string>
+    <string name="settings_logcat_show_time">Показывать время (HH:MM:SS)</string>
+    <string name="settings_logcat_show_millis">Показывать миллисекунды</string>
+    <string name="settings_logcat_colored_levels">Цветовая подсветка уровней</string>
+    <string name="settings_logcat_auto_scroll">Автоскролл по умолчанию</string>
+    <string name="settings_logcat_buffer_title">Макс. строк в буфере</string>
+    <string name="settings_logcat_buffer_help">Минимум 100. Старые строки удаляются (FIFO) при переполнении.</string>
+    <string name="settings_logcat_font_family_title">Шрифт logcat</string>
+    <string name="settings_logcat_font_size_title">Размер шрифта logcat</string>
+    <string name="settings_logcat_font_family_monospace">Monospace</string>
+    <string name="settings_logcat_font_family_sans_serif">Sans Serif</string>
+    <string name="settings_logcat_font_family_serif">Serif</string>
+    <string name="settings_logcat_font_family_system">System</string>
+    <string name="settings_logcat_font_size_value">%1$d sp</string>
+
+    <string name="settings_stepper_decrease">Уменьшить значение</string>
+    <string name="settings_stepper_increase">Увеличить значение</string>
+
+    <string name="settings_bundletool_download">Скачать bundletool: https://github.com/google/bundletool/releases</string>
+    <string name="settings_bundletool_examples_macos">macOS: /opt/homebrew/bin/bundletool или ~/Tools/bundletool/bundletool-all.jar</string>
+    <string name="settings_bundletool_examples_linux">Linux: /usr/local/bin/bundletool или ~/tools/bundletool/bundletool-all.jar</string>
+    <string name="settings_bundletool_examples_windows">Windows: C:\\tools\\bundletool\\bundletool.bat или C:\\tools\\bundletool\\bundletool-all.jar</string>
+
+    <string name="settings_status_available">Доступен: %1$s</string>
+    <string name="settings_status_not_found">Не найден: %1$s</string>
+    <string name="settings_feedback_saved">Настройки сохранены</string>
+    <string name="settings_feedback_save_failed">Не удалось сохранить настройки</string>
+    <string name="settings_feedback_logcat_save_failed">Не удалось сохранить настройки Logcat</string>
+</resources>
