@@ -1,0 +1,29 @@
+<resources>
+    <string name="dashboard_title">ADB Deck</string>
+    <string name="dashboard_subtitle">Управление Android-устройствами через ADB</string>
+
+    <string name="dashboard_section_quick_actions">Быстрые действия</string>
+    <string name="dashboard_section_diagnostics">Диагностика</string>
+
+    <string name="dashboard_tile_devices_title">Устройства</string>
+    <string name="dashboard_tile_devices_subtitle_default">Список устройств</string>
+    <string name="dashboard_tile_devices_subtitle_count">%1$d подключено</string>
+
+    <string name="dashboard_tile_logcat_title">Logcat</string>
+    <string name="dashboard_tile_logcat_subtitle">Просмотр логов</string>
+
+    <string name="dashboard_tile_settings_subtitle">Конфигурация ADB</string>
+
+    <string name="dashboard_tile_refresh_devices_title">Обновить устройства</string>
+    <string name="dashboard_tile_refresh_devices_subtitle_idle">Запустить adb devices</string>
+    <string name="dashboard_tile_refresh_devices_subtitle_loading">Обновляется…</string>
+
+    <string name="dashboard_tile_check_adb_title">Проверить ADB</string>
+    <string name="dashboard_tile_check_adb_subtitle_idle">adb version</string>
+    <string name="dashboard_tile_check_adb_subtitle_loading">Проверяется…</string>
+
+    <string name="dashboard_adb_available">ADB доступен: %1$s</string>
+    <string name="dashboard_adb_unavailable">ADB недоступен: %1$s</string>
+    <string name="dashboard_refresh_failed">Не удалось обновить устройства: %1$s</string>
+    <string name="dashboard_unknown_error">Неизвестная ошибка</string>
+</resources>

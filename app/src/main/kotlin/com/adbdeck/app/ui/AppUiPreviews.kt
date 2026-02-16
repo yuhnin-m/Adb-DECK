@@ -27,6 +27,7 @@ import com.adbdeck.core.process.InMemoryProcessHistoryStore
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.feature.dashboard.DashboardComponent
+import com.adbdeck.feature.dashboard.DashboardAdbCheckState
 import com.adbdeck.feature.dashboard.DashboardState
 import com.adbdeck.feature.devices.DeviceListState
 import com.adbdeck.feature.devices.DevicesComponent
@@ -148,7 +149,7 @@ private val previewLogEntries = listOf(
 private class PreviewDashboardComponent : DashboardComponent {
     override val state: StateFlow<DashboardState> = MutableStateFlow(
         DashboardState(
-            adbStatusText = "✓ adb доступен: Android Debug Bridge version 1.0.41",
+            adbCheckState = DashboardAdbCheckState.Available("Android Debug Bridge version 1.0.41"),
             deviceCount = previewDevices.size,
         )
     )
@@ -158,6 +159,8 @@ private class PreviewDashboardComponent : DashboardComponent {
     override fun onOpenSettings() = Unit
     override fun onRefreshDevices() = Unit
     override fun onCheckAdb() = Unit
+    override fun onDismissAdbCheck() = Unit
+    override fun onDismissRefreshError() = Unit
 }
 
 private class PreviewDevicesComponent : DevicesComponent {

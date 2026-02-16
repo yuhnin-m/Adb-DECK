@@ -176,6 +176,7 @@ class DefaultRootComponent(
             DefaultDashboardComponent(
                 componentContext = componentContext,
                 adbClient = adbClient,
+                deviceManager = deviceManager,
                 onNavigateToDevices = { navigate(Screen.Devices) },
                 onNavigateToLogcat = { navigate(Screen.Logcat) },
                 onNavigateToSettings = { navigate(Screen.Settings) },

@@ -27,4 +27,10 @@ interface DashboardComponent {
 
     /** Проверить доступность adb и отобразить результат. */
     fun onCheckAdb()
+
+    /** Скрыть баннер результата проверки adb. */
+    fun onDismissAdbCheck()
+
+    /** Скрыть баннер ошибки обновления устройств. */
+    fun onDismissRefreshError()
 }

@@ -1,0 +1,29 @@
+<resources>
+    <string name="dashboard_title">ADB Deck</string>
+    <string name="dashboard_subtitle">Manage Android devices through ADB</string>
+
+    <string name="dashboard_section_quick_actions">Quick actions</string>
+    <string name="dashboard_section_diagnostics">Diagnostics</string>
+
+    <string name="dashboard_tile_devices_title">Devices</string>
+    <string name="dashboard_tile_devices_subtitle_default">Device list</string>
+    <string name="dashboard_tile_devices_subtitle_count">%1$d connected</string>
+
+    <string name="dashboard_tile_logcat_title">Logcat</string>
+    <string name="dashboard_tile_logcat_subtitle">View logs</string>
+
+    <string name="dashboard_tile_settings_subtitle">ADB configuration</string>
+
+    <string name="dashboard_tile_refresh_devices_title">Refresh devices</string>
+    <string name="dashboard_tile_refresh_devices_subtitle_idle">Run adb devices</string>
+    <string name="dashboard_tile_refresh_devices_subtitle_loading">Refreshing…</string>
+
+    <string name="dashboard_tile_check_adb_title">Check ADB</string>
+    <string name="dashboard_tile_check_adb_subtitle_idle">adb version</string>
+    <string name="dashboard_tile_check_adb_subtitle_loading">Checking…</string>
+
+    <string name="dashboard_adb_available">ADB is available: %1$s</string>
+    <string name="dashboard_adb_unavailable">ADB is unavailable: %1$s</string>
+    <string name="dashboard_refresh_failed">Failed to refresh devices: %1$s</string>
+    <string name="dashboard_unknown_error">Unknown error</string>
+</resources>
