@@ -2,10 +2,14 @@ package com.adbdeck.feature.dashboard
 
 import com.adbdeck.core.adb.api.adb.AdbCheckResult
 import com.adbdeck.core.adb.api.adb.AdbClient
+import com.adbdeck.core.adb.api.adb.AdbServerState
+import com.adbdeck.core.adb.api.adb.AdbServerStatusResult
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.settings.AppSettings
+import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.destroy
@@ -14,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -170,6 +175,119 @@ class DefaultDashboardComponentTest {
     }
 
     @Test
+    fun `adb check also refreshes server status`() = runTest(context = testDispatcher) {
+        val fixture = createFixture(
+            adbClient = FakeAdbClient(
+                checkResult = AdbCheckResult.Available("Android Debug Bridge version 1.0.41"),
+                serverStatusResult = AdbServerStatusResult(
+                    state = AdbServerState.STOPPED,
+                    message = "daemon is not running",
+                ),
+            ),
+        )
+        try {
+            fixture.component.onCheckAdb()
+            testDispatcher.scheduler.runCurrent()
+
+            awaitCondition("Ожидался синхронизированный статус ADB server после check adb") {
+                fixture.component.state.value.adbServer.serverState == DashboardAdbServerState.STOPPED
+            }
+
+            assertEquals(1, fixture.adbClient.checkCalls)
+            assertEquals(1, fixture.adbClient.serverStatusCalls)
+            assertEquals(
+                DashboardAdbServerState.STOPPED,
+                fixture.component.state.value.adbServer.serverState,
+            )
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun `refresh adb server status populates server block`() = runTest(context = testDispatcher) {
+        val fixture = createFixture(
+            adbClient = FakeAdbClient(
+                checkResult = AdbCheckResult.Available("Android Debug Bridge version 1.0.41"),
+                serverStatusResult = AdbServerStatusResult(
+                    state = AdbServerState.STOPPED,
+                    message = "daemon is not running",
+                ),
+            ),
+        )
+        try {
+            fixture.component.onRefreshAdbServerStatus()
+            testDispatcher.scheduler.runCurrent()
+
+            awaitCondition("Ожидалось завершение refresh статуса ADB server") {
+                fixture.component.state.value.adbServer.activeAction == null &&
+                    fixture.component.state.value.adbServer.serverState == DashboardAdbServerState.STOPPED
+            }
+
+            assertTrue(fixture.component.state.value.adbServer.isAdbFound)
+            assertEquals(
+                DashboardAdbServerState.STOPPED,
+                fixture.component.state.value.adbServer.serverState,
+            )
+            assertEquals(1, fixture.adbClient.serverStatusCalls)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun `unknown server status is inferred as running when device is visible`() = runTest(context = testDispatcher) {
+        val fixture = createFixture(
+            adbClient = FakeAdbClient(
+                checkResult = AdbCheckResult.Available("Android Debug Bridge version 1.0.41"),
+                serverStatusResult = AdbServerStatusResult(
+                    state = AdbServerState.UNKNOWN,
+                    message = "unsupported format",
+                ),
+            ),
+            deviceManager = FakeDeviceManager(
+                initialDevices = listOf(device("emulator-5554")),
+            ),
+        )
+        try {
+            fixture.component.onRefreshAdbServerStatus()
+            testDispatcher.scheduler.runCurrent()
+
+            awaitCondition("Ожидалось определение RUNNING при UNKNOWN и видимом устройстве") {
+                fixture.component.state.value.adbServer.serverState == DashboardAdbServerState.RUNNING
+            }
+
+            assertEquals(
+                DashboardAdbServerState.RUNNING,
+                fixture.component.state.value.adbServer.serverState,
+            )
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun `start server does not execute command when adb is unavailable`() = runTest(context = testDispatcher) {
+        val fixture = createFixture(
+            adbClient = FakeAdbClient(
+                checkResult = AdbCheckResult.NotAvailable("adb not found"),
+            ),
+        )
+        try {
+            fixture.component.onStartAdbServer()
+
+            awaitCondition("Ожидалось завершение start server при недоступном adb") {
+                fixture.component.state.value.adbServer.activeAction == null
+            }
+
+            assertEquals(0, fixture.adbClient.startServerCalls)
+            assertTrue(!fixture.component.state.value.adbServer.isAdbFound)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
     fun `dismiss handlers clear feedback states`() = runTest(context = testDispatcher) {
         val fixture = createFixture(
             adbClient = FakeAdbClient(
@@ -195,6 +313,28 @@ class DefaultDashboardComponentTest {
 
             assertTrue(fixture.component.state.value.adbCheckState is DashboardAdbCheckState.Idle)
             assertEquals(null, fixture.component.state.value.refreshError)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun `dismiss adb server error clears server action feedback`() = runTest(context = testDispatcher) {
+        val fixture = createFixture(
+            adbClient = FakeAdbClient(
+                checkResult = AdbCheckResult.Available("Android Debug Bridge version 1.0.41"),
+                startServerResult = Result.failure(IllegalStateException("failed to start server")),
+            ),
+        )
+        try {
+            fixture.component.onStartAdbServer()
+
+            awaitCondition("Ожидалась ошибка действия ADB server") {
+                fixture.component.state.value.adbServer.actionError == "failed to start server"
+            }
+
+            fixture.component.onDismissAdbServerError()
+            assertEquals(null, fixture.component.state.value.adbServer.actionError)
         } finally {
             fixture.close()
         }
@@ -227,8 +367,19 @@ class DefaultDashboardComponentTest {
             componentContext = DefaultComponentContext(lifecycle),
             adbClient = adbClient,
             deviceManager = deviceManager,
+            settingsRepository = FakeSettingsRepository(),
             onNavigateToDevices = {},
+            onNavigateToDeviceInfo = {},
+            onNavigateToQuickToggles = {},
             onNavigateToLogcat = {},
+            onNavigateToPackages = {},
+            onNavigateToApkInstall = {},
+            onNavigateToDeepLinks = {},
+            onNavigateToNotifications = {},
+            onNavigateToScreenTools = {},
+            onNavigateToFileExplorer = {},
+            onNavigateToContacts = {},
+            onNavigateToSystemMonitor = {},
             onNavigateToSettings = {},
         )
         testDispatcher.scheduler.runCurrent()
@@ -256,9 +407,21 @@ class DefaultDashboardComponentTest {
         private val delayMs: Long = 0L,
         private val checkResult: AdbCheckResult = AdbCheckResult.Available("ok"),
         private val checkThrowable: Throwable? = null,
+        private val serverStatusResult: AdbServerStatusResult = AdbServerStatusResult(AdbServerState.RUNNING),
+        private val startServerResult: Result<String> = Result.success("started"),
+        private val stopServerResult: Result<String> = Result.success("stopped"),
+        private val restartServerResult: Result<String> = Result.success("restarted"),
     ) : AdbClient {
 
         var checkCalls: Int = 0
+            private set
+        var serverStatusCalls: Int = 0
+            private set
+        var startServerCalls: Int = 0
+            private set
+        var stopServerCalls: Int = 0
+            private set
+        var restartServerCalls: Int = 0
             private set
 
         override suspend fun checkAvailability(adbPathOverride: String?): AdbCheckResult {
@@ -266,6 +429,26 @@ class DefaultDashboardComponentTest {
             if (delayMs > 0) delay(delayMs)
             checkThrowable?.let { throw it }
             return checkResult
+        }
+
+        override suspend fun getServerStatus(adbPathOverride: String?): AdbServerStatusResult {
+            serverStatusCalls++
+            return serverStatusResult
+        }
+
+        override suspend fun startServer(adbPathOverride: String?): Result<String> {
+            startServerCalls++
+            return startServerResult
+        }
+
+        override suspend fun stopServer(adbPathOverride: String?): Result<String> {
+            stopServerCalls++
+            return stopServerResult
+        }
+
+        override suspend fun restartServer(adbPathOverride: String?): Result<String> {
+            restartServerCalls++
+            return restartServerResult
         }
 
         override suspend fun getDevices(): Result<List<AdbDevice>> = Result.success(emptyList())
@@ -317,4 +500,12 @@ class DefaultDashboardComponentTest {
         deviceId = id,
         state = DeviceState.DEVICE,
     )
+
+    private class FakeSettingsRepository : SettingsRepository {
+        override val settingsFlow: StateFlow<AppSettings> = MutableStateFlow(AppSettings(adbPath = "adb"))
+
+        override fun getSettings(): AppSettings = settingsFlow.value
+
+        override suspend fun saveSettings(settings: AppSettings) = Unit
+    }
 }

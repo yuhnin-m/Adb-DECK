@@ -3,7 +3,41 @@
     <string name="dashboard_subtitle">Управление Android-устройствами через ADB</string>
 
     <string name="dashboard_section_quick_actions">Быстрые действия</string>
+    <string name="dashboard_section_devices">Devices</string>
+    <string name="dashboard_section_apps">Apps</string>
+    <string name="dashboard_section_device_tools">Device Tools</string>
+    <string name="dashboard_section_debugging">Debugging</string>
+    <string name="dashboard_section_adb_server_status">Adb Core</string>
     <string name="dashboard_section_diagnostics">Диагностика</string>
+
+    <string name="dashboard_adb_server_refresh">Обновить</string>
+    <string name="dashboard_adb_server_status_ready">ОК</string>
+    <string name="dashboard_adb_server_status_stopped">Остановлен</string>
+    <string name="dashboard_adb_server_status_unknown">Неизвестно</string>
+    <string name="dashboard_adb_server_status_error">Ошибка</string>
+    <string name="dashboard_adb_server_status_not_found">ADB не найден</string>
+
+    <string name="dashboard_adb_server_row_status">Состояние сервера</string>
+    <string name="dashboard_adb_server_row_path">Путь к ADB</string>
+    <string name="dashboard_adb_server_row_binary">Доступность ADB</string>
+    <string name="dashboard_adb_server_row_version">Версия ADB</string>
+    <string name="dashboard_adb_server_row_devices">Устройств доступно</string>
+    <string name="dashboard_adb_server_binary_found">найден</string>
+    <string name="dashboard_adb_server_binary_not_found">не найден</string>
+
+    <string name="dashboard_adb_server_action_start_title">Запустить сервер</string>
+    <string name="dashboard_adb_server_action_start_subtitle">Выполнить adb start-server</string>
+    <string name="dashboard_adb_server_action_stop_title">Остановить сервер</string>
+    <string name="dashboard_adb_server_action_stop_subtitle">Выполнить adb kill-server</string>
+    <string name="dashboard_adb_server_action_restart_title">Рестарт ADB</string>
+    <string name="dashboard_adb_server_action_open_settings_title">Настройки ADB</string>
+    <string name="dashboard_adb_server_action_restart_subtitle">Перезапуск демона</string>
+    <string name="dashboard_adb_server_action_open_settings_subtitle">Настроить путь к adb</string>
+
+    <string name="dashboard_adb_server_placeholder_title">ADB не найден</string>
+    <string name="dashboard_adb_server_placeholder_body">Настройте путь к ADB в Settings, чтобы управлять ADB server.</string>
+    <string name="dashboard_adb_server_placeholder_action">Настроить ADB</string>
+    <string name="dashboard_adb_server_action_failed">Ошибка действия ADB server: %1$s</string>
 
     <string name="dashboard_tile_devices_title">Устройства</string>
     <string name="dashboard_tile_devices_subtitle_default">Список устройств</string>
@@ -11,6 +45,35 @@
 
     <string name="dashboard_tile_logcat_title">Logcat</string>
     <string name="dashboard_tile_logcat_subtitle">Просмотр логов</string>
+    <string name="dashboard_tile_device_info_title">Device Info</string>
+    <string name="dashboard_tile_device_info_subtitle">Сведения об устройстве и системе</string>
+    <string name="dashboard_tile_quick_toggles_title">Quick Toggles</string>
+    <string name="dashboard_tile_quick_toggles_subtitle">Быстрые системные переключатели</string>
+
+    <string name="dashboard_tile_packages_title">Packages</string>
+    <string name="dashboard_tile_packages_subtitle">Установленные приложения и пакеты</string>
+    <string name="dashboard_tile_apk_install_title">APK Install</string>
+    <string name="dashboard_tile_apk_install_subtitle">Установка APK на устройство</string>
+    <string name="dashboard_tile_deep_links_title">Deep Links</string>
+    <string name="dashboard_tile_deep_links_subtitle">Запуск и проверка intent/deeplink</string>
+    <string name="dashboard_tile_notifications_title">Notifications</string>
+    <string name="dashboard_tile_notifications_subtitle">Список уведомлений устройства</string>
+
+    <string name="dashboard_tile_screen_tools_title">Screen Tools</string>
+    <string name="dashboard_tile_screen_tools_subtitle">Screenshot и Screenrecord</string>
+    <string name="dashboard_tile_file_explorer_title">File Explorer</string>
+    <string name="dashboard_tile_file_explorer_subtitle">Файлы устройства и локальные файлы</string>
+    <string name="dashboard_tile_contacts_title">Contacts</string>
+    <string name="dashboard_tile_contacts_subtitle">Управление контактами устройства</string>
+    <string name="dashboard_tile_system_monitor_title">System Monitor</string>
+    <string name="dashboard_tile_system_monitor_subtitle">Процессы и ресурсы устройства</string>
+
+    <string name="dashboard_tile_process_monitor_title">Process Monitor</string>
+    <string name="dashboard_tile_process_monitor_subtitle">Мониторинг процессов</string>
+    <string name="dashboard_tile_notification_monitor_title">Notification Monitor</string>
+    <string name="dashboard_tile_notification_monitor_subtitle">Мониторинг уведомлений</string>
+    <string name="dashboard_tile_intent_history_title">Intent History</string>
+    <string name="dashboard_tile_intent_history_subtitle">История запуска intent/deeplink</string>
 
     <string name="dashboard_tile_settings_subtitle">Конфигурация ADB</string>
 

@@ -1,6 +1,7 @@
 package com.adbdeck.app
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +44,7 @@ import com.arkivanov.essenty.lifecycle.stop
 import kotlinx.coroutines.launch
 import org.koin.core.context.startKoin
 import org.koin.java.KoinJavaComponent.get
+import java.awt.Dimension
 import java.util.Locale
 
 /**
@@ -97,6 +99,11 @@ fun main() = application {
         title = "ADB Deck",
         state = rememberWindowState(width = 1200.dp, height = 800.dp),
     ) {
+        DisposableEffect(window) {
+            window.minimumSize = Dimension(800, 600)
+            onDispose {}
+        }
+
         // Подписка на настройки — управляет темой на уровне всего приложения
         val settings by settingsRepository.settingsFlow.collectAsState()
         val scope = rememberCoroutineScope()

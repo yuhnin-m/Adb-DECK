@@ -3,7 +3,41 @@
     <string name="dashboard_subtitle">Manage Android devices through ADB</string>
 
     <string name="dashboard_section_quick_actions">Quick actions</string>
+    <string name="dashboard_section_devices">Devices</string>
+    <string name="dashboard_section_apps">Apps</string>
+    <string name="dashboard_section_device_tools">Device Tools</string>
+    <string name="dashboard_section_debugging">Debugging</string>
+    <string name="dashboard_section_adb_server_status">Adb Core</string>
     <string name="dashboard_section_diagnostics">Diagnostics</string>
+
+    <string name="dashboard_adb_server_refresh">Refresh</string>
+    <string name="dashboard_adb_server_status_ready">OK</string>
+    <string name="dashboard_adb_server_status_stopped">Stopped</string>
+    <string name="dashboard_adb_server_status_unknown">Unknown</string>
+    <string name="dashboard_adb_server_status_error">Error</string>
+    <string name="dashboard_adb_server_status_not_found">ADB not found</string>
+
+    <string name="dashboard_adb_server_row_status">Server state</string>
+    <string name="dashboard_adb_server_row_path">ADB path</string>
+    <string name="dashboard_adb_server_row_binary">ADB binary</string>
+    <string name="dashboard_adb_server_row_version">ADB version</string>
+    <string name="dashboard_adb_server_row_devices">Devices available</string>
+    <string name="dashboard_adb_server_binary_found">found</string>
+    <string name="dashboard_adb_server_binary_not_found">not found</string>
+
+    <string name="dashboard_adb_server_action_start_title">Start server</string>
+    <string name="dashboard_adb_server_action_start_subtitle">Run adb start-server</string>
+    <string name="dashboard_adb_server_action_stop_title">Stop server</string>
+    <string name="dashboard_adb_server_action_stop_subtitle">Run adb kill-server</string>
+    <string name="dashboard_adb_server_action_restart_title">Restart server</string>
+    <string name="dashboard_adb_server_action_restart_subtitle">Restart daemon safely</string>
+    <string name="dashboard_adb_server_action_open_settings_title">Open ADB settings</string>
+    <string name="dashboard_adb_server_action_open_settings_subtitle">Configure adb path</string>
+
+    <string name="dashboard_adb_server_placeholder_title">ADB not found</string>
+    <string name="dashboard_adb_server_placeholder_body">Configure ADB path in Settings to manage ADB server.</string>
+    <string name="dashboard_adb_server_placeholder_action">Configure ADB</string>
+    <string name="dashboard_adb_server_action_failed">ADB server action failed: %1$s</string>
 
     <string name="dashboard_tile_devices_title">Devices</string>
     <string name="dashboard_tile_devices_subtitle_default">Device list</string>
@@ -11,6 +45,35 @@
 
     <string name="dashboard_tile_logcat_title">Logcat</string>
     <string name="dashboard_tile_logcat_subtitle">View logs</string>
+    <string name="dashboard_tile_device_info_title">Device Info</string>
+    <string name="dashboard_tile_device_info_subtitle">Detailed device and system info</string>
+    <string name="dashboard_tile_quick_toggles_title">Quick Toggles</string>
+    <string name="dashboard_tile_quick_toggles_subtitle">Common system switchers</string>
+
+    <string name="dashboard_tile_packages_title">Packages</string>
+    <string name="dashboard_tile_packages_subtitle">Installed apps and package actions</string>
+    <string name="dashboard_tile_apk_install_title">APK Install</string>
+    <string name="dashboard_tile_apk_install_subtitle">Install APK files on device</string>
+    <string name="dashboard_tile_deep_links_title">Deep Links</string>
+    <string name="dashboard_tile_deep_links_subtitle">Run and test intents/deeplinks</string>
+    <string name="dashboard_tile_notifications_title">Notifications</string>
+    <string name="dashboard_tile_notifications_subtitle">Inspect device notifications</string>
+
+    <string name="dashboard_tile_screen_tools_title">Screen Tools</string>
+    <string name="dashboard_tile_screen_tools_subtitle">Screenshot and screenrecord tools</string>
+    <string name="dashboard_tile_file_explorer_title">File Explorer</string>
+    <string name="dashboard_tile_file_explorer_subtitle">Device and local file operations</string>
+    <string name="dashboard_tile_contacts_title">Contacts</string>
+    <string name="dashboard_tile_contacts_subtitle">Manage device contacts</string>
+    <string name="dashboard_tile_system_monitor_title">System Monitor</string>
+    <string name="dashboard_tile_system_monitor_subtitle">Processes and resource state</string>
+
+    <string name="dashboard_tile_process_monitor_title">Process Monitor</string>
+    <string name="dashboard_tile_process_monitor_subtitle">Track running processes</string>
+    <string name="dashboard_tile_notification_monitor_title">Notification Monitor</string>
+    <string name="dashboard_tile_notification_monitor_subtitle">Track notification stream</string>
+    <string name="dashboard_tile_intent_history_title">Intent History</string>
+    <string name="dashboard_tile_intent_history_subtitle">Recent intent/deeplink launches</string>
 
     <string name="dashboard_tile_settings_subtitle">ADB configuration</string>
 
