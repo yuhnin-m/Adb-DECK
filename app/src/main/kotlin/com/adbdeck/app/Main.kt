@@ -31,6 +31,7 @@ import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.adb.api.screen.ScreenToolsClient
+import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.process.ProcessHistoryStore
@@ -83,6 +84,7 @@ fun main() = application {
         contactsClient      = get(ContactsClient::class.java),
         screenToolsClient   = get(ScreenToolsClient::class.java),
         apkInstallClient    = get(ApkInstallClient::class.java),
+        scrcpyClient       = get(ScrcpyClient::class.java),
         bundletoolClient    = get(BundletoolClient::class.java),
         intentLaunchClient  = get(IntentLaunchClient::class.java),
         notificationsClient = get(NotificationsClient::class.java),

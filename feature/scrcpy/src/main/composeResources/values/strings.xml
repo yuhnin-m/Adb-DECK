@@ -1,0 +1,62 @@
+<resources>
+    <!-- ── Empty / Error states ──────────────────────────────── -->
+    <string name="scrcpy_empty_no_device">No device selected.\nConnect a device to use scrcpy.</string>
+    <string name="scrcpy_error_not_configured">scrcpy is not configured.</string>
+    <string name="scrcpy_error_not_configured_hint">Set the path to the scrcpy executable in Settings.</string>
+    <string name="scrcpy_action_open_settings">Open Settings</string>
+
+    <!-- ── Status ────────────────────────────────────────────── -->
+    <string name="scrcpy_status_running">Scrcpy Running</string>
+    <string name="scrcpy_status_device_label">Device</string>
+
+    <!-- ── Actions ───────────────────────────────────────────── -->
+    <string name="scrcpy_action_start">Start Screen</string>
+    <string name="scrcpy_action_stop">Stop Screen</string>
+    <string name="scrcpy_action_starting">Starting…</string>
+    <string name="scrcpy_action_stopping">Stopping…</string>
+
+    <!-- ── Section: Basic ────────────────────────────────────── -->
+    <string name="scrcpy_section_basic">Basic</string>
+    <string name="scrcpy_field_max_resolution">Max Resolution</string>
+    <string name="scrcpy_resolution_no_limit">No limit</string>
+    <string name="scrcpy_field_fps">FPS</string>
+    <string name="scrcpy_field_bitrate">Bitrate (Mbps)</string>
+    <string name="scrcpy_field_bitrate_placeholder">8</string>
+    <string name="scrcpy_bitrate_auto">Auto</string>
+    <string name="scrcpy_bitrate_value_mbps">%1$d Mbps</string>
+
+    <!-- ── Section: Control ──────────────────────────────────── -->
+    <string name="scrcpy_section_control">Control</string>
+    <string name="scrcpy_toggle_allow_input">Allow input</string>
+    <string name="scrcpy_toggle_turn_screen_off">Turn screen off</string>
+    <string name="scrcpy_toggle_show_touches">Show touches</string>
+    <string name="scrcpy_toggle_stay_awake">Stay awake</string>
+
+    <!-- ── Section: Window ───────────────────────────────────── -->
+    <string name="scrcpy_section_window">Window</string>
+    <string name="scrcpy_toggle_fullscreen">Fullscreen</string>
+    <string name="scrcpy_toggle_always_on_top">Always on top</string>
+    <string name="scrcpy_toggle_borderless">Borderless</string>
+    <string name="scrcpy_field_window_preset">Window preset</string>
+    <string name="scrcpy_window_preset_auto">Auto</string>
+    <string name="scrcpy_window_preset_custom">Custom</string>
+    <string name="scrcpy_field_window_width">Window width (px)</string>
+    <string name="scrcpy_field_window_height">Window height (px)</string>
+    <string name="scrcpy_field_window_placeholder">Auto</string>
+
+    <!-- ── Section: Advanced ─────────────────────────────────── -->
+    <string name="scrcpy_section_advanced">Advanced</string>
+    <string name="scrcpy_field_video_codec">Video codec</string>
+    <string name="scrcpy_field_keyboard_mode">Keyboard mode</string>
+    <string name="scrcpy_field_mouse_mode">Mouse mode</string>
+
+    <!-- ── Feedback ───────────────────────────────────────────── -->
+    <string name="scrcpy_feedback_started">scrcpy started</string>
+    <string name="scrcpy_feedback_stopped">scrcpy stopped</string>
+    <string name="scrcpy_feedback_crashed">scrcpy exited unexpectedly: %1$s</string>
+    <string name="scrcpy_feedback_start_failed">Failed to start scrcpy: %1$s</string>
+    <string name="scrcpy_feedback_stop_failed">Failed to stop scrcpy: %1$s</string>
+    <string name="scrcpy_feedback_no_device">No device available</string>
+    <string name="scrcpy_validation_window_width_range">Window width must be within %1$d–%2$d px</string>
+    <string name="scrcpy_validation_window_height_range">Window height must be within %1$d–%2$d px</string>
+</resources>

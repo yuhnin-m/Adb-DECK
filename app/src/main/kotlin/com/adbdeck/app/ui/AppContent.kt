@@ -33,6 +33,7 @@ import com.adbdeck.feature.logcat.ui.LogcatScreen
 import com.adbdeck.feature.packages.ui.PackagesScreen
 import com.adbdeck.feature.quicktoggles.ui.QuickTogglesScreen
 import com.adbdeck.feature.screentools.ui.ScreenToolsScreen
+import com.adbdeck.feature.scrcpy.ui.ScrcpyScreen
 import com.adbdeck.feature.settings.ui.SettingsScreen
 import com.adbdeck.feature.systemmonitor.ui.SystemMonitorScreen
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
@@ -122,6 +123,7 @@ fun AppContent(
         is RootComponent.Child.Notifications -> Screen.Notifications
         is RootComponent.Child.DeviceInfo -> Screen.DeviceInfo
         is RootComponent.Child.QuickToggles -> Screen.QuickToggles
+        is RootComponent.Child.Scrcpy -> Screen.Scrcpy
         else -> Screen.Dashboard
     }
 
@@ -175,6 +177,7 @@ fun AppContent(
                         is RootComponent.Child.Notifications -> NotificationsScreen(activeChild.component)
                         is RootComponent.Child.DeviceInfo -> DeviceInfoScreen(activeChild.component)
                         is RootComponent.Child.QuickToggles -> QuickTogglesScreen(activeChild.component)
+                        is RootComponent.Child.Scrcpy -> ScrcpyScreen(activeChild.component)
                     }
                 }
 
@@ -217,4 +220,5 @@ private fun Screen.title(): String = when (this) {
     is Screen.Notifications -> "Notifications"
     is Screen.DeviceInfo -> "Device Info"
     is Screen.QuickToggles -> "Quick Toggles"
+    is Screen.Scrcpy -> "Scrcpy"
 }

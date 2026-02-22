@@ -28,11 +28,15 @@ import kotlinx.serialization.Serializable
  * Screen Tools:
  * @param screenToolsScreenshotOutputDir Папка сохранения screenshot-файлов.
  * @param screenToolsScreenrecordOutputDir Папка сохранения screenrecord-видео.
+ *
+ * Scrcpy:
+ * @param scrcpyPath Путь к исполняемому файлу scrcpy. Пусто → системный PATH.
  */
 @Serializable
 data class AppSettings(
     val adbPath: String = "adb",
     val bundletoolPath: String = "bundletool",
+    val scrcpyPath: String = "scrcpy",
     val theme: AppTheme = AppTheme.SYSTEM,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val knownEndpoints: List<String> = emptyList(),

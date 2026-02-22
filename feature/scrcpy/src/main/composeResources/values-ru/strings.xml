@@ -1,0 +1,62 @@
+<resources>
+    <!-- ── Empty / Error states ──────────────────────────────── -->
+    <string name="scrcpy_empty_no_device">Устройство не выбрано.\nПодключите устройство для использования scrcpy.</string>
+    <string name="scrcpy_error_not_configured">scrcpy не настроен.</string>
+    <string name="scrcpy_error_not_configured_hint">Укажите путь к исполняемому файлу scrcpy в Настройках.</string>
+    <string name="scrcpy_action_open_settings">Открыть настройки</string>
+
+    <!-- ── Status ────────────────────────────────────────────── -->
+    <string name="scrcpy_status_running">Scrcpy запущен</string>
+    <string name="scrcpy_status_device_label">Устройство</string>
+
+    <!-- ── Actions ───────────────────────────────────────────── -->
+    <string name="scrcpy_action_start">Запустить экран</string>
+    <string name="scrcpy_action_stop">Остановить экран</string>
+    <string name="scrcpy_action_starting">Запуск…</string>
+    <string name="scrcpy_action_stopping">Остановка…</string>
+
+    <!-- ── Section: Basic ────────────────────────────────────── -->
+    <string name="scrcpy_section_basic">Основные</string>
+    <string name="scrcpy_field_max_resolution">Макс. разрешение</string>
+    <string name="scrcpy_resolution_no_limit">Без ограничений</string>
+    <string name="scrcpy_field_fps">FPS</string>
+    <string name="scrcpy_field_bitrate">Битрейт (Мбит/с)</string>
+    <string name="scrcpy_field_bitrate_placeholder">8</string>
+    <string name="scrcpy_bitrate_auto">Авто</string>
+    <string name="scrcpy_bitrate_value_mbps">%1$d Мбит/с</string>
+
+    <!-- ── Section: Control ──────────────────────────────────── -->
+    <string name="scrcpy_section_control">Управление</string>
+    <string name="scrcpy_toggle_allow_input">Разрешить ввод</string>
+    <string name="scrcpy_toggle_turn_screen_off">Выключить экран</string>
+    <string name="scrcpy_toggle_show_touches">Показывать касания</string>
+    <string name="scrcpy_toggle_stay_awake">Не засыпать</string>
+
+    <!-- ── Section: Window ───────────────────────────────────── -->
+    <string name="scrcpy_section_window">Окно</string>
+    <string name="scrcpy_toggle_fullscreen">Полноэкранный режим</string>
+    <string name="scrcpy_toggle_always_on_top">Поверх других окон</string>
+    <string name="scrcpy_toggle_borderless">Без рамки</string>
+    <string name="scrcpy_field_window_preset">Пресет окна</string>
+    <string name="scrcpy_window_preset_auto">Авто</string>
+    <string name="scrcpy_window_preset_custom">Пользовательский</string>
+    <string name="scrcpy_field_window_width">Ширина окна (пкс)</string>
+    <string name="scrcpy_field_window_height">Высота окна (пкс)</string>
+    <string name="scrcpy_field_window_placeholder">Авто</string>
+
+    <!-- ── Section: Advanced ─────────────────────────────────── -->
+    <string name="scrcpy_section_advanced">Дополнительно</string>
+    <string name="scrcpy_field_video_codec">Видеокодек</string>
+    <string name="scrcpy_field_keyboard_mode">Режим клавиатуры</string>
+    <string name="scrcpy_field_mouse_mode">Режим мыши</string>
+
+    <!-- ── Feedback ───────────────────────────────────────────── -->
+    <string name="scrcpy_feedback_started">scrcpy запущен</string>
+    <string name="scrcpy_feedback_stopped">scrcpy остановлен</string>
+    <string name="scrcpy_feedback_crashed">scrcpy завершился неожиданно: %1$s</string>
+    <string name="scrcpy_feedback_start_failed">Не удалось запустить scrcpy: %1$s</string>
+    <string name="scrcpy_feedback_stop_failed">Не удалось остановить scrcpy: %1$s</string>
+    <string name="scrcpy_feedback_no_device">Устройство недоступно</string>
+    <string name="scrcpy_validation_window_width_range">Ширина окна должна быть в диапазоне %1$d–%2$d px</string>
+    <string name="scrcpy_validation_window_height_range">Высота окна должна быть в диапазоне %1$d–%2$d px</string>
+</resources>

@@ -49,6 +49,7 @@ dependencies {
     implementation(project(":feature:notifications"))
     implementation(project(":feature:device-info"))
     implementation(project(":feature:quick-toggles"))
+    implementation(project(":feature:scrcpy"))
 }
 
 compose.desktop {

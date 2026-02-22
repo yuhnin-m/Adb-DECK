@@ -39,6 +39,7 @@ private class DashboardPreviewComponent : DashboardComponent {
     override fun onOpenDeepLinks() = Unit
     override fun onOpenNotifications() = Unit
     override fun onOpenScreenTools() = Unit
+    override fun onOpenScrcpy() = Unit
     override fun onOpenFileExplorer() = Unit
     override fun onOpenContacts() = Unit
     override fun onOpenSystemMonitor() = Unit

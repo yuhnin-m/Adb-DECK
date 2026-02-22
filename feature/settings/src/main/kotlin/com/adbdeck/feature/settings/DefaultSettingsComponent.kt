@@ -10,6 +10,8 @@ import com.adbdeck.core.adb.api.adb.AdbCheckResult
 import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.adb.BundletoolCheckResult
 import com.adbdeck.core.adb.api.adb.BundletoolClient
+import com.adbdeck.core.adb.api.scrcpy.ScrcpyCheckResult
+import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
 import com.adbdeck.core.settings.AppSettings
 import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.core.settings.AppTheme
@@ -42,6 +44,7 @@ class DefaultSettingsComponent(
     componentContext: ComponentContext,
     private val adbClient: AdbClient,
     private val bundletoolClient: BundletoolClient,
+    private val scrcpyClient: ScrcpyClient,
     private val settingsRepository: SettingsRepository,
 ) : SettingsComponent, ComponentContext by componentContext {
 
@@ -52,6 +55,7 @@ class DefaultSettingsComponent(
 
     private var adbCheckJob: Job? = null
     private var bundletoolCheckJob: Job? = null
+    private var scrcpyCheckJob: Job? = null
     private var logcatSaveJob: Job? = null
     private var feedbackJob: Job? = null
 
@@ -72,6 +76,7 @@ class DefaultSettingsComponent(
                 hasPendingChanges = hasPendingChanges(
                     adbPath = path,
                     bundletoolPath = current.bundletoolPath,
+                    scrcpyPath = current.scrcpyPath,
                     theme = current.currentTheme,
                     language = current.currentLanguage,
                 ),
@@ -86,11 +91,63 @@ class DefaultSettingsComponent(
                 bundletoolCheckState = ToolCheckState.Idle,
                 hasPendingChanges = hasPendingChanges(
                     adbPath = current.adbPath,
-                    bundletoolPath = path,
+                    bundletoolPath = current.bundletoolPath,
+                    scrcpyPath = current.scrcpyPath,
                     theme = current.currentTheme,
                     language = current.currentLanguage,
                 ),
             )
+        }
+    }
+
+    override fun onScrcpyPathChanged(path: String) {
+        _state.update { current ->
+            current.copy(
+                scrcpyPath = path,
+                scrcpyCheckState = ToolCheckState.Idle,
+                hasPendingChanges = hasPendingChanges(
+                    adbPath = current.adbPath,
+                    bundletoolPath = current.bundletoolPath,
+                    scrcpyPath = path,
+                    theme = current.currentTheme,
+                    language = current.currentLanguage,
+                ),
+            )
+        }
+    }
+
+    override fun onCheckScrcpy() {
+        if (scrcpyCheckJob?.isActive == true) return
+        scrcpyCheckJob = scope.launch {
+            val requestedPath = _state.value.scrcpyPath.ifBlank { "scrcpy" }
+            _state.update { it.copy(scrcpyCheckState = ToolCheckState.Checking) }
+
+            val nextState = when (val result = scrcpyClient.checkAvailability(requestedPath)) {
+                is ScrcpyCheckResult.Available ->
+                    ToolCheckState.Success(
+                        getString(
+                            Res.string.settings_status_available,
+                            result.version.ifBlank { requestedPath },
+                        )
+                    )
+
+                is ScrcpyCheckResult.NotAvailable ->
+                    ToolCheckState.Error(
+                        getString(
+                            Res.string.settings_status_not_found,
+                            result.reason.take(120).ifBlank { requestedPath },
+                        )
+                    )
+            }
+
+            _state.update { current ->
+                if (current.scrcpyPath == requestedPath) {
+                    current.copy(scrcpyCheckState = nextState)
+                } else {
+                    current
+                }
+            }
+            scrcpyCheckJob = null
         }
     }
 
@@ -106,6 +163,7 @@ class DefaultSettingsComponent(
                     val updated = currentRepo.copy(
                         adbPath = currentUi.adbPath,
                         bundletoolPath = currentUi.bundletoolPath,
+                        scrcpyPath = currentUi.scrcpyPath,
                         theme = currentUi.currentTheme,
                         language = currentUi.currentLanguage,
                     )
@@ -122,6 +180,7 @@ class DefaultSettingsComponent(
                             hasPendingChanges = hasPendingChanges(
                                 adbPath = current.adbPath,
                                 bundletoolPath = current.bundletoolPath,
+                                scrcpyPath = current.scrcpyPath,
                                 theme = current.currentTheme,
                                 language = current.currentLanguage,
                             ),
@@ -226,6 +285,7 @@ class DefaultSettingsComponent(
                 hasPendingChanges = hasPendingChanges(
                     adbPath = current.adbPath,
                     bundletoolPath = current.bundletoolPath,
+                    scrcpyPath = current.scrcpyPath,
                     theme = theme,
                     language = current.currentLanguage,
                 ),
@@ -240,6 +300,7 @@ class DefaultSettingsComponent(
                 hasPendingChanges = hasPendingChanges(
                     adbPath = current.adbPath,
                     bundletoolPath = current.bundletoolPath,
+                    scrcpyPath = current.scrcpyPath,
                     theme = current.currentTheme,
                     language = language,
                 ),
@@ -294,6 +355,7 @@ class DefaultSettingsComponent(
                     val merged = current.copy(
                         adbPath = if (shouldSyncEditable) saved.adbPath else current.adbPath,
                         bundletoolPath = if (shouldSyncEditable) saved.bundletoolPath else current.bundletoolPath,
+                        scrcpyPath = if (shouldSyncEditable) saved.scrcpyPath else current.scrcpyPath,
                         currentTheme = if (shouldSyncEditable) saved.theme else current.currentTheme,
                         currentLanguage = if (shouldSyncEditable) saved.language else current.currentLanguage,
                         logcatCompactMode = saved.logcatCompactMode,
@@ -310,6 +372,7 @@ class DefaultSettingsComponent(
                         hasPendingChanges = hasPendingChanges(
                             adbPath = merged.adbPath,
                             bundletoolPath = merged.bundletoolPath,
+                            scrcpyPath = merged.scrcpyPath,
                             theme = merged.currentTheme,
                             language = merged.currentLanguage,
                         ),
@@ -364,11 +427,13 @@ class DefaultSettingsComponent(
     private fun hasPendingChanges(
         adbPath: String,
         bundletoolPath: String,
+        scrcpyPath: String,
         theme: AppTheme,
         language: AppLanguage,
     ): Boolean {
         return adbPath != persistedEditable.adbPath ||
             bundletoolPath != persistedEditable.bundletoolPath ||
+            scrcpyPath != persistedEditable.scrcpyPath ||
             theme != persistedEditable.theme ||
             language != persistedEditable.language
     }
@@ -391,6 +456,7 @@ class DefaultSettingsComponent(
     private fun AppSettings.toUiState(): SettingsUiState = SettingsUiState(
         adbPath = adbPath,
         bundletoolPath = bundletoolPath,
+        scrcpyPath = scrcpyPath,
         currentTheme = theme,
         currentLanguage = language,
         hasPendingChanges = false,
@@ -408,6 +474,7 @@ class DefaultSettingsComponent(
     private data class EditableSettingsSnapshot(
         val adbPath: String,
         val bundletoolPath: String,
+        val scrcpyPath: String,
         val theme: AppTheme,
         val language: AppLanguage,
     ) {
@@ -415,6 +482,7 @@ class DefaultSettingsComponent(
             fun from(settings: AppSettings): EditableSettingsSnapshot = EditableSettingsSnapshot(
                 adbPath = settings.adbPath,
                 bundletoolPath = settings.bundletoolPath,
+                scrcpyPath = settings.scrcpyPath,
                 theme = settings.theme,
                 language = settings.language,
             )

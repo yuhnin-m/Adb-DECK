@@ -13,10 +13,12 @@ import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.adb.api.screen.ScreenToolsClient
+import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.DefaultContactsComponent
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
+import com.adbdeck.feature.scrcpy.DefaultScrcpyComponent
 import com.adbdeck.feature.deeplinks.DefaultDeepLinksComponent
 import com.adbdeck.feature.deviceinfo.DefaultDeviceInfoComponent
 import com.adbdeck.feature.notifications.DefaultNotificationsComponent
@@ -73,6 +75,7 @@ class DefaultRootComponent(
     private val deviceFileClient: DeviceFileClient,
     private val contactsClient: ContactsClient,
     private val screenToolsClient: ScreenToolsClient,
+    private val scrcpyClient: ScrcpyClient,
     private val apkInstallClient: ApkInstallClient,
     private val bundletoolClient: BundletoolClient,
     private val intentLaunchClient: IntentLaunchClient,
@@ -187,6 +190,7 @@ class DefaultRootComponent(
                 onNavigateToDeepLinks = { navigate(Screen.DeepLinks) },
                 onNavigateToNotifications = { navigate(Screen.Notifications) },
                 onNavigateToScreenTools = { navigate(Screen.ScreenTools) },
+                onNavigateToScrcpy = { navigate(Screen.Scrcpy) },
                 onNavigateToFileExplorer = { navigate(Screen.FileExplorer) },
                 onNavigateToContacts = { navigate(Screen.Contacts) },
                 onNavigateToSystemMonitor = { navigate(Screen.SystemMonitor) },
@@ -226,6 +230,7 @@ class DefaultRootComponent(
                 componentContext = componentContext,
                 adbClient = adbClient,
                 bundletoolClient = bundletoolClient,
+                scrcpyClient = scrcpyClient,
                 settingsRepository = settingsRepository,
             )
         )
@@ -327,6 +332,16 @@ class DefaultRootComponent(
                 deviceManager = deviceManager,
                 settingsRepository = settingsRepository,
                 quickTogglesService = DefaultQuickTogglesService(deviceInfoClient),
+            )
+        )
+
+        is Screen.Scrcpy -> RootComponent.Child.Scrcpy(
+            DefaultScrcpyComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                settingsRepository = settingsRepository,
+                scrcpyClient = scrcpyClient,
+                onOpenSettings = { navigate(Screen.Settings) },
             )
         )
     }

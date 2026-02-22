@@ -103,6 +103,12 @@ fun Sidebar(
             onClick = { onNavigate(Screen.ScreenTools) },
         )
         SidebarNavItem(
+            icon = Icons.Outlined.Cast,
+            label = "Scrcpy",
+            isActive = activeScreen is Screen.Scrcpy,
+            onClick = { onNavigate(Screen.Scrcpy) },
+        )
+        SidebarNavItem(
             icon = Icons.Outlined.SystemUpdateAlt,
             label = "APK Install",
             isActive = activeScreen is Screen.ApkInstall,

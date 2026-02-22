@@ -61,6 +61,8 @@
 
     <string name="dashboard_tile_screen_tools_title">Screen Tools</string>
     <string name="dashboard_tile_screen_tools_subtitle">Screenshot и Screenrecord</string>
+    <string name="dashboard_tile_mirror_screen_title">Зеркалирование экрана</string>
+    <string name="dashboard_tile_mirror_screen_subtitle">Открыть управление scrcpy</string>
     <string name="dashboard_tile_file_explorer_title">File Explorer</string>
     <string name="dashboard_tile_file_explorer_subtitle">Файлы устройства и локальные файлы</string>
     <string name="dashboard_tile_contacts_title">Contacts</string>

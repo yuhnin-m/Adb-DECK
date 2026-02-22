@@ -27,8 +27,10 @@ data class SettingsFeedback(
 data class SettingsUiState(
     val adbPath: String = "adb",
     val bundletoolPath: String = "bundletool",
+    val scrcpyPath: String = "scrcpy",
     val adbCheckState: ToolCheckState = ToolCheckState.Idle,
     val bundletoolCheckState: ToolCheckState = ToolCheckState.Idle,
+    val scrcpyCheckState: ToolCheckState = ToolCheckState.Idle,
     val saveFeedback: SettingsFeedback? = null,
     val isSaving: Boolean = false,
     val hasPendingChanges: Boolean = false,

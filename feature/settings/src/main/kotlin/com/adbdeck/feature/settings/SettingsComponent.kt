@@ -35,6 +35,16 @@ interface SettingsComponent {
     /** Проверить доступность bundletool по текущему пути и вывести версию. */
     fun onCheckBundletool()
 
+    /**
+     * Пользователь изменил поле пути к scrcpy.
+     *
+     * @param path Новое значение пути.
+     */
+    fun onScrcpyPathChanged(path: String)
+
+    /** Проверить доступность scrcpy по текущему пути (запускает `scrcpy --version`). */
+    fun onCheckScrcpy()
+
     /** Скрыть баннер обратной связи. */
     fun onDismissFeedback()
 

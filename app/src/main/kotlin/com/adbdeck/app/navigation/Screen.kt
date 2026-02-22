@@ -50,4 +50,7 @@ sealed interface Screen {
 
     /** Экран быстрых QA-тумблеров (Wi-Fi/Data/Bluetooth и др.). */
     data object QuickToggles : Screen
+
+    /** Экран управления scrcpy (зеркалирование экрана устройства). */
+    data object Scrcpy : Screen
 }

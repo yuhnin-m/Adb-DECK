@@ -13,10 +13,12 @@ import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.logcat.LogcatStreamer
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.adb.api.screen.ScreenToolsClient
+import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.adb.impl.monitoring.DefaultSystemMonitorClient
 import com.adbdeck.core.adb.impl.adb.SystemAdbClient
 import com.adbdeck.core.adb.impl.adb.SystemBundletoolClient
+import com.adbdeck.core.adb.impl.scrcpy.SystemScrcpyClient
 import com.adbdeck.core.adb.impl.contacts.SystemContactsClient
 import com.adbdeck.core.adb.impl.intents.SystemIntentLaunchClient
 import com.adbdeck.core.adb.impl.notifications.SystemNotificationsClient
@@ -122,6 +124,15 @@ val appModule = module {
 
     // ── ScreenToolsClient ─────────────────────────────────────────
     singleOf(::SystemScreenToolsClient) bind ScreenToolsClient::class
+
+    // ── ScrcpyClient ──────────────────────────────────────────────
+    single<ScrcpyClient> {
+        SystemScrcpyClient(
+            processRunner = get(),
+            settingsRepository = get(),
+            historyStore = get(),
+        )
+    }
 
     // ── ApkInstallClient ──────────────────────────────────────────
     singleOf(::SystemApkInstallClient) bind ApkInstallClient::class

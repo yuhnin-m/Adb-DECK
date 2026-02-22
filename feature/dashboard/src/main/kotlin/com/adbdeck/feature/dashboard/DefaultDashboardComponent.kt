@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
  * @param onNavigateToDeepLinks Callback навигации на экран Deep Links / Intents.
  * @param onNavigateToNotifications Callback навигации на экран уведомлений.
  * @param onNavigateToScreenTools Callback навигации на экран Screen Tools.
+ * @param onNavigateToScrcpy Callback навигации на экран Scrcpy (Mirror screen).
  * @param onNavigateToFileExplorer Callback навигации на экран File Explorer.
  * @param onNavigateToContacts Callback навигации на экран Contacts.
  * @param onNavigateToSystemMonitor Callback навигации на экран System Monitor.
@@ -56,6 +57,7 @@ class DefaultDashboardComponent(
     private val onNavigateToDeepLinks: () -> Unit,
     private val onNavigateToNotifications: () -> Unit,
     private val onNavigateToScreenTools: () -> Unit,
+    private val onNavigateToScrcpy: () -> Unit,
     private val onNavigateToFileExplorer: () -> Unit,
     private val onNavigateToContacts: () -> Unit,
     private val onNavigateToSystemMonitor: () -> Unit,
@@ -100,6 +102,8 @@ class DefaultDashboardComponent(
 
     override fun onOpenScreenTools() = onNavigateToScreenTools()
 
+    override fun onOpenScrcpy() = onNavigateToScrcpy()
+
     override fun onOpenFileExplorer() = onNavigateToFileExplorer()
 
     override fun onOpenContacts() = onNavigateToContacts()
@@ -141,8 +145,8 @@ class DefaultDashboardComponent(
         if (adbCheckJob?.isActive == true) return
         adbCheckJob = scope.launch {
             _state.update { it.copy(adbCheckState = DashboardAdbCheckState.Checking) }
+            val adbPath = resolvedAdbPath()
             try {
-                val adbPath = resolvedAdbPath()
                 val result = adbClient.checkAvailability(adbPath)
                 val nextState = when (result) {
                     is AdbCheckResult.Available -> DashboardAdbCheckState.Available(result.version)
@@ -166,11 +170,18 @@ class DefaultDashboardComponent(
                 _state.update { it.copy(adbCheckState = DashboardAdbCheckState.Idle) }
                 throw e
             } catch (e: Exception) {
+                val reason = e.message.orEmpty()
                 _state.update {
                     it.copy(
-                        adbCheckState = DashboardAdbCheckState.NotAvailable(e.message.orEmpty()),
+                        adbCheckState = DashboardAdbCheckState.NotAvailable(reason),
                     )
                 }
+                // Не оставляем устаревший статус блока Adb Core при ошибке проверки.
+                applyAdbNotFound(
+                    adbPath = adbPath,
+                    reason = reason,
+                    clearActionError = false,
+                )
             } finally {
                 adbCheckJob = null
             }
@@ -400,7 +411,7 @@ class DefaultDashboardComponent(
         adbPath: String? = null,
         adbVersion: String? = null,
     ) {
-        val normalizedMessage = message.ifBlank { "Unknown error" }
+        val normalizedMessage = message.trim()
         _state.update { current ->
             current.copy(
                 adbServer = current.adbServer.copy(
@@ -408,7 +419,7 @@ class DefaultDashboardComponent(
                     isAdbFound = true,
                     adbVersion = adbVersion ?: current.adbServer.adbVersion,
                     serverState = DashboardAdbServerState.ERROR,
-                    serverMessage = normalizedMessage,
+                    serverMessage = normalizedMessage.ifBlank { null },
                     actionError = normalizedMessage,
                 ),
             )

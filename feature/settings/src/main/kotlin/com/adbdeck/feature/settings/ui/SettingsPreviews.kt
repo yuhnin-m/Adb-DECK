@@ -42,6 +42,8 @@ private class SettingsPreviewComponent : SettingsComponent {
     override fun onSave() = Unit
     override fun onCheckAdb() = Unit
     override fun onCheckBundletool() = Unit
+    override fun onScrcpyPathChanged(path: String) {}
+    override fun onCheckScrcpy() {}
     override fun onDismissFeedback() = Unit
     override fun onThemeChanged(theme: AppTheme) = Unit
     override fun onLanguageChanged(language: AppLanguage) = Unit

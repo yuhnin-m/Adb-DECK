@@ -3,6 +3,7 @@ package com.adbdeck.app.navigation
 import com.adbdeck.feature.contacts.ContactsComponent
 import com.adbdeck.feature.notifications.NotificationsComponent
 import com.adbdeck.feature.dashboard.DashboardComponent
+import com.adbdeck.feature.scrcpy.ScrcpyComponent
 import com.adbdeck.feature.devices.DevicesComponent
 import com.adbdeck.feature.apkinstall.ApkInstallComponent
 import com.adbdeck.feature.deviceinfo.DeviceInfoComponent
@@ -83,5 +84,8 @@ interface RootComponent {
 
         /** Дочерний компонент Quick Toggles. */
         class QuickToggles(val component: QuickTogglesComponent) : Child()
+
+        /** Дочерний компонент Scrcpy. */
+        class Scrcpy(val component: ScrcpyComponent) : Child()
     }
 }

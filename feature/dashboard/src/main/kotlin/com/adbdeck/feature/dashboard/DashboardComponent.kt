@@ -40,6 +40,9 @@ interface DashboardComponent {
     /** Переход на экран Screen Tools. */
     fun onOpenScreenTools()
 
+    /** Переход на экран Scrcpy (Mirror screen). */
+    fun onOpenScrcpy()
+
     /** Переход на экран File Explorer. */
     fun onOpenFileExplorer()
 

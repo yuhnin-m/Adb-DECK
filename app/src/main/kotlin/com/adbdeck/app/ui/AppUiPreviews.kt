@@ -75,6 +75,14 @@ import com.adbdeck.feature.screentools.ScreenshotQualityPreset
 import com.adbdeck.feature.screentools.ScreenshotSectionState
 import com.adbdeck.feature.screentools.ScreenrecordQualityPreset
 import com.adbdeck.feature.screentools.ScreenrecordSectionState
+import com.adbdeck.feature.scrcpy.ScrcpyComponent
+import com.adbdeck.feature.scrcpy.ScrcpyConfig
+import com.adbdeck.feature.scrcpy.ScrcpyFps
+import com.adbdeck.feature.scrcpy.ScrcpyInputMode
+import com.adbdeck.feature.scrcpy.ScrcpyMaxResolution
+import com.adbdeck.feature.scrcpy.ScrcpyProcessState
+import com.adbdeck.feature.scrcpy.ScrcpyState
+import com.adbdeck.feature.scrcpy.ScrcpyVideoCodec
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.settings.SettingsFeedback
 import com.adbdeck.feature.settings.SettingsUiState
@@ -172,6 +180,7 @@ private class PreviewDashboardComponent : DashboardComponent {
     override fun onOpenDeepLinks() = Unit
     override fun onOpenNotifications() = Unit
     override fun onOpenScreenTools() = Unit
+    override fun onOpenScrcpy() = Unit
     override fun onOpenFileExplorer() = Unit
     override fun onOpenContacts() = Unit
     override fun onOpenSystemMonitor() = Unit
@@ -269,9 +278,11 @@ private class PreviewSettingsComponent : SettingsComponent {
 
     override fun onAdbPathChanged(path: String) = Unit
     override fun onBundletoolPathChanged(path: String) = Unit
+    override fun onScrcpyPathChanged(path: String) = Unit
     override fun onSave() = Unit
     override fun onCheckAdb() = Unit
     override fun onCheckBundletool() = Unit
+    override fun onCheckScrcpy() = Unit
     override fun onDismissFeedback() = Unit
     override fun onThemeChanged(theme: AppTheme) = Unit
     override fun onLanguageChanged(language: AppLanguage) = Unit
@@ -692,6 +703,38 @@ private class PreviewQuickTogglesComponent : QuickTogglesComponent {
     override fun onDismissFeedback() = Unit
 }
 
+private class PreviewScrcpyComponent : ScrcpyComponent {
+    override val state: StateFlow<ScrcpyState> = MutableStateFlow(
+        ScrcpyState(
+            activeDeviceId = previewDevices.first().deviceId,
+            processState = ScrcpyProcessState.IDLE,
+            config = ScrcpyConfig(),
+            scrcpyPath = "scrcpy",
+            isConfigured = true,
+        )
+    )
+
+    override fun startScrcpy() = Unit
+    override fun stopScrcpy() = Unit
+    override fun onMaxResolutionChanged(resolution: ScrcpyMaxResolution) = Unit
+    override fun onFpsChanged(fps: ScrcpyFps) = Unit
+    override fun onBitrateChanged(bitrate: String) = Unit
+    override fun onAllowInputChanged(enabled: Boolean) = Unit
+    override fun onTurnScreenOffChanged(enabled: Boolean) = Unit
+    override fun onShowTouchesChanged(enabled: Boolean) = Unit
+    override fun onStayAwakeChanged(enabled: Boolean) = Unit
+    override fun onFullscreenChanged(enabled: Boolean) = Unit
+    override fun onAlwaysOnTopChanged(enabled: Boolean) = Unit
+    override fun onBorderlessChanged(enabled: Boolean) = Unit
+    override fun onWindowWidthChanged(width: String) = Unit
+    override fun onWindowHeightChanged(height: String) = Unit
+    override fun onVideoCodecChanged(codec: ScrcpyVideoCodec) = Unit
+    override fun onKeyboardModeChanged(mode: ScrcpyInputMode) = Unit
+    override fun onMouseModeChanged(mode: ScrcpyInputMode) = Unit
+    override fun onOpenSettings() = Unit
+    override fun onDismissFeedback() = Unit
+}
+
 private class PreviewRootComponent(
     initialScreen: Screen = Screen.Dashboard,
 ) : RootComponent {
@@ -709,6 +752,7 @@ private class PreviewRootComponent(
     private val notifications = PreviewNotificationsComponent()
     private val deviceInfo = PreviewDeviceInfoComponent()
     private val quickToggles = PreviewQuickTogglesComponent()
+    private val scrcpy = PreviewScrcpyComponent()
 
     private val stack = MutableValue(createStack(initialScreen))
 
@@ -736,6 +780,7 @@ private class PreviewRootComponent(
         Screen.Notifications -> RootComponent.Child.Notifications(notifications)
         Screen.DeviceInfo -> RootComponent.Child.DeviceInfo(deviceInfo)
         Screen.QuickToggles -> RootComponent.Child.QuickToggles(quickToggles)
+        Screen.Scrcpy -> RootComponent.Child.Scrcpy(scrcpy)
     }
 }
 

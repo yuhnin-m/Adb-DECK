@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -31,6 +32,7 @@ import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.filedialogs.showOpenFileDialog
 import com.adbdeck.core.ui.sectioncards.AdbSectionCard
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedOption
@@ -79,8 +81,10 @@ fun SettingsScreen(component: SettingsComponent) {
 private data class ToolsSectionUiState(
     val adbPath: String,
     val bundletoolPath: String,
+    val scrcpyPath: String,
     val adbCheckState: ToolCheckState,
     val bundletoolCheckState: ToolCheckState,
+    val scrcpyCheckState: ToolCheckState,
 )
 
 private data class ThemeSectionUiState(
@@ -131,8 +135,10 @@ private fun ToolsSectionHost(component: SettingsComponent) {
         ToolsSectionUiState(
             adbPath = initial.adbPath,
             bundletoolPath = initial.bundletoolPath,
+            scrcpyPath = initial.scrcpyPath,
             adbCheckState = initial.adbCheckState,
             bundletoolCheckState = initial.bundletoolCheckState,
+            scrcpyCheckState = initial.scrcpyCheckState,
         )
     }
     val uiState by remember(component) {
@@ -141,8 +147,10 @@ private fun ToolsSectionHost(component: SettingsComponent) {
                 ToolsSectionUiState(
                     adbPath = it.adbPath,
                     bundletoolPath = it.bundletoolPath,
+                    scrcpyPath = it.scrcpyPath,
                     adbCheckState = it.adbCheckState,
                     bundletoolCheckState = it.bundletoolCheckState,
+                    scrcpyCheckState = it.scrcpyCheckState,
                 )
             }
             .distinctUntilChanged()
@@ -154,6 +162,8 @@ private fun ToolsSectionHost(component: SettingsComponent) {
         onCheckAdb = component::onCheckAdb,
         onBundletoolPathChanged = component::onBundletoolPathChanged,
         onCheckBundletool = component::onCheckBundletool,
+        onScrcpyPathChanged = component::onScrcpyPathChanged,
+        onCheckScrcpy = component::onCheckScrcpy,
     )
 }
 
@@ -240,6 +250,8 @@ private fun ToolsSection(
     onCheckAdb: () -> Unit,
     onBundletoolPathChanged: (String) -> Unit,
     onCheckBundletool: () -> Unit,
+    onScrcpyPathChanged: (String) -> Unit,
+    onCheckScrcpy: () -> Unit,
 ) {
     val sectionTitle = stringResource(Res.string.settings_section_tools)
     val adbLabel = stringResource(Res.string.settings_field_adb_label)
@@ -252,10 +264,22 @@ private fun ToolsSection(
     val bundletoolHelp = stringResource(Res.string.settings_field_bundletool_help)
     val checkBundletoolLabel = stringResource(Res.string.settings_action_check_bundletool)
 
-    val downloadLabel = stringResource(Res.string.settings_bundletool_download)
-    val macosExample = stringResource(Res.string.settings_bundletool_examples_macos)
-    val linuxExample = stringResource(Res.string.settings_bundletool_examples_linux)
-    val windowsExample = stringResource(Res.string.settings_bundletool_examples_windows)
+    val scrcpyLabel = stringResource(Res.string.settings_field_scrcpy_label)
+    val scrcpyPlaceholder = stringResource(Res.string.settings_field_scrcpy_placeholder)
+    val scrcpyHelp = stringResource(Res.string.settings_field_scrcpy_help)
+    val checkScrcpyLabel = stringResource(Res.string.settings_action_check_scrcpy)
+    val choosePathLabel = stringResource(Res.string.settings_action_choose_path)
+
+    val downloadBundletoolLabel = stringResource(Res.string.settings_bundletool_download)
+    val bundletoolMacosExample = stringResource(Res.string.settings_bundletool_examples_macos)
+    val bundletoolLinuxExample = stringResource(Res.string.settings_bundletool_examples_linux)
+    val bundletoolWindowsExample = stringResource(Res.string.settings_bundletool_examples_windows)
+
+    val downloadScrcpyLabel = stringResource(Res.string.settings_scrcpy_download)
+    val scrcpyMacosExample = stringResource(Res.string.settings_scrcpy_examples_macos)
+    val scrcpyLinuxExample = stringResource(Res.string.settings_scrcpy_examples_linux)
+    val scrcpyWindowsExample = stringResource(Res.string.settings_scrcpy_examples_windows)
+
     val checkingLabel = stringResource(Res.string.settings_action_checking)
 
     AdbSectionCard(
@@ -282,14 +306,28 @@ private fun ToolsSection(
                 null
             },
         )
-        AdbOutlinedButton(
-            onClick = onCheckAdb,
-            text = if (state.adbCheckState is ToolCheckState.Checking) checkingLabel else checkAdbLabel,
-            loading = state.adbCheckState is ToolCheckState.Checking,
-            enabled = state.adbCheckState !is ToolCheckState.Checking,
-            size = AdbButtonSize.MEDIUM,
-            cornerRadius = AdbCornerRadius.MEDIUM,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+        ) {
+            AdbOutlinedButton(
+                onClick = {
+                    showOpenFileDialog(adbLabel)?.let(onAdbPathChanged)
+                },
+                text = choosePathLabel,
+                leadingIcon = Icons.Outlined.FolderOpen,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
+            AdbOutlinedButton(
+                onClick = onCheckAdb,
+                text = if (state.adbCheckState is ToolCheckState.Checking) checkingLabel else checkAdbLabel,
+                loading = state.adbCheckState is ToolCheckState.Checking,
+                enabled = state.adbCheckState !is ToolCheckState.Checking,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
+        }
         ToolCheckStateView(state = state.adbCheckState)
 
         Spacer(modifier = Modifier.height(Dimensions.paddingSmall))
@@ -314,33 +352,114 @@ private fun ToolsSection(
                 null
             },
         )
-        AdbOutlinedButton(
-            onClick = onCheckBundletool,
-            text = if (state.bundletoolCheckState is ToolCheckState.Checking) checkingLabel else checkBundletoolLabel,
-            loading = state.bundletoolCheckState is ToolCheckState.Checking,
-            enabled = state.bundletoolCheckState !is ToolCheckState.Checking,
-            size = AdbButtonSize.MEDIUM,
-            cornerRadius = AdbCornerRadius.MEDIUM,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+        ) {
+            AdbOutlinedButton(
+                onClick = {
+                    showOpenFileDialog(bundletoolLabel)?.let(onBundletoolPathChanged)
+                },
+                text = choosePathLabel,
+                leadingIcon = Icons.Outlined.FolderOpen,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
+            AdbOutlinedButton(
+                onClick = onCheckBundletool,
+                text = if (state.bundletoolCheckState is ToolCheckState.Checking) checkingLabel else checkBundletoolLabel,
+                loading = state.bundletoolCheckState is ToolCheckState.Checking,
+                enabled = state.bundletoolCheckState !is ToolCheckState.Checking,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
+        }
         ToolCheckStateView(state = state.bundletoolCheckState)
 
         Text(
-            text = downloadLabel,
+            text = downloadBundletoolLabel,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = macosExample,
+            text = bundletoolMacosExample,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = linuxExample,
+            text = bundletoolLinuxExample,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = windowsExample,
+            text = bundletoolWindowsExample,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Spacer(modifier = Modifier.height(Dimensions.paddingSmall))
+
+        Text(
+            text = scrcpyLabel,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        AdbOutlinedTextField(
+            value = state.scrcpyPath,
+            onValueChange = onScrcpyPathChanged,
+            placeholder = scrcpyPlaceholder,
+            supportingText = scrcpyHelp,
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = AdbCornerRadius.MEDIUM,
+            size = AdbTextFieldSize.MEDIUM,
+            trailingIcon = if (state.scrcpyPath.isNotBlank()) Icons.Outlined.Clear else null,
+            onTrailingIconClick = if (state.scrcpyPath.isNotBlank()) {
+                { onScrcpyPathChanged("") }
+            } else {
+                null
+            },
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+        ) {
+            AdbOutlinedButton(
+                onClick = {
+                    showOpenFileDialog(scrcpyLabel)?.let(onScrcpyPathChanged)
+                },
+                text = choosePathLabel,
+                leadingIcon = Icons.Outlined.FolderOpen,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
+            AdbOutlinedButton(
+                onClick = onCheckScrcpy,
+                text = if (state.scrcpyCheckState is ToolCheckState.Checking) checkingLabel else checkScrcpyLabel,
+                loading = state.scrcpyCheckState is ToolCheckState.Checking,
+                enabled = state.scrcpyCheckState !is ToolCheckState.Checking,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.MEDIUM,
+            )
+        }
+        ToolCheckStateView(state = state.scrcpyCheckState)
+
+        Text(
+            text = downloadScrcpyLabel,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = scrcpyMacosExample,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = scrcpyLinuxExample,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = scrcpyWindowsExample,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

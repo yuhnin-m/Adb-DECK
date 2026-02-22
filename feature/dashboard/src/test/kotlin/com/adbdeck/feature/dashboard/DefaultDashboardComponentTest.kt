@@ -175,6 +175,39 @@ class DefaultDashboardComponentTest {
     }
 
     @Test
+    fun `adb check exception resets adb core availability state`() = runTest(context = testDispatcher) {
+        val adbClient = FakeAdbClient(
+            checkResult = AdbCheckResult.Available("Android Debug Bridge version 1.0.41"),
+            serverStatusResult = AdbServerStatusResult(
+                state = AdbServerState.RUNNING,
+                message = "daemon started successfully",
+            ),
+        )
+        val fixture = createFixture(adbClient = adbClient)
+        try {
+            fixture.component.onCheckAdb()
+            testDispatcher.scheduler.runCurrent()
+
+            awaitCondition("Ожидался успешный первичный check adb") {
+                fixture.component.state.value.adbCheckState is DashboardAdbCheckState.Available &&
+                    fixture.component.state.value.adbServer.isAdbFound
+            }
+
+            adbClient.checkThrowable = IllegalStateException("check exploded")
+            fixture.component.onCheckAdb()
+            testDispatcher.scheduler.runCurrent()
+
+            awaitCondition("Ожидалось сбросить доступность adb в блоке Adb Core") {
+                fixture.component.state.value.adbCheckState is DashboardAdbCheckState.NotAvailable &&
+                    !fixture.component.state.value.adbServer.isAdbFound &&
+                    fixture.component.state.value.adbServer.serverState == DashboardAdbServerState.UNKNOWN
+            }
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
     fun `adb check also refreshes server status`() = runTest(context = testDispatcher) {
         val fixture = createFixture(
             adbClient = FakeAdbClient(
@@ -377,6 +410,7 @@ class DefaultDashboardComponentTest {
             onNavigateToDeepLinks = {},
             onNavigateToNotifications = {},
             onNavigateToScreenTools = {},
+            onNavigateToScrcpy = {},
             onNavigateToFileExplorer = {},
             onNavigateToContacts = {},
             onNavigateToSystemMonitor = {},
@@ -406,12 +440,14 @@ class DefaultDashboardComponentTest {
     private class FakeAdbClient(
         private val delayMs: Long = 0L,
         private val checkResult: AdbCheckResult = AdbCheckResult.Available("ok"),
-        private val checkThrowable: Throwable? = null,
+        checkThrowable: Throwable? = null,
         private val serverStatusResult: AdbServerStatusResult = AdbServerStatusResult(AdbServerState.RUNNING),
         private val startServerResult: Result<String> = Result.success("started"),
         private val stopServerResult: Result<String> = Result.success("stopped"),
         private val restartServerResult: Result<String> = Result.success("restarted"),
     ) : AdbClient {
+
+        var checkThrowable: Throwable? = checkThrowable
 
         var checkCalls: Int = 0
             private set

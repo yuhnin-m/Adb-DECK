@@ -61,6 +61,8 @@
 
     <string name="dashboard_tile_screen_tools_title">Screen Tools</string>
     <string name="dashboard_tile_screen_tools_subtitle">Screenshot and screenrecord tools</string>
+    <string name="dashboard_tile_mirror_screen_title">Mirror screen</string>
+    <string name="dashboard_tile_mirror_screen_subtitle">Open scrcpy controls</string>
     <string name="dashboard_tile_file_explorer_title">File Explorer</string>
     <string name="dashboard_tile_file_explorer_subtitle">Device and local file operations</string>
     <string name="dashboard_tile_contacts_title">Contacts</string>
