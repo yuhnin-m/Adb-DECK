@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts.ui
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,6 +38,7 @@ import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.filedialogs.showSaveFileDialog
 import com.adbdeck.feature.contacts.ContactsComponent
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun DetailContent(
@@ -43,6 +46,12 @@ internal fun DetailContent(
     contact: Contact,
     component: ContactsComponent,
 ) {
+    val localAccountLabel = stringResource(Res.string.contacts_detail_account_local)
+    val jsonFileDescription = stringResource(Res.string.contacts_file_desc_json)
+    val vcardFileDescription = stringResource(Res.string.contacts_file_desc_vcard)
+    val fallbackName = stringResource(Res.string.contacts_detail_contact_fallback, contact.id)
+    val exportBaseName = contact.displayName.ifBlank { fallbackName }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,21 +62,21 @@ internal fun DetailContent(
             details.lastName.isNotEmpty() ||
             details.middleName.isNotEmpty()
         if (hasNameFields) {
-            DetailSection(title = "Имя") {
+            DetailSection(title = stringResource(Res.string.contacts_detail_section_name)) {
                 if (details.firstName.isNotEmpty()) {
-                    DetailRow("Имя", details.firstName)
+                    DetailRow(stringResource(Res.string.contacts_detail_label_first_name), details.firstName)
                 }
                 if (details.lastName.isNotEmpty()) {
-                    DetailRow("Фамилия", details.lastName)
+                    DetailRow(stringResource(Res.string.contacts_detail_label_last_name), details.lastName)
                 }
                 if (details.middleName.isNotEmpty()) {
-                    DetailRow("Отчество", details.middleName)
+                    DetailRow(stringResource(Res.string.contacts_detail_label_middle_name), details.middleName)
                 }
             }
         }
 
         if (details.phones.isNotEmpty()) {
-            DetailSection(title = "Телефоны") {
+            DetailSection(title = stringResource(Res.string.contacts_detail_section_phones)) {
                 for (phone in details.phones) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -83,7 +92,9 @@ internal fun DetailContent(
                             text = phone.value,
                             style = MaterialTheme.typography.bodyMedium,
                             fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.padding(start = 6.dp).weight(1f),
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .weight(1f),
                         )
                         PhoneTypeBadge(phone.type)
                     }
@@ -92,7 +103,7 @@ internal fun DetailContent(
         }
 
         if (details.emails.isNotEmpty()) {
-            DetailSection(title = "Email") {
+            DetailSection(title = stringResource(Res.string.contacts_detail_section_email)) {
                 for (email in details.emails) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -107,7 +118,9 @@ internal fun DetailContent(
                         Text(
                             text = email.value,
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(start = 6.dp).weight(1f),
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .weight(1f),
                         )
                         EmailTypeBadge(email.type)
                     }
@@ -117,7 +130,7 @@ internal fun DetailContent(
 
         details.organization?.let { org ->
             if (org.company.isNotEmpty() || org.title.isNotEmpty()) {
-                DetailSection(title = "Организация") {
+                DetailSection(title = stringResource(Res.string.contacts_detail_section_organization)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Filled.Business,
@@ -134,20 +147,25 @@ internal fun DetailContent(
                         }
                     }
                     if (org.title.isNotEmpty()) {
-                        DetailRow("Должность", org.title)
+                        DetailRow(stringResource(Res.string.contacts_detail_label_position), org.title)
                     }
                 }
             }
         }
 
         if (details.addresses.isNotEmpty()) {
-            DetailSection(title = "Адреса") {
+            DetailSection(title = stringResource(Res.string.contacts_detail_section_addresses)) {
                 for (addr in details.addresses) {
-                    Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(vertical = 2.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.Top,
+                        modifier = Modifier.padding(vertical = 2.dp),
+                    ) {
                         Icon(
                             Icons.Filled.Home,
                             contentDescription = null,
-                            modifier = Modifier.size(14.dp).padding(top = 2.dp),
+                            modifier = Modifier
+                                .size(14.dp)
+                                .padding(top = 2.dp),
                             tint = MaterialTheme.colorScheme.primary,
                         )
                         Text(
@@ -161,7 +179,7 @@ internal fun DetailContent(
         }
 
         if (details.notes.isNotEmpty()) {
-            DetailSection(title = "Заметки") {
+            DetailSection(title = stringResource(Res.string.contacts_detail_section_notes)) {
                 Text(
                     text = details.notes,
                     style = MaterialTheme.typography.bodyMedium,
@@ -171,15 +189,14 @@ internal fun DetailContent(
         }
 
         if (details.rawContacts.isNotEmpty()) {
-            DetailSection(title = "Аккаунты") {
+            DetailSection(title = stringResource(Res.string.contacts_detail_section_accounts)) {
                 for (raw in details.rawContacts) {
                     val accountLabel = when {
-                        raw.accountName.isNotEmpty() && raw.accountType.isNotEmpty() -> {
+                        raw.accountName.isNotEmpty() && raw.accountType.isNotEmpty() ->
                             "${raw.accountName} (${raw.accountType})"
-                        }
                         raw.accountName.isNotEmpty() -> raw.accountName
                         raw.accountType.isNotEmpty() -> raw.accountType
-                        else -> "Локальный"
+                        else -> localAccountLabel
                     }
                     Text(
                         text = accountLabel,
@@ -190,11 +207,15 @@ internal fun DetailContent(
             }
         }
 
-        DetailSection(title = "Идентификаторы") {
-            DetailRow("Contact ID", details.id.toString(), monospace = true)
+        DetailSection(title = stringResource(Res.string.contacts_detail_section_identifiers)) {
+            DetailRow(
+                stringResource(Res.string.contacts_detail_label_contact_id),
+                details.id.toString(),
+                monospace = true,
+            )
             if (details.rawContacts.isNotEmpty()) {
                 DetailRow(
-                    label = "Raw IDs",
+                    label = stringResource(Res.string.contacts_detail_label_raw_ids),
                     value = details.rawContacts.joinToString(", ") { it.rawContactId.toString() },
                     monospace = true,
                 )
@@ -203,14 +224,14 @@ internal fun DetailContent(
 
         Spacer(Modifier.height(16.dp))
 
-        DetailSection(title = "Действия") {
+        DetailSection(title = stringResource(Res.string.contacts_detail_section_actions)) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 AdbOutlinedButton(
                     onClick = { component.onShowEditForm() },
-                    text = "Редактировать",
+                    text = stringResource(Res.string.contacts_detail_action_edit),
                     leadingIcon = Icons.Filled.Edit,
                     size = AdbButtonSize.SMALL,
                     fullWidth = true,
@@ -218,7 +239,7 @@ internal fun DetailContent(
 
                 AdbOutlinedButton(
                     onClick = { component.onRefreshDetail() },
-                    text = "Обновить",
+                    text = stringResource(Res.string.contacts_detail_action_refresh),
                     leadingIcon = Icons.Filled.Refresh,
                     size = AdbButtonSize.SMALL,
                     fullWidth = true,
@@ -227,15 +248,15 @@ internal fun DetailContent(
                 AdbOutlinedButton(
                     onClick = {
                         val path = showSaveFileDialog(
-                            defaultName = "${contact.displayName}.json",
+                            defaultName = "$exportBaseName.json",
                             ext = "json",
-                            desc = "JSON-файл",
+                            desc = jsonFileDescription,
                         )
                         if (path != null) {
                             component.onExportContactToJson(contact, path)
                         }
                     },
-                    text = "Экспорт JSON",
+                    text = stringResource(Res.string.contacts_detail_action_export_json),
                     leadingIcon = Icons.Outlined.FileDownload,
                     size = AdbButtonSize.SMALL,
                     fullWidth = true,
@@ -244,15 +265,15 @@ internal fun DetailContent(
                 AdbOutlinedButton(
                     onClick = {
                         val path = showSaveFileDialog(
-                            defaultName = "${contact.displayName}.vcf",
+                            defaultName = "$exportBaseName.vcf",
                             ext = "vcf",
-                            desc = "vCard-файл",
+                            desc = vcardFileDescription,
                         )
                         if (path != null) {
                             component.onExportContactToVcf(contact, path)
                         }
                     },
-                    text = "Экспорт VCF",
+                    text = stringResource(Res.string.contacts_detail_action_export_vcf),
                     leadingIcon = Icons.Outlined.FileDownload,
                     size = AdbButtonSize.SMALL,
                     fullWidth = true,
@@ -260,7 +281,7 @@ internal fun DetailContent(
 
                 AdbFilledButton(
                     onClick = { component.onRequestDelete(contact) },
-                    text = "Удалить",
+                    text = stringResource(Res.string.contacts_detail_action_delete),
                     leadingIcon = Icons.Filled.Delete,
                     type = AdbButtonType.DANGER,
                     size = AdbButtonSize.SMALL,

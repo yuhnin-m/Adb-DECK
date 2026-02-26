@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import com.adbdeck.core.adb.api.contacts.Contact
 import com.adbdeck.core.adb.api.contacts.ContactAccount
 import com.adbdeck.core.adb.api.device.DeviceState
@@ -19,7 +21,11 @@ internal fun DefaultContactsComponent.observeSelectedDevice() {
                     val hadRunningOperation = operationJob?.isActive == true
                     loadJob?.cancel()
                     detailJob?.cancel()
-                    operationJob?.cancel(CancellationException("Операция прервана: устройство недоступно."))
+                    operationJob?.cancel(
+                        CancellationException(
+                            contactsString(Res.string.contacts_component_operation_aborted_unavailable),
+                        ),
+                    )
                     activeDeviceId = null
                     _state.update {
                         it.copy(
@@ -37,7 +43,9 @@ internal fun DefaultContactsComponent.observeSelectedDevice() {
                     if (hadRunningOperation) {
                         showFeedback(
                             ContactFeedback(
-                                message = "Операция прервана: устройство отключено или недоступно",
+                                message = contactsString(
+                                    Res.string.contacts_component_operation_aborted_unavailable,
+                                ),
                                 isError = true,
                             ),
                         )
@@ -51,7 +59,9 @@ internal fun DefaultContactsComponent.observeSelectedDevice() {
                         detailJob?.cancel()
                         if (operationJob?.isActive == true) {
                             operationJob?.cancel(
-                                CancellationException("Операция прервана: выбрано другое устройство."),
+                                CancellationException(
+                                    contactsString(Res.string.contacts_component_device_switched),
+                                ),
                             )
                         }
                         _state.update {
@@ -115,65 +125,74 @@ internal fun DefaultContactsComponent.loadContacts() {
 
         _state.update { it.copy(listState = ContactsListState.Loading) }
 
-        contactsClient.getContacts(deviceId = requestDeviceId, adbPath = adbPath)
-            .onSuccess { contacts ->
-                if (!isRequestStillValid(requestDeviceId)) return@onSuccess
-
-                val accounts = contactsClient.getAvailableAccounts(
-                    deviceId = requestDeviceId,
-                    adbPath = adbPath,
-                ).getOrElse { error ->
-                    if (isRequestStillValid(requestDeviceId)) {
-                        showFeedback(
-                            ContactFeedback(
-                                message = "Не удалось загрузить аккаунты контактов: ${error.message}",
-                                isError = true,
-                            ),
-                        )
-                    }
-                    listOf(ContactAccount.local())
-                }.ifEmpty { listOf(ContactAccount.local()) }
-
-                _state.update { current ->
-                    val selectedStillExists =
-                        current.selectedContactId != null &&
-                            contacts.any { it.id == current.selectedContactId }
-                    val selectedAccount = selectAccountForState(
-                        currentSelected = current.selectedAccount,
-                        availableAccounts = accounts,
-                    )
-                    val updatedAddForm = current.addForm?.let { form ->
-                        val formAccount = accounts.firstOrNull {
-                            it.accountName == form.accountName &&
-                                it.accountType == form.accountType
-                        } ?: selectedAccount
-                        form.copy(
-                            accountName = formAccount.accountName,
-                            accountType = formAccount.accountType,
-                        )
-                    }
-                    current.copy(
-                        listState = ContactsListState.Success(contacts),
-                        filteredContacts = applySearch(contacts, current.searchQuery),
-                        availableAccounts = accounts,
-                        selectedAccount = selectedAccount,
-                        selectedContactId = if (selectedStillExists) current.selectedContactId else null,
-                        detailState = if (selectedStillExists) current.detailState else ContactDetailState.Idle,
-                        addForm = updatedAddForm,
-                    )
-                }
+        val contactsResult = contactsClient.getContacts(deviceId = requestDeviceId, adbPath = adbPath)
+        if (contactsResult.isFailure) {
+            if (!isRequestStillValid(requestDeviceId)) return@launch
+            val message = contactsResult.exceptionOrNull()?.message
+                ?: contactsString(Res.string.contacts_component_error_unknown)
+            _state.update {
+                it.copy(
+                    listState = ContactsListState.Error(message),
+                    filteredContacts = emptyList(),
+                    availableAccounts = listOf(ContactAccount.local()),
+                    selectedAccount = ContactAccount.local(),
+                )
             }
-            .onFailure { error ->
-                if (!isRequestStillValid(requestDeviceId)) return@onFailure
-                _state.update {
-                    it.copy(
-                        listState = ContactsListState.Error(error.message ?: "Неизвестная ошибка"),
-                        filteredContacts = emptyList(),
-                        availableAccounts = listOf(ContactAccount.local()),
-                        selectedAccount = ContactAccount.local(),
-                    )
-                }
+            return@launch
+        }
+
+        val contacts = contactsResult.getOrThrow()
+        if (!isRequestStillValid(requestDeviceId)) return@launch
+
+        val accountsResult = contactsClient.getAvailableAccounts(
+            deviceId = requestDeviceId,
+            adbPath = adbPath,
+        )
+        val accounts = if (accountsResult.isSuccess) {
+            accountsResult.getOrThrow().ifEmpty { listOf(ContactAccount.local()) }
+        } else {
+            if (isRequestStillValid(requestDeviceId)) {
+                showFeedback(
+                    ContactFeedback(
+                        message = contactsString(
+                            Res.string.contacts_component_accounts_load_failed,
+                            accountsResult.exceptionOrNull()?.message.orEmpty(),
+                        ),
+                        isError = true,
+                    ),
+                )
             }
+            listOf(ContactAccount.local())
+        }
+
+        _state.update { current ->
+            val selectedStillExists =
+                current.selectedContactId != null &&
+                    contacts.any { it.id == current.selectedContactId }
+            val selectedAccount = selectAccountForState(
+                currentSelected = current.selectedAccount,
+                availableAccounts = accounts,
+            )
+            val updatedAddForm = current.addForm?.let { form ->
+                val formAccount = accounts.firstOrNull {
+                    it.accountName == form.accountName &&
+                        it.accountType == form.accountType
+                } ?: selectedAccount
+                form.copy(
+                    accountName = formAccount.accountName,
+                    accountType = formAccount.accountType,
+                )
+            }
+            current.copy(
+                listState = ContactsListState.Success(contacts),
+                filteredContacts = applySearch(contacts, current.searchQuery),
+                availableAccounts = accounts,
+                selectedAccount = selectedAccount,
+                selectedContactId = if (selectedStillExists) current.selectedContactId else null,
+                detailState = if (selectedStillExists) current.detailState else ContactDetailState.Idle,
+                addForm = updatedAddForm,
+            )
+        }
     }
 }
 
@@ -220,19 +239,22 @@ internal suspend fun DefaultContactsComponent.loadDetails(contactId: Long) {
     val requestDeviceId = device.deviceId
     val adbPath = adbPath()
 
-    contactsClient.getContactDetails(requestDeviceId, contactId, adbPath)
-        .onSuccess { details ->
-            if (!isRequestStillValid(requestDeviceId)) return@onSuccess
-            if (_state.value.selectedContactId != contactId) return@onSuccess
-            _state.update { it.copy(detailState = ContactDetailState.Success(details)) }
+    val result = contactsClient.getContactDetails(requestDeviceId, contactId, adbPath)
+    if (!isRequestStillValid(requestDeviceId)) return
+    if (_state.value.selectedContactId != contactId) return
+
+    if (result.isSuccess) {
+        _state.update { it.copy(detailState = ContactDetailState.Success(result.getOrThrow())) }
+    } else {
+        _state.update {
+            it.copy(
+                detailState = ContactDetailState.Error(
+                    result.exceptionOrNull()?.message
+                        ?: contactsString(Res.string.contacts_component_error_load_details),
+                ),
+            )
         }
-        .onFailure { error ->
-            if (!isRequestStillValid(requestDeviceId)) return@onFailure
-            if (_state.value.selectedContactId != contactId) return@onFailure
-            _state.update {
-                it.copy(detailState = ContactDetailState.Error(error.message ?: "Ошибка загрузки"))
-            }
-        }
+    }
 }
 
 internal fun applySearch(contacts: List<Contact>, query: String): List<Contact> {

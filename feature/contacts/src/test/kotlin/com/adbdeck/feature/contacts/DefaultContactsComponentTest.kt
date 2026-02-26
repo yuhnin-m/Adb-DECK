@@ -182,7 +182,10 @@ class DefaultContactsComponentTest {
             val feedback = fixture.component.state.value.actionFeedback
             assertNotNull(feedback)
             assertTrue(feedback.isError)
-            assertContains(feedback.message, "Файл не содержит распознанных контактов")
+            assertTrue(
+                feedback.message.contains("распознан", ignoreCase = true) ||
+                    feedback.message.contains("recognized", ignoreCase = true),
+            )
         } finally {
             fixture.close()
         }

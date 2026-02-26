@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts.ui
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +31,7 @@ import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
 import com.adbdeck.feature.contacts.models.ContactsListState
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun ContactsListPane(
@@ -44,7 +47,7 @@ internal fun ContactsListPane(
         Box(modifier = Modifier.fillMaxSize()) {
             when (listState) {
                 is ContactsListState.NoDevice -> EmptyView(
-                    message = "Нет активного устройства",
+                    message = stringResource(Res.string.contacts_list_no_active_device),
                     modifier = Modifier.fillMaxSize(),
                 )
                 is ContactsListState.Loading -> LoadingView(modifier = Modifier.fillMaxSize())
@@ -57,9 +60,9 @@ internal fun ContactsListPane(
                     if (filteredContacts.isEmpty()) {
                         EmptyView(
                             message = if (searchQuery.isBlank()) {
-                                "Контакты не найдены"
+                                stringResource(Res.string.contacts_list_empty)
                             } else {
-                                "Нет результатов для «$searchQuery»"
+                                stringResource(Res.string.contacts_list_empty_search, searchQuery)
                             },
                             modifier = Modifier.fillMaxSize(),
                         )
@@ -123,7 +126,9 @@ private fun ContactRow(
 
         Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
             Text(
-                text = contact.displayName.ifEmpty { "Без имени" },
+                text = contact.displayName.ifEmpty {
+                    stringResource(Res.string.contacts_list_name_without_name)
+                },
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -172,10 +177,13 @@ internal fun ContactsStatusBar(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         val statusText = when (listState) {
-            is ContactsListState.NoDevice -> "Устройство не подключено"
-            is ContactsListState.Loading -> "Загрузка контактов..."
-            is ContactsListState.Error -> "Ошибка загрузки"
-            is ContactsListState.Success -> "${listState.contacts.size} контакт(ов)"
+            is ContactsListState.NoDevice -> stringResource(Res.string.contacts_status_no_device)
+            is ContactsListState.Loading -> stringResource(Res.string.contacts_status_loading)
+            is ContactsListState.Error -> stringResource(Res.string.contacts_status_error)
+            is ContactsListState.Success -> stringResource(
+                Res.string.contacts_status_count,
+                listState.contacts.size,
+            )
         }
         Text(
             text = statusText,

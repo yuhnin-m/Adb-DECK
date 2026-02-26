@@ -546,7 +546,7 @@ class DefaultSystemMonitorClient(
             }
 
             val (filesystem, dataparts) = if (pendingFilesystem != null) {
-                Pair(pendingFilesystem!!, parts).also { pendingFilesystem = null }
+                Pair(pendingFilesystem, parts).also { pendingFilesystem = null }
             } else {
                 Pair(parts[0], parts.drop(1))
             }

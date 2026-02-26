@@ -742,7 +742,7 @@ class DefaultDeviceInfoService(
                 ?.takeIf { it.localeTag == localeTag }
                 ?.formatter
         }
-        if (cached != null) return cached!!
+        if (cached != null) return cached
 
         val formatter = DeviceInfoFormatter.fromResources()
         formatterMutex.withLock {
@@ -768,7 +768,7 @@ class DefaultDeviceInfoService(
                 cached = entry.data
             }
         }
-        if (cached != null) return@coroutineScope cached!!
+        if (cached != null) return@coroutineScope cached
 
         val deferred = cachedDeviceDataMutex.withLock {
             inFlightCachedDeviceDataByKey[key] ?: async {

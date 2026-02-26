@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts.ui
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,9 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.contacts.ContactAccount
 import com.adbdeck.core.adb.api.contacts.EmailType
-import com.adbdeck.core.adb.api.contacts.EmailType.Companion.label
 import com.adbdeck.core.adb.api.contacts.PhoneType
-import com.adbdeck.core.adb.api.contacts.PhoneType.Companion.label
 import com.adbdeck.core.ui.alertdialogs.AdbAlertDialog
 import com.adbdeck.core.ui.alertdialogs.AdbAlertDialogAction
 import com.adbdeck.core.ui.textfields.AdbDropdownOption
@@ -33,8 +33,10 @@ import com.adbdeck.core.ui.textfields.AdbOutlinedDropdownTextField
 import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
 import com.adbdeck.core.ui.textfields.AdbTextFieldSize
 import com.adbdeck.feature.contacts.ContactsComponent
+import com.adbdeck.feature.contacts.localizedLabel
 import com.adbdeck.feature.contacts.models.AddContactFormState
 import com.adbdeck.feature.contacts.models.ContactFormMode
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Диалог создания/редактирования контакта на Android-устройстве.
@@ -48,19 +50,33 @@ fun AddContactDialog(
     component: ContactsComponent,
 ) {
     val isEditMode = form.mode == ContactFormMode.EDIT
-    val dialogTitle = if (isEditMode) "Редактировать контакт" else "Новый контакт"
-    val confirmButtonText = if (isEditMode) "Сохранить" else "Добавить"
+    val dialogTitle = if (isEditMode) {
+        stringResource(Res.string.contacts_add_title_edit)
+    } else {
+        stringResource(Res.string.contacts_add_title_new)
+    }
+    val confirmButtonText = if (isEditMode) {
+        stringResource(Res.string.contacts_add_confirm_save)
+    } else {
+        stringResource(Res.string.contacts_add_confirm_add)
+    }
+    val localAccountLabel = stringResource(Res.string.contacts_account_local_label)
     val selectedAccount = availableAccounts.firstOrNull {
         it.accountName == form.accountName && it.accountType == form.accountType
     } ?: ContactAccount(form.accountName, form.accountType)
     val infoText = if (isEditMode) {
-        "Контакт будет сохранён в аккаунте: ${selectedAccount.uiLabel()}."
+        stringResource(
+            Res.string.contacts_add_info_edit,
+            selectedAccount.localizedLabel(localAccountLabel),
+        )
     } else {
-        "Контакт будет создан в выбранном аккаунте: ${selectedAccount.uiLabel()}. " +
-            "Если устройство отклонит запись, попробуйте выбрать другой аккаунт."
+        stringResource(
+            Res.string.contacts_add_info_create,
+            selectedAccount.localizedLabel(localAccountLabel),
+        )
     }
 
-    val accountOptions = remember(availableAccounts, selectedAccount) {
+    val accountOptions = remember(availableAccounts, selectedAccount, localAccountLabel) {
         val base = if (availableAccounts.isNotEmpty()) {
             availableAccounts
         } else {
@@ -73,16 +89,48 @@ fun AddContactDialog(
         }
         resolved
             .distinctBy { it.stableKey }
-            .map { AdbDropdownOption(value = it, label = it.uiLabel()) }
+            .map {
+                AdbDropdownOption(
+                    value = it,
+                    label = it.localizedLabel(localAccountLabel),
+                )
+            }
     }
-    val phoneTypeOptions = remember {
+    val phoneTypeHomeLabel = stringResource(Res.string.contacts_phone_type_home)
+    val phoneTypeMobileLabel = stringResource(Res.string.contacts_phone_type_mobile)
+    val phoneTypeWorkLabel = stringResource(Res.string.contacts_phone_type_work)
+    val phoneTypeOtherLabel = stringResource(Res.string.contacts_phone_type_other)
+    val phoneTypeOptions = remember(
+        phoneTypeHomeLabel,
+        phoneTypeMobileLabel,
+        phoneTypeWorkLabel,
+        phoneTypeOtherLabel,
+    ) {
         PhoneType.entries.map { type ->
-            AdbDropdownOption(value = type, label = type.label())
+            val label = when (type) {
+                PhoneType.HOME -> phoneTypeHomeLabel
+                PhoneType.MOBILE -> phoneTypeMobileLabel
+                PhoneType.WORK -> phoneTypeWorkLabel
+                PhoneType.OTHER -> phoneTypeOtherLabel
+            }
+            AdbDropdownOption(value = type, label = label)
         }
     }
-    val emailTypeOptions = remember {
+    val emailTypeHomeLabel = stringResource(Res.string.contacts_email_type_home)
+    val emailTypeWorkLabel = stringResource(Res.string.contacts_email_type_work)
+    val emailTypeOtherLabel = stringResource(Res.string.contacts_email_type_other)
+    val emailTypeOptions = remember(
+        emailTypeHomeLabel,
+        emailTypeWorkLabel,
+        emailTypeOtherLabel,
+    ) {
         EmailType.entries.map { type ->
-            AdbDropdownOption(value = type, label = type.label())
+            val label = when (type) {
+                EmailType.HOME -> emailTypeHomeLabel
+                EmailType.WORK -> emailTypeWorkLabel
+                EmailType.OTHER -> emailTypeOtherLabel
+            }
+            AdbDropdownOption(value = type, label = label)
         }
     }
 
@@ -99,7 +147,7 @@ fun AddContactDialog(
             loading = form.isSubmitting,
         ),
         dismissAction = AdbAlertDialogAction(
-            text = "Отмена",
+            text = stringResource(Res.string.contacts_add_cancel),
             onClick = { component.onDismissAddForm() },
             enabled = !form.isSubmitting,
         ),
@@ -111,7 +159,7 @@ fun AddContactDialog(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Аккаунт",
+                text = stringResource(Res.string.contacts_add_account_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -131,7 +179,7 @@ fun AddContactDialog(
                 AdbOutlinedTextField(
                     value = form.firstName,
                     onValueChange = { component.onAddFormFirstNameChanged(it) },
-                    placeholder = "Имя",
+                    placeholder = stringResource(Res.string.contacts_add_placeholder_first_name),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !form.isSubmitting,
@@ -140,7 +188,7 @@ fun AddContactDialog(
                 AdbOutlinedTextField(
                     value = form.lastName,
                     onValueChange = { component.onAddFormLastNameChanged(it) },
-                    placeholder = "Фамилия",
+                    placeholder = stringResource(Res.string.contacts_add_placeholder_last_name),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !form.isSubmitting,
@@ -156,7 +204,7 @@ fun AddContactDialog(
                 AdbOutlinedTextField(
                     value = form.phone1,
                     onValueChange = { component.onAddFormPhone1Changed(it) },
-                    placeholder = "Телефон 1",
+                    placeholder = stringResource(Res.string.contacts_add_placeholder_phone_1),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !form.isSubmitting,
@@ -178,7 +226,7 @@ fun AddContactDialog(
                 AdbOutlinedTextField(
                     value = form.phone2,
                     onValueChange = { component.onAddFormPhone2Changed(it) },
-                    placeholder = "Телефон 2",
+                    placeholder = stringResource(Res.string.contacts_add_placeholder_phone_2),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !form.isSubmitting,
@@ -200,7 +248,7 @@ fun AddContactDialog(
                 AdbOutlinedTextField(
                     value = form.email,
                     onValueChange = { component.onAddFormEmailChanged(it) },
-                    placeholder = "Email",
+                    placeholder = stringResource(Res.string.contacts_add_placeholder_email),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     enabled = !form.isSubmitting,
@@ -217,7 +265,7 @@ fun AddContactDialog(
             AdbOutlinedTextField(
                 value = form.organization,
                 onValueChange = { component.onAddFormOrganizationChanged(it) },
-                placeholder = "Организация",
+                placeholder = stringResource(Res.string.contacts_add_placeholder_organization),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 enabled = !form.isSubmitting,
@@ -227,7 +275,7 @@ fun AddContactDialog(
             AdbOutlinedTextField(
                 value = form.notes,
                 onValueChange = { component.onAddFormNotesChanged(it) },
-                placeholder = "Заметки",
+                placeholder = stringResource(Res.string.contacts_add_placeholder_notes),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(84.dp),

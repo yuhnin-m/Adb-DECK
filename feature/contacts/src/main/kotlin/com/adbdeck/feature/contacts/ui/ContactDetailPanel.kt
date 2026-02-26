@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts.ui
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +28,7 @@ import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbPlainButton
 import com.adbdeck.feature.contacts.ContactsComponent
 import com.adbdeck.feature.contacts.models.ContactDetailState
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Правая панель с детальной информацией о контакте.
@@ -84,7 +87,9 @@ private fun DetailHeader(
 
         Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
             Text(
-                text = contact.displayName.ifEmpty { "Контакт #${contact.id}" },
+                text = contact.displayName.ifEmpty {
+                    stringResource(Res.string.contacts_detail_contact_fallback, contact.id)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -100,7 +105,7 @@ private fun DetailHeader(
         AdbPlainButton(
             onClick = onClose,
             leadingIcon = Icons.Filled.Close,
-            contentDescription = "Закрыть",
+            contentDescription = stringResource(Res.string.contacts_detail_close),
             size = AdbButtonSize.SMALL,
         )
     }

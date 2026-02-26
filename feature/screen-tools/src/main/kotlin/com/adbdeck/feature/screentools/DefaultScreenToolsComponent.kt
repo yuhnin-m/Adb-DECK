@@ -271,8 +271,8 @@ class DefaultScreenToolsComponent(
     }
 
     override fun onCopyLastScreenshotToClipboard() {
-        val path = _state.value.screenshot.lastFilePath
-        if (!hostFileService.isFile(path)) {
+        val path = _state.value.screenshot.lastFilePath?.takeIf { hostFileService.isFile(it) }
+        if (path == null) {
             showFeedbackResource(
                 messageRes = Res.string.screen_tools_error_screenshot_file_not_found,
                 isError = true,
@@ -282,13 +282,13 @@ class DefaultScreenToolsComponent(
 
         runHostAction(
             successMessageRes = Res.string.screen_tools_feedback_screenshot_copied,
-            action = { hostFileService.copyImageToClipboard(path!!) },
+            action = { hostFileService.copyImageToClipboard(path) },
         )
     }
 
     override fun onOpenLastScreenshotFile() {
-        val path = _state.value.screenshot.lastFilePath
-        if (!hostFileService.isFile(path)) {
+        val path = _state.value.screenshot.lastFilePath?.takeIf { hostFileService.isFile(it) }
+        if (path == null) {
             showFeedbackResource(
                 messageRes = Res.string.screen_tools_error_screenshot_file_not_found,
                 isError = true,
@@ -298,7 +298,7 @@ class DefaultScreenToolsComponent(
 
         runHostAction(
             successMessageRes = Res.string.screen_tools_feedback_screenshot_opened,
-            action = { hostFileService.openFile(path!!) },
+            action = { hostFileService.openFile(path) },
         )
     }
 
@@ -577,8 +577,8 @@ class DefaultScreenToolsComponent(
     }
 
     override fun onOpenLastVideoFile() {
-        val path = _state.value.screenrecord.lastFilePath
-        if (!hostFileService.isFile(path)) {
+        val path = _state.value.screenrecord.lastFilePath?.takeIf { hostFileService.isFile(it) }
+        if (path == null) {
             showFeedbackResource(
                 messageRes = Res.string.screen_tools_error_video_file_not_found,
                 isError = true,
@@ -588,7 +588,7 @@ class DefaultScreenToolsComponent(
 
         runHostAction(
             successMessageRes = Res.string.screen_tools_feedback_video_opened,
-            action = { hostFileService.openFile(path!!) },
+            action = { hostFileService.openFile(path) },
         )
     }
 

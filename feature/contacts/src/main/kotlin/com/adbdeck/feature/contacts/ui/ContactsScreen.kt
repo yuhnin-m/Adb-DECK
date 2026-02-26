@@ -1,5 +1,8 @@
 package com.adbdeck.feature.contacts.ui
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.contacts_action_ok
+import adbdeck.feature.contacts.generated.resources.contacts_banner_safety_message
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
@@ -31,6 +34,7 @@ import com.adbdeck.feature.contacts.models.toMainContentState
 import com.adbdeck.feature.contacts.models.toOverlayState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Главный экран управления контактами Android-устройства.
@@ -63,11 +67,10 @@ private fun ContactsMainContent(component: ContactsComponent) {
     Column(modifier = Modifier.fillMaxSize()) {
         if (state.showSafetyBanner) {
             AdbBanner(
-                message = "ADB не предназначен для управления пользовательскими данными. " +
-                    "Но для отладки иногда очень удобно. Надеемся, вы знаете, что делаете.",
+                message = stringResource(Res.string.contacts_banner_safety_message),
                 type = AdbBannerType.WARNING,
                 dismissStyle = AdbBannerDismissStyle.TEXT,
-                dismissText = "ОК",
+                dismissText = stringResource(Res.string.contacts_action_ok),
                 onDismiss = { component.onDismissSafetyBanner() },
                 modifier = Modifier
                     .fillMaxWidth()

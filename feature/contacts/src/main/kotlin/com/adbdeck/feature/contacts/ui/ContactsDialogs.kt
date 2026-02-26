@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts.ui
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +30,7 @@ import com.adbdeck.feature.contacts.models.ContactsState
 import com.adbdeck.feature.contacts.models.toDialogsState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun ContactsDialogs(component: ContactsComponent) {
@@ -66,25 +69,25 @@ private fun ConfirmDeleteDialog(
 ) {
     AdbAlertDialog(
         onDismissRequest = onDismiss,
-        title = "Удалить контакт?",
+        title = stringResource(Res.string.contacts_delete_title),
         hideDismissWhenBusy = false,
         confirmAction = AdbAlertDialogAction(
-            text = "Удалить",
+            text = stringResource(Res.string.contacts_delete_confirm),
             onClick = onConfirm,
             enabled = !isActionRunning,
             loading = isActionRunning,
             type = AdbButtonType.DANGER,
         ),
         dismissAction = AdbAlertDialogAction(
-            text = "Отмена",
+            text = stringResource(Res.string.contacts_delete_cancel),
             onClick = onDismiss,
             enabled = !isActionRunning,
         ),
     ) {
-        Text("Контакт «${contact.displayName}» будет удалён с устройства. Это действие нельзя отменить.")
+        Text(stringResource(Res.string.contacts_delete_message, contact.displayName))
         if (isActionRunning) {
             Text(
-                text = "Удаление...",
+                text = stringResource(Res.string.contacts_delete_in_progress),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -101,7 +104,7 @@ internal fun OperationProgressDialog(
         onDismissRequest = { },
         title = operation.title,
         confirmAction = AdbAlertDialogAction(
-            text = "Отмена",
+            text = stringResource(Res.string.contacts_operation_cancel),
             onClick = onCancel,
             type = AdbButtonType.DANGER,
         ),

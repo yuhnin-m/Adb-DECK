@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import com.adbdeck.core.adb.api.contacts.Contact
 import com.adbdeck.core.adb.api.contacts.ContactDetails
 import com.adbdeck.core.adb.api.contacts.ContactImportData
@@ -12,130 +14,240 @@ import com.adbdeck.feature.contacts.models.ContactsOperationState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.StringResource
 import java.time.LocalTime
 
 internal fun DefaultContactsComponent.handleExportAllToJson(path: String) {
-    launchLongOperation(title = "Экспорт контактов в JSON") { deviceId, adbPath ->
+    launchLongOperation(titleRes = Res.string.contacts_component_operation_title_export_all_json) { deviceId, adbPath ->
         val contacts = (state.value.listState as? ContactsListState.Success)?.contacts.orEmpty()
         if (contacts.isEmpty()) {
-            error("Список контактов пуст. Нечего экспортировать.")
+            error(contactsString(Res.string.contacts_component_operation_error_empty_contacts))
         }
 
-        appendOperationLog("Найдено контактов: ${contacts.size}")
+        appendOperationLog(contactsString(Res.string.contacts_component_operation_log_found_contacts, contacts.size))
         val details = mutableListOf<ContactDetails>()
         contacts.forEachIndexed { index, contact ->
             ensureDeviceStillConnected(deviceId)
             updateOperationProgress(
-                status = "Чтение контактов ${index + 1}/${contacts.size}",
+                status = contactsString(
+                    Res.string.contacts_component_operation_status_reading_contacts,
+                    index + 1,
+                    contacts.size,
+                ),
                 currentStep = index + 1,
                 totalSteps = contacts.size,
             )
-            appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
+            appendOperationLog(
+                contactsString(
+                    Res.string.contacts_component_operation_log_reading_contact,
+                    contact.displayName.ifBlank { "#${contact.id}" },
+                ),
+            )
+
             val detailsResult = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
-                .getOrElse { throwable ->
-                    error("Не удалось прочитать контакт «${contact.displayName}»: ${throwable.message}")
-                }
-            details += detailsResult
+            if (detailsResult.isFailure) {
+                error(
+                    contactsString(
+                        Res.string.contacts_component_operation_error_read_contact_named,
+                        contact.displayName,
+                        detailsResult.exceptionOrNull()?.message.orEmpty(),
+                    ),
+                )
+            }
+            details += detailsResult.getOrThrow()
         }
 
-        updateOperationStatus("Запись файла JSON...", isIndeterminate = true)
-        appendOperationLog("Сохранение файла: $path")
+        updateOperationStatus(
+            contactsString(Res.string.contacts_component_operation_status_writing_json),
+            isIndeterminate = true,
+        )
+        appendOperationLog(
+            contactsString(Res.string.contacts_component_operation_log_saving_file, path),
+        )
         val file = ContactsJsonFile(contacts = details.map { it.toJsonEntry() })
         val jsonText = encodeJson(file)
         writeFile(path, jsonText)
 
-        appendOperationLog("Экспорт завершён: ${details.size} контактов")
-        showFeedback(ContactFeedback("Экспортировано ${details.size} контактов в JSON", isError = false))
+        appendOperationLog(
+            contactsString(
+                Res.string.contacts_component_operation_log_export_completed_count,
+                details.size,
+            ),
+        )
+        showFeedback(
+            ContactFeedback(
+                contactsString(Res.string.contacts_component_feedback_exported_count_json, details.size),
+                isError = false,
+            ),
+        )
     }
 }
 
 internal fun DefaultContactsComponent.handleExportAllToVcf(path: String) {
-    launchLongOperation(title = "Экспорт контактов в VCF") { deviceId, adbPath ->
+    launchLongOperation(titleRes = Res.string.contacts_component_operation_title_export_all_vcf) { deviceId, adbPath ->
         val contacts = (state.value.listState as? ContactsListState.Success)?.contacts.orEmpty()
         if (contacts.isEmpty()) {
-            error("Список контактов пуст. Нечего экспортировать.")
+            error(contactsString(Res.string.contacts_component_operation_error_empty_contacts))
         }
 
-        appendOperationLog("Найдено контактов: ${contacts.size}")
+        appendOperationLog(contactsString(Res.string.contacts_component_operation_log_found_contacts, contacts.size))
         val details = mutableListOf<ContactDetails>()
         contacts.forEachIndexed { index, contact ->
             ensureDeviceStillConnected(deviceId)
             updateOperationProgress(
-                status = "Чтение контактов ${index + 1}/${contacts.size}",
+                status = contactsString(
+                    Res.string.contacts_component_operation_status_reading_contacts,
+                    index + 1,
+                    contacts.size,
+                ),
                 currentStep = index + 1,
                 totalSteps = contacts.size,
             )
-            appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
+            appendOperationLog(
+                contactsString(
+                    Res.string.contacts_component_operation_log_reading_contact,
+                    contact.displayName.ifBlank { "#${contact.id}" },
+                ),
+            )
+
             val detailsResult = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
-                .getOrElse { throwable ->
-                    error("Не удалось прочитать контакт «${contact.displayName}»: ${throwable.message}")
-                }
-            details += detailsResult
+            if (detailsResult.isFailure) {
+                error(
+                    contactsString(
+                        Res.string.contacts_component_operation_error_read_contact_named,
+                        contact.displayName,
+                        detailsResult.exceptionOrNull()?.message.orEmpty(),
+                    ),
+                )
+            }
+            details += detailsResult.getOrThrow()
         }
 
-        updateOperationStatus("Запись файла VCF...", isIndeterminate = true)
-        appendOperationLog("Сохранение файла: $path")
+        updateOperationStatus(
+            contactsString(Res.string.contacts_component_operation_status_writing_vcf),
+            isIndeterminate = true,
+        )
+        appendOperationLog(
+            contactsString(Res.string.contacts_component_operation_log_saving_file, path),
+        )
         val vcfText = serializeVcf(details)
         writeFile(path, vcfText)
 
-        appendOperationLog("Экспорт завершён: ${details.size} контактов")
-        showFeedback(ContactFeedback("Экспортировано ${details.size} контактов в VCF", isError = false))
+        appendOperationLog(
+            contactsString(
+                Res.string.contacts_component_operation_log_export_completed_count,
+                details.size,
+            ),
+        )
+        showFeedback(
+            ContactFeedback(
+                contactsString(Res.string.contacts_component_feedback_exported_count_vcf, details.size),
+                isError = false,
+            ),
+        )
     }
 }
 
 internal fun DefaultContactsComponent.handleExportContactToJson(contact: Contact, path: String) {
-    launchLongOperation(title = "Экспорт контакта в JSON") { deviceId, adbPath ->
+    launchLongOperation(titleRes = Res.string.contacts_component_operation_title_export_contact_json) { deviceId, adbPath ->
         ensureDeviceStillConnected(deviceId)
         updateOperationProgress(
-            status = "Чтение контакта",
+            status = contactsString(Res.string.contacts_component_operation_status_reading_contact),
             currentStep = 1,
             totalSteps = 1,
         )
-        appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
-        val details = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
-            .getOrElse { throwable ->
-                error("Не удалось прочитать контакт: ${throwable.message}")
-            }
+        appendOperationLog(
+            contactsString(
+                Res.string.contacts_component_operation_log_reading_contact,
+                contact.displayName.ifBlank { "#${contact.id}" },
+            ),
+        )
+        val detailsResult = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
+        if (detailsResult.isFailure) {
+            error(
+                contactsString(
+                    Res.string.contacts_component_operation_error_read_contact,
+                    detailsResult.exceptionOrNull()?.message.orEmpty(),
+                ),
+            )
+        }
+        val details = detailsResult.getOrThrow()
 
-        updateOperationStatus("Запись файла JSON...", isIndeterminate = true)
-        appendOperationLog("Сохранение файла: $path")
+        updateOperationStatus(
+            contactsString(Res.string.contacts_component_operation_status_writing_json),
+            isIndeterminate = true,
+        )
+        appendOperationLog(
+            contactsString(Res.string.contacts_component_operation_log_saving_file, path),
+        )
         val file = ContactsJsonFile(contacts = listOf(details.toJsonEntry()))
         val jsonText = encodeJson(file)
         writeFile(path, jsonText)
 
-        appendOperationLog("Экспорт завершён")
-        showFeedback(ContactFeedback("Контакт экспортирован в JSON", isError = false))
+        appendOperationLog(contactsString(Res.string.contacts_component_operation_log_export_completed))
+        showFeedback(
+            ContactFeedback(
+                contactsString(Res.string.contacts_component_feedback_exported_contact_json),
+                isError = false,
+            ),
+        )
     }
 }
 
 internal fun DefaultContactsComponent.handleExportContactToVcf(contact: Contact, path: String) {
-    launchLongOperation(title = "Экспорт контакта в VCF") { deviceId, adbPath ->
+    launchLongOperation(titleRes = Res.string.contacts_component_operation_title_export_contact_vcf) { deviceId, adbPath ->
         ensureDeviceStillConnected(deviceId)
         updateOperationProgress(
-            status = "Чтение контакта",
+            status = contactsString(Res.string.contacts_component_operation_status_reading_contact),
             currentStep = 1,
             totalSteps = 1,
         )
-        appendOperationLog("Чтение: ${contact.displayName.ifBlank { "#${contact.id}" }}")
-        val details = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
-            .getOrElse { throwable ->
-                error("Не удалось прочитать контакт: ${throwable.message}")
-            }
+        appendOperationLog(
+            contactsString(
+                Res.string.contacts_component_operation_log_reading_contact,
+                contact.displayName.ifBlank { "#${contact.id}" },
+            ),
+        )
+        val detailsResult = contactsClient.getContactDetails(deviceId, contact.id, adbPath)
+        if (detailsResult.isFailure) {
+            error(
+                contactsString(
+                    Res.string.contacts_component_operation_error_read_contact,
+                    detailsResult.exceptionOrNull()?.message.orEmpty(),
+                ),
+            )
+        }
+        val details = detailsResult.getOrThrow()
 
-        updateOperationStatus("Запись файла VCF...", isIndeterminate = true)
-        appendOperationLog("Сохранение файла: $path")
+        updateOperationStatus(
+            contactsString(Res.string.contacts_component_operation_status_writing_vcf),
+            isIndeterminate = true,
+        )
+        appendOperationLog(
+            contactsString(Res.string.contacts_component_operation_log_saving_file, path),
+        )
         val vcfText = serializeVcf(details)
         writeFile(path, vcfText)
 
-        appendOperationLog("Экспорт завершён")
-        showFeedback(ContactFeedback("Контакт экспортирован в VCF", isError = false))
+        appendOperationLog(contactsString(Res.string.contacts_component_operation_log_export_completed))
+        showFeedback(
+            ContactFeedback(
+                contactsString(Res.string.contacts_component_feedback_exported_contact_vcf),
+                isError = false,
+            ),
+        )
     }
 }
 
 internal fun DefaultContactsComponent.handleImportFromJson(path: String) {
-    launchLongOperation(title = "Импорт контактов из JSON") { deviceId, adbPath ->
-        updateOperationStatus("Чтение JSON-файла...", isIndeterminate = true)
-        appendOperationLog("Чтение файла: $path")
+    launchLongOperation(titleRes = Res.string.contacts_component_operation_title_import_json) { deviceId, adbPath ->
+        updateOperationStatus(
+            contactsString(Res.string.contacts_component_operation_status_reading_json_file),
+            isIndeterminate = true,
+        )
+        appendOperationLog(
+            contactsString(Res.string.contacts_component_operation_log_reading_file, path),
+        )
         val text = readFile(path)
         val file = decodeJson(text)
         val importData = file.contacts.map { it.toImportData() }
@@ -148,9 +260,14 @@ internal fun DefaultContactsComponent.handleImportFromJson(path: String) {
 }
 
 internal fun DefaultContactsComponent.handleImportFromVcf(path: String) {
-    launchLongOperation(title = "Импорт контактов из VCF") { deviceId, adbPath ->
-        updateOperationStatus("Чтение VCF-файла...", isIndeterminate = true)
-        appendOperationLog("Чтение файла: $path")
+    launchLongOperation(titleRes = Res.string.contacts_component_operation_title_import_vcf) { deviceId, adbPath ->
+        updateOperationStatus(
+            contactsString(Res.string.contacts_component_operation_status_reading_vcf_file),
+            isIndeterminate = true,
+        )
+        appendOperationLog(
+            contactsString(Res.string.contacts_component_operation_log_reading_file, path),
+        )
         val text = readFile(path)
         val importData = parseVcf(text)
         importContactsWithProgress(
@@ -162,7 +279,13 @@ internal fun DefaultContactsComponent.handleImportFromVcf(path: String) {
 }
 
 internal fun DefaultContactsComponent.handleCancelOperation() {
-    operationJob?.cancel(CancellationException("Операция отменена пользователем."))
+    scope.launch {
+        operationJob?.cancel(
+            CancellationException(
+                contactsString(Res.string.contacts_component_operation_cancelled_by_user),
+            ),
+        )
+    }
 }
 
 internal suspend fun DefaultContactsComponent.importContactsWithProgress(
@@ -171,50 +294,81 @@ internal suspend fun DefaultContactsComponent.importContactsWithProgress(
     importData: List<ContactImportData>,
 ) {
     if (importData.isEmpty()) {
-        error("Файл не содержит распознанных контактов.")
+        error(contactsString(Res.string.contacts_component_operation_error_unrecognized_contacts))
     }
 
     val account = _state.value.selectedAccount
-    appendOperationLog("Контактов к импорту: ${importData.size}")
-    appendOperationLog("Аккаунт назначения: ${account.uiLabel()}")
+    appendOperationLog(contactsString(Res.string.contacts_component_operation_log_import_total, importData.size))
+    appendOperationLog(
+        contactsString(
+            Res.string.contacts_component_operation_log_target_account,
+            localizedAccountLabel(account),
+        ),
+    )
 
     var successCount = 0
     var failedCount = 0
     importData.forEachIndexed { index, source ->
         ensureDeviceStillConnected(deviceId)
         updateOperationProgress(
-            status = "Импорт контактов ${index + 1}/${importData.size}",
+            status = contactsString(
+                Res.string.contacts_component_operation_status_importing_contacts,
+                index + 1,
+                importData.size,
+            ),
             currentStep = index + 1,
             totalSteps = importData.size,
         )
         val titledName = source.displayName.ifBlank {
-            buildDisplayName(source.firstName, source.lastName).ifBlank { "Без имени" }
+            buildDisplayName(source.firstName, source.lastName).ifBlank {
+                contactsString(Res.string.contacts_component_name_untitled)
+            }
         }
-        appendOperationLog("Импорт: $titledName")
+        appendOperationLog(
+            contactsString(Res.string.contacts_component_operation_log_import_item, titledName),
+        )
 
         val prepared = source.copy(
             accountName = account.accountName,
             accountType = account.accountType,
         )
-        contactsClient.addContact(deviceId, prepared.toNewContactData(), adbPath)
-            .onSuccess {
-                successCount++
-                appendOperationLog("Успех: $titledName")
-            }
-            .onFailure { error ->
-                failedCount++
-                appendOperationLog("Ошибка: $titledName — ${error.message ?: "неизвестная ошибка"}")
-            }
+        val result = contactsClient.addContact(deviceId, prepared.toNewContactData(), adbPath)
+        if (result.isSuccess) {
+            successCount++
+            appendOperationLog(
+                contactsString(Res.string.contacts_component_operation_log_success_item, titledName),
+            )
+        } else {
+            failedCount++
+            appendOperationLog(
+                contactsString(
+                    Res.string.contacts_component_operation_log_error_item,
+                    titledName,
+                    result.exceptionOrNull()?.message
+                        ?: contactsString(Res.string.contacts_component_operation_error_unknown_lower),
+                ),
+            )
+        }
     }
 
     if (successCount == 0 && failedCount > 0) {
-        error("Не удалось импортировать ни одного контакта. Проверьте аккаунт и права Contacts Provider.")
+        error(contactsString(Res.string.contacts_component_operation_error_import_none))
     }
 
-    appendOperationLog("Импорт завершён: успехов=$successCount, ошибок=$failedCount")
+    appendOperationLog(
+        contactsString(
+            Res.string.contacts_component_operation_log_import_completed,
+            successCount,
+            failedCount,
+        ),
+    )
     showFeedback(
         ContactFeedback(
-            message = "Импортировано: $successCount, ошибок: $failedCount",
+            message = contactsString(
+                Res.string.contacts_component_feedback_import_completed,
+                successCount,
+                failedCount,
+            ),
             isError = failedCount > 0,
         ),
     )
@@ -222,28 +376,42 @@ internal suspend fun DefaultContactsComponent.importContactsWithProgress(
 }
 
 internal fun DefaultContactsComponent.launchLongOperation(
-    title: String,
+    titleRes: StringResource,
+    vararg titleArgs: Any,
     block: suspend (deviceId: String, adbPath: String) -> Unit,
 ) {
     if (operationJob?.isActive == true) {
-        showFeedback(ContactFeedback("Уже выполняется другая операция", isError = true))
+        scope.launch {
+            showFeedback(
+                ContactFeedback(
+                    contactsString(Res.string.contacts_component_feedback_operation_in_progress),
+                    isError = true,
+                ),
+            )
+        }
         return
     }
 
     operationJob = scope.launch {
-        startOperation(title = title, status = "Подготовка...")
-        appendOperationLog("Операция запущена")
+        val title = contactsString(titleRes, *titleArgs)
+        startOperation(
+            title = title,
+            status = contactsString(Res.string.contacts_component_operation_status_preparing),
+        )
+        appendOperationLog(contactsString(Res.string.contacts_component_operation_log_started))
         try {
             val (deviceId, adbPath) = requireDeviceAndPath(showFeedbackOnError = false)
-                ?: error("Устройство не выбрано или недоступно.")
+                ?: error(contactsString(Res.string.contacts_component_operation_error_device_required))
             block(deviceId, adbPath)
         } catch (cancelled: CancellationException) {
-            val message = cancelled.message ?: "Операция отменена"
+            val message = cancelled.message ?: contactsString(Res.string.contacts_component_operation_cancelled)
             appendOperationLog(message)
             showFeedback(ContactFeedback(message, isError = true))
         } catch (error: Throwable) {
-            val message = error.message ?: "Неизвестная ошибка"
-            appendOperationLog("Ошибка: $message")
+            val message = error.message ?: contactsString(Res.string.contacts_component_error_unknown)
+            appendOperationLog(
+                contactsString(Res.string.contacts_component_operation_log_error, message),
+            )
             showFeedback(ContactFeedback(message, isError = true))
         } finally {
             _state.update { it.copy(operationState = null) }

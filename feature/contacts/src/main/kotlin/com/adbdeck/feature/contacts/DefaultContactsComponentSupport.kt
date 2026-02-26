@@ -1,5 +1,7 @@
 package com.adbdeck.feature.contacts
 
+import adbdeck.feature.contacts.generated.resources.Res
+import adbdeck.feature.contacts.generated.resources.*
 import com.adbdeck.core.adb.api.contacts.ContactAccount
 import com.adbdeck.core.adb.api.contacts.ContactDetails
 import com.adbdeck.core.adb.api.contacts.ContactImportData
@@ -17,6 +19,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
 import java.time.format.DateTimeFormatter
 
 internal val OPERATION_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
@@ -33,11 +37,21 @@ internal fun DefaultContactsComponent.handleDismissFeedback() {
 internal fun DefaultContactsComponent.adbPath(): String =
     settingsRepository.getSettings().adbPath.ifBlank { "adb" }
 
-internal fun DefaultContactsComponent.requireDeviceAndPath(showFeedbackOnError: Boolean = true): Pair<String, String>? {
+internal suspend fun contactsString(
+    resource: StringResource,
+    vararg args: Any,
+): String = getString(resource, *args)
+
+internal suspend fun DefaultContactsComponent.requireDeviceAndPath(showFeedbackOnError: Boolean = true): Pair<String, String>? {
     val device = deviceManager.selectedDeviceFlow.value
     if (device == null || device.state != DeviceState.DEVICE) {
         if (showFeedbackOnError) {
-            showFeedback(ContactFeedback("Устройство не выбрано или недоступно", isError = true))
+            showFeedback(
+                ContactFeedback(
+                    contactsString(Res.string.contacts_component_device_unavailable),
+                    isError = true,
+                ),
+            )
         }
         return null
     }
@@ -61,9 +75,11 @@ internal fun DefaultContactsComponent.isRequestStillValid(deviceId: String): Boo
         activeDeviceId == deviceId
 }
 
-internal fun DefaultContactsComponent.ensureDeviceStillConnected(deviceId: String) {
+internal suspend fun DefaultContactsComponent.ensureDeviceStillConnected(deviceId: String) {
     if (!isRequestStillValid(deviceId)) {
-        throw IllegalStateException("Устройство отключено или переключено во время операции.")
+        throw IllegalStateException(
+            contactsString(Res.string.contacts_component_device_disconnected_operation),
+        )
     }
 }
 
@@ -80,14 +96,16 @@ internal fun selectAccountForState(
 internal fun buildDisplayName(firstName: String, lastName: String): String =
     listOf(firstName, lastName).map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" ")
 
-internal fun ContactImportData.toNewContactData(): NewContactData {
+internal suspend fun ContactImportData.toNewContactData(): NewContactData {
     val normalizedDisplayName = displayName.ifBlank {
         buildDisplayName(firstName, lastName)
     }
     return NewContactData(
         firstName = firstName,
         lastName = lastName,
-        displayName = normalizedDisplayName.ifBlank { "Без имени" },
+        displayName = normalizedDisplayName.ifBlank {
+            contactsString(Res.string.contacts_component_name_untitled)
+        },
         phone1 = phones.getOrNull(0)?.value.orEmpty(),
         phone1Type = phones.getOrNull(0)?.type ?: PhoneType.MOBILE,
         phone2 = phones.getOrNull(1)?.value.orEmpty(),
@@ -100,6 +118,9 @@ internal fun ContactImportData.toNewContactData(): NewContactData {
         accountType = accountType,
     )
 }
+
+internal suspend fun DefaultContactsComponent.localizedAccountLabel(account: ContactAccount): String =
+    account.localizedLabel(contactsString(Res.string.contacts_account_local_label))
 
 internal suspend fun readFile(path: String): String = withContext(Dispatchers.IO) {
     ContactIoService.readText(path)
