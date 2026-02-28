@@ -35,7 +35,7 @@ internal fun DefaultContactsComponent.handleDismissFeedback() {
 }
 
 internal fun DefaultContactsComponent.adbPath(): String =
-    settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+    settingsRepository.resolvedAdbPath()
 
 internal suspend fun contactsString(
     resource: StringResource,

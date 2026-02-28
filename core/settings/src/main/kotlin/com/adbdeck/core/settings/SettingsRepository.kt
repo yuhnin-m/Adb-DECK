@@ -21,6 +21,9 @@ interface SettingsRepository {
      */
     fun getSettings(): AppSettings
 
+    /** Возвращает нормализованный путь к adb с учётом дефолта. */
+    fun resolvedAdbPath(): String = getSettings().resolvedAdbPath()
+
     /**
      * Сохраняет новые настройки и обновляет [settingsFlow].
      *

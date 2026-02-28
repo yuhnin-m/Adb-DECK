@@ -2,6 +2,7 @@ package com.adbdeck.feature.settings
 
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.AppLanguage
+import com.adbdeck.core.settings.DEFAULT_ADB_EXECUTABLE
 
 /**
  * Типизированное состояние проверки инструмента (adb / bundletool).
@@ -25,7 +26,7 @@ data class SettingsFeedback(
  * Состояние UI экрана настроек.
  */
 data class SettingsUiState(
-    val adbPath: String = "adb",
+    val adbPath: String = DEFAULT_ADB_EXECUTABLE,
     val bundletoolPath: String = "bundletool",
     val scrcpyPath: String = "scrcpy",
     val adbCheckState: ToolCheckState = ToolCheckState.Idle,

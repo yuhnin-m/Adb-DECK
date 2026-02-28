@@ -32,6 +32,8 @@ import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.filedialogs.HostFileSelectionMode
+import com.adbdeck.core.ui.filedialogs.OpenFileDialogConfig
 import com.adbdeck.core.ui.filedialogs.showOpenFileDialog
 import com.adbdeck.core.ui.sectioncards.AdbSectionCard
 import com.adbdeck.core.ui.segmentedbuttons.AdbSegmentedButtonSize
@@ -312,7 +314,10 @@ private fun ToolsSection(
         ) {
             AdbOutlinedButton(
                 onClick = {
-                    showOpenFileDialog(adbLabel)?.let(onAdbPathChanged)
+                    chooseToolExecutablePath(
+                        title = adbLabel,
+                        currentPath = state.adbPath,
+                    )?.let(onAdbPathChanged)
                 },
                 text = choosePathLabel,
                 leadingIcon = Icons.Outlined.FolderOpen,
@@ -358,7 +363,10 @@ private fun ToolsSection(
         ) {
             AdbOutlinedButton(
                 onClick = {
-                    showOpenFileDialog(bundletoolLabel)?.let(onBundletoolPathChanged)
+                    chooseToolExecutablePath(
+                        title = bundletoolLabel,
+                        currentPath = state.bundletoolPath,
+                    )?.let(onBundletoolPathChanged)
                 },
                 text = choosePathLabel,
                 leadingIcon = Icons.Outlined.FolderOpen,
@@ -425,7 +433,10 @@ private fun ToolsSection(
         ) {
             AdbOutlinedButton(
                 onClick = {
-                    showOpenFileDialog(scrcpyLabel)?.let(onScrcpyPathChanged)
+                    chooseToolExecutablePath(
+                        title = scrcpyLabel,
+                        currentPath = state.scrcpyPath,
+                    )?.let(onScrcpyPathChanged)
                 },
                 text = choosePathLabel,
                 leadingIcon = Icons.Outlined.FolderOpen,
@@ -528,6 +539,23 @@ private fun ThemeSection(
         )
     }
 }
+
+/**
+ * Открывает диалог выбора исполняемого файла утилиты.
+ *
+ * [currentPath] используется как начальная директория, если путь валиден.
+ */
+private fun chooseToolExecutablePath(
+    title: String,
+    currentPath: String,
+): String? = showOpenFileDialog(
+    OpenFileDialogConfig(
+        title = title,
+        initialPath = currentPath,
+        selectionMode = HostFileSelectionMode.FILES_ONLY,
+        isAcceptAllFileFilterUsed = true,
+    ),
+)
 
 @Composable
 private fun LogcatSection(

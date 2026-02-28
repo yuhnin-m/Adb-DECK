@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Monitor
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Restore
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
@@ -62,6 +63,8 @@ internal fun QuickActionsSection(
     onOpenContacts: () -> Unit,
     onOpenSystemMonitor: () -> Unit,
     onOpenLogcat: () -> Unit,
+    onOpenAdbShell: () -> Unit,
+    onOpenRootAdbShell: () -> Unit,
 ) {
     val devicesSubtitle = if (state.deviceCount > 0) {
         stringResource(Res.string.dashboard_tile_devices_subtitle_count, state.deviceCount)
@@ -99,6 +102,10 @@ internal fun QuickActionsSection(
     val contactsSubtitle = stringResource(Res.string.dashboard_tile_contacts_subtitle)
     val systemMonitorTitle = stringResource(Res.string.dashboard_tile_system_monitor_title)
     val systemMonitorSubtitle = stringResource(Res.string.dashboard_tile_system_monitor_subtitle)
+    val adbShellTitle = stringResource(Res.string.dashboard_tile_adb_shell_title)
+    val adbShellSubtitle = stringResource(Res.string.dashboard_tile_adb_shell_subtitle)
+    val rootAdbShellTitle = stringResource(Res.string.dashboard_tile_root_adb_shell_title)
+    val rootAdbShellSubtitle = stringResource(Res.string.dashboard_tile_root_adb_shell_subtitle)
 
     val logcatTitle = stringResource(Res.string.dashboard_tile_logcat_title)
     val logcatSubtitle = stringResource(Res.string.dashboard_tile_logcat_subtitle)
@@ -195,11 +202,17 @@ internal fun QuickActionsSection(
         contactsSubtitle,
         systemMonitorTitle,
         systemMonitorSubtitle,
+        adbShellTitle,
+        adbShellSubtitle,
+        rootAdbShellTitle,
+        rootAdbShellSubtitle,
         onOpenScreenTools,
         onOpenScrcpy,
         onOpenFileExplorer,
         onOpenContacts,
         onOpenSystemMonitor,
+        onOpenAdbShell,
+        onOpenRootAdbShell,
     ) {
         listOf(
             DashboardNavItemUi(
@@ -231,6 +244,18 @@ internal fun QuickActionsSection(
                 title = systemMonitorTitle,
                 subtitle = systemMonitorSubtitle,
                 onClick = onOpenSystemMonitor,
+            ),
+            DashboardNavItemUi(
+                icon = Icons.Outlined.Terminal,
+                title = adbShellTitle,
+                subtitle = adbShellSubtitle,
+                onClick = onOpenAdbShell,
+            ),
+            DashboardNavItemUi(
+                icon = Icons.Outlined.Security,
+                title = rootAdbShellTitle,
+                subtitle = rootAdbShellSubtitle,
+                onClick = onOpenRootAdbShell,
             ),
         )
     }

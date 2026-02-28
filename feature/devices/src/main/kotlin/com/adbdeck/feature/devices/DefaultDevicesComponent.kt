@@ -196,7 +196,7 @@ class DefaultDevicesComponent(
         _state.update { it.copy(pendingAction = null, isActionRunning = true) }
 
         scope.launch {
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val result = when (action.type) {
                 PendingDeviceActionType.REBOOT ->
                     runCatchingPreserveCancellation {
@@ -266,7 +266,7 @@ class DefaultDevicesComponent(
      * [DeviceInfoLoadState.Loaded] или [DeviceInfoLoadState.Failed] по результату.
      */
     private fun loadDeviceInfo(deviceId: String) {
-        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        val adbPath = settingsRepository.resolvedAdbPath()
 
         // Помечаем как загружающееся
         _state.update { state ->

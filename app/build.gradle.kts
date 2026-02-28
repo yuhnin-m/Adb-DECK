@@ -52,19 +52,32 @@ dependencies {
     implementation(project(":feature:scrcpy"))
 }
 
+val appDisplayName = "ADB Deck"
+val appPackageName = "ADBDeck"
+val appVersion = "1.1.0"
+
 compose.desktop {
     application {
         mainClass = "com.adbdeck.app.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "AdbDeck"
-            packageVersion = "1.0.0"
-            description = "Desktop-инструмент для работы с ADB"
+            packageName = appPackageName
+            packageVersion = appVersion
+            description = "$appDisplayName — Desktop-инструмент для работы с ADB"
             copyright = "© 2025 ADB Deck"
 
             macOS {
                 bundleID = "com.adbdeck.app"
+                iconFile.set(project.file("src/main/resources/icons/adbdeck.icns"))
+            }
+
+            windows {
+                iconFile.set(project.file("src/main/resources/icons/adbdeck.ico"))
+            }
+
+            linux {
+                iconFile.set(project.file("src/main/resources/icons/adbdeck.png"))
             }
         }
     }

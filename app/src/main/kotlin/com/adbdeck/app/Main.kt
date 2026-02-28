@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -47,6 +48,8 @@ import org.koin.core.context.startKoin
 import org.koin.java.KoinJavaComponent.get
 import java.awt.Dimension
 import java.util.Locale
+
+private const val APP_TITLE = "ADB Deck"
 
 /**
  * Точка входа приложения ADB Deck.
@@ -98,7 +101,8 @@ fun main() = application {
             lifecycle.stop()
             exitApplication()
         },
-        title = "ADB Deck",
+        title = APP_TITLE,
+        icon = painterResource("icons/adbdeck_window.png"),
         state = rememberWindowState(width = 1200.dp, height = 800.dp),
     ) {
         DisposableEffect(window) {

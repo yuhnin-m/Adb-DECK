@@ -137,7 +137,7 @@ class DefaultNotificationsComponent(
             }
 
         val deviceId = selectedDevice.deviceId
-        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { ADB_EXECUTABLE_DEFAULT }
+        val adbPath = settingsRepository.resolvedAdbPath()
 
         refreshJob?.cancel()
         _state.update {
@@ -376,7 +376,7 @@ class DefaultNotificationsComponent(
             return
         }
 
-        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { ADB_EXECUTABLE_DEFAULT }
+        val adbPath = settingsRepository.resolvedAdbPath()
         val normalizedRequest = request.copy(
             tag = normalizedTag,
             text = normalizedText,
@@ -566,6 +566,5 @@ class DefaultNotificationsComponent(
         const val MAX_HISTORY = 500
         const val MAX_SAVED = 200
         const val FEEDBACK_HIDE_DELAY_MS = 3_000L
-        const val ADB_EXECUTABLE_DEFAULT = "adb"
     }
 }

@@ -101,7 +101,7 @@ class DefaultStorageComponent(
     private suspend fun fetchStorage(deviceId: String) {
         if (!isRequestStillValid(deviceId)) return
 
-        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        val adbPath = settingsRepository.resolvedAdbPath()
         val result = runCatchingPreserveCancellation {
             systemMonitorClient.getStorageInfo(deviceId, adbPath)
         }.getOrElse { e -> Result.failure(e) }

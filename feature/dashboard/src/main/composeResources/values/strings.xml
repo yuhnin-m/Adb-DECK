@@ -69,6 +69,10 @@
     <string name="dashboard_tile_contacts_subtitle">Manage device contacts</string>
     <string name="dashboard_tile_system_monitor_title">System Monitor</string>
     <string name="dashboard_tile_system_monitor_subtitle">Processes and resource state</string>
+    <string name="dashboard_tile_adb_shell_title">Open ADB Shell</string>
+    <string name="dashboard_tile_adb_shell_subtitle">Open adb shell session</string>
+    <string name="dashboard_tile_root_adb_shell_title">Open Root ADB Shell</string>
+    <string name="dashboard_tile_root_adb_shell_subtitle">Open terminal and start adb shell with root privileges</string>
 
     <string name="dashboard_tile_process_monitor_title">Process Monitor</string>
     <string name="dashboard_tile_process_monitor_subtitle">Track running processes</string>
@@ -90,5 +94,6 @@
     <string name="dashboard_adb_available">ADB is available: %1$s</string>
     <string name="dashboard_adb_unavailable">ADB is unavailable: %1$s</string>
     <string name="dashboard_refresh_failed">Failed to refresh devices: %1$s</string>
+    <string name="dashboard_terminal_launch_failed">Failed to launch terminal</string>
     <string name="dashboard_unknown_error">Unknown error</string>
 </resources>

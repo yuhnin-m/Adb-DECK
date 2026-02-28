@@ -1,5 +1,7 @@
 package com.adbdeck.feature.dashboard
 
+import com.adbdeck.core.settings.DEFAULT_ADB_EXECUTABLE
+
 /**
  * Типизированный статус проверки доступности ADB.
  */
@@ -34,7 +36,7 @@ enum class DashboardAdbServerAction {
  * UI-состояние секции ADB server на Dashboard.
  */
 data class DashboardAdbServerUiState(
-    val adbPath: String = "adb",
+    val adbPath: String = DEFAULT_ADB_EXECUTABLE,
     val isAdbFound: Boolean = false,
     val adbVersion: String? = null,
     val serverState: DashboardAdbServerState = DashboardAdbServerState.UNKNOWN,
@@ -52,6 +54,7 @@ data class DashboardAdbServerUiState(
  * @param isRefreshingDevices Флаг выполняющегося обновления списка устройств.
  * @param deviceCount       Количество устройств в актуальном [com.adbdeck.core.adb.api.device.DeviceManager.devicesFlow].
  * @param refreshError      Сообщение ошибки последнего обновления устройств.
+ * @param isTerminalLaunchFailed `true`, если запуск shell-терминала завершился ошибкой.
  * @param adbServer         Состояние секции ADB server.
  */
 data class DashboardState(
@@ -59,5 +62,6 @@ data class DashboardState(
     val isRefreshingDevices: Boolean = false,
     val deviceCount: Int = 0,
     val refreshError: String? = null,
+    val isTerminalLaunchFailed: Boolean = false,
     val adbServer: DashboardAdbServerUiState = DashboardAdbServerUiState(),
 )

@@ -18,6 +18,7 @@
     <string name="contacts_file_desc_vcard">vCard file</string>
     <string name="contacts_file_pick_json">Choose JSON file</string>
     <string name="contacts_file_pick_vcf">Choose VCF file</string>
+    <string name="contacts_file_save_title">Save as</string>
 
     <string name="contacts_add_title_new">New contact</string>
     <string name="contacts_add_title_edit">Edit contact</string>

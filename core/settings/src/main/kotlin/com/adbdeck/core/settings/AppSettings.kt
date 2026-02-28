@@ -34,7 +34,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class AppSettings(
-    val adbPath: String = "adb",
+    val adbPath: String = DEFAULT_ADB_EXECUTABLE,
     val bundletoolPath: String = "bundletool",
     val scrcpyPath: String = "scrcpy",
     val theme: AppTheme = AppTheme.SYSTEM,

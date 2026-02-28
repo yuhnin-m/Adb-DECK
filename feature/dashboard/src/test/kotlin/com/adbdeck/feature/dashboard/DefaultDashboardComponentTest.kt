@@ -373,6 +373,53 @@ class DefaultDashboardComponentTest {
         }
     }
 
+    @Test
+    fun `open adb shell uses resolved adb path and selected device`() = runTest(context = testDispatcher) {
+        val recordedCalls = mutableListOf<Triple<String, String?, Boolean>>()
+        val fixture = createFixture(
+            deviceManager = FakeDeviceManager(
+                initialDevices = listOf(device("emulator-5554")),
+            ),
+            settingsRepository = FakeSettingsRepository(adbPath = "/custom/platform-tools/adb"),
+            openAdbShellInTerminal = { adbPath, deviceId, root ->
+                recordedCalls += Triple(adbPath, deviceId, root)
+            },
+        )
+        try {
+            fixture.component.onOpenAdbShell()
+            testDispatcher.scheduler.runCurrent()
+
+            assertEquals(1, recordedCalls.size)
+            assertEquals(
+                Triple("/custom/platform-tools/adb", "emulator-5554", false),
+                recordedCalls.first(),
+            )
+            assertTrue(!fixture.component.state.value.isTerminalLaunchFailed)
+        } finally {
+            fixture.close()
+        }
+    }
+
+    @Test
+    fun `open root adb shell failure shows and dismisses terminal banner state`() = runTest(context = testDispatcher) {
+        val fixture = createFixture(
+            openAdbShellInTerminal = { _, _, _ ->
+                error("terminal launch failed")
+            },
+        )
+        try {
+            fixture.component.onOpenRootAdbShell()
+            testDispatcher.scheduler.runCurrent()
+
+            assertTrue(fixture.component.state.value.isTerminalLaunchFailed)
+
+            fixture.component.onDismissTerminalLaunchError()
+            assertTrue(!fixture.component.state.value.isTerminalLaunchFailed)
+        } finally {
+            fixture.close()
+        }
+    }
+
     private suspend fun awaitCondition(
         errorMessage: String,
         timeoutMs: Long = 5_000,
@@ -392,6 +439,9 @@ class DefaultDashboardComponentTest {
     private fun createFixture(
         adbClient: FakeAdbClient = FakeAdbClient(),
         deviceManager: FakeDeviceManager = FakeDeviceManager(),
+        settingsRepository: SettingsRepository = FakeSettingsRepository(),
+        openAdbShellInTerminal: (adbPath: String, deviceId: String?, root: Boolean) -> Unit =
+            { _, _, _ -> Unit },
     ): DashboardFixture {
         val lifecycle = LifecycleRegistry()
         lifecycle.resume()
@@ -400,7 +450,7 @@ class DefaultDashboardComponentTest {
             componentContext = DefaultComponentContext(lifecycle),
             adbClient = adbClient,
             deviceManager = deviceManager,
-            settingsRepository = FakeSettingsRepository(),
+            settingsRepository = settingsRepository,
             onNavigateToDevices = {},
             onNavigateToDeviceInfo = {},
             onNavigateToQuickToggles = {},
@@ -415,6 +465,7 @@ class DefaultDashboardComponentTest {
             onNavigateToContacts = {},
             onNavigateToSystemMonitor = {},
             onNavigateToSettings = {},
+            openAdbShellInTerminal = openAdbShellInTerminal,
         )
         testDispatcher.scheduler.runCurrent()
 
@@ -537,8 +588,10 @@ class DefaultDashboardComponentTest {
         state = DeviceState.DEVICE,
     )
 
-    private class FakeSettingsRepository : SettingsRepository {
-        override val settingsFlow: StateFlow<AppSettings> = MutableStateFlow(AppSettings(adbPath = "adb"))
+    private class FakeSettingsRepository(
+        adbPath: String = "adb",
+    ) : SettingsRepository {
+        override val settingsFlow: StateFlow<AppSettings> = MutableStateFlow(AppSettings(adbPath = adbPath))
 
         override fun getSettings(): AppSettings = settingsFlow.value
 

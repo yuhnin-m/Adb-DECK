@@ -188,7 +188,7 @@ internal suspend fun DefaultProcessesComponent.fetchSnapshot(
 ): Boolean = snapshotFetchMutex.withLock {
     if (!isRequestStillValid(deviceId)) return@withLock false
 
-    val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+    val adbPath = settingsRepository.resolvedAdbPath()
     val result = runCatchingPreserveCancellation {
         systemMonitorClient.getProcessSnapshot(deviceId, adbPath)
     }.getOrElse { e -> Result.failure(e) }

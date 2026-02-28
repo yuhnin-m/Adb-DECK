@@ -67,6 +67,7 @@ internal data class FeedbackUiState(
     val adbCheckState: DashboardAdbCheckState,
     val refreshError: String?,
     val adbServerError: String?,
+    val isTerminalLaunchFailed: Boolean,
 )
 
 @Composable
@@ -148,6 +149,8 @@ private fun QuickActionsSectionHost(component: DashboardComponent) {
     val onOpenContacts = remember(component) { { component.onOpenContacts() } }
     val onOpenSystemMonitor = remember(component) { { component.onOpenSystemMonitor() } }
     val onOpenLogcat = remember(component) { { component.onOpenLogcat() } }
+    val onOpenAdbShell = remember(component) { { component.onOpenAdbShell() } }
+    val onOpenRootAdbShell = remember(component) { { component.onOpenRootAdbShell() } }
 
     QuickActionsSection(
         state = uiState,
@@ -164,6 +167,8 @@ private fun QuickActionsSectionHost(component: DashboardComponent) {
         onOpenContacts = onOpenContacts,
         onOpenSystemMonitor = onOpenSystemMonitor,
         onOpenLogcat = onOpenLogcat,
+        onOpenAdbShell = onOpenAdbShell,
+        onOpenRootAdbShell = onOpenRootAdbShell,
     )
 }
 
@@ -174,6 +179,7 @@ private fun FeedbackSectionHost(component: DashboardComponent) {
             adbCheckState = component.state.value.adbCheckState,
             refreshError = component.state.value.refreshError,
             adbServerError = component.state.value.adbServer.actionError,
+            isTerminalLaunchFailed = component.state.value.isTerminalLaunchFailed,
         )
     }
     val uiState by remember(component) {
@@ -183,6 +189,7 @@ private fun FeedbackSectionHost(component: DashboardComponent) {
                     adbCheckState = it.adbCheckState,
                     refreshError = it.refreshError,
                     adbServerError = it.adbServer.actionError,
+                    isTerminalLaunchFailed = it.isTerminalLaunchFailed,
                 )
             }
             .distinctUntilChanged()
@@ -191,11 +198,13 @@ private fun FeedbackSectionHost(component: DashboardComponent) {
     val onDismissAdbCheck = remember(component) { { component.onDismissAdbCheck() } }
     val onDismissRefreshError = remember(component) { { component.onDismissRefreshError() } }
     val onDismissAdbServerError = remember(component) { { component.onDismissAdbServerError() } }
+    val onDismissTerminalLaunchError = remember(component) { { component.onDismissTerminalLaunchError() } }
 
     FeedbackSection(
         state = uiState,
         onDismissAdbCheck = onDismissAdbCheck,
         onDismissRefreshError = onDismissRefreshError,
         onDismissAdbServerError = onDismissAdbServerError,
+        onDismissTerminalLaunchError = onDismissTerminalLaunchError,
     )
 }

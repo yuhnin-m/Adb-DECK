@@ -36,6 +36,9 @@ import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.filedialogs.HostFileDialogFilter
+import com.adbdeck.core.ui.filedialogs.SaveFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileExtensionPolicy
 import com.adbdeck.core.ui.filedialogs.showSaveFileDialog
 import com.adbdeck.feature.contacts.ContactsComponent
 import org.jetbrains.compose.resources.stringResource
@@ -49,6 +52,7 @@ internal fun DetailContent(
     val localAccountLabel = stringResource(Res.string.contacts_detail_account_local)
     val jsonFileDescription = stringResource(Res.string.contacts_file_desc_json)
     val vcardFileDescription = stringResource(Res.string.contacts_file_desc_vcard)
+    val saveDialogTitle = stringResource(Res.string.contacts_file_save_title)
     val fallbackName = stringResource(Res.string.contacts_detail_contact_fallback, contact.id)
     val exportBaseName = contact.displayName.ifBlank { fallbackName }
 
@@ -247,10 +251,11 @@ internal fun DetailContent(
 
                 AdbOutlinedButton(
                     onClick = {
-                        val path = showSaveFileDialog(
+                        val path = showContactSaveFileDialog(
+                            title = saveDialogTitle,
                             defaultName = "$exportBaseName.json",
-                            ext = "json",
-                            desc = jsonFileDescription,
+                            extension = "json",
+                            filterDescription = jsonFileDescription,
                         )
                         if (path != null) {
                             component.onExportContactToJson(contact, path)
@@ -264,10 +269,11 @@ internal fun DetailContent(
 
                 AdbOutlinedButton(
                     onClick = {
-                        val path = showSaveFileDialog(
+                        val path = showContactSaveFileDialog(
+                            title = saveDialogTitle,
                             defaultName = "$exportBaseName.vcf",
-                            ext = "vcf",
-                            desc = vcardFileDescription,
+                            extension = "vcf",
+                            filterDescription = vcardFileDescription,
                         )
                         if (path != null) {
                             component.onExportContactToVcf(contact, path)
@@ -293,3 +299,28 @@ internal fun DetailContent(
         Spacer(Modifier.height(16.dp))
     }
 }
+
+/**
+ * Диалог сохранения файла отдельного контакта.
+ *
+ * Добавляет расширение [extension], если пользователь его не указал.
+ */
+private fun showContactSaveFileDialog(
+    title: String,
+    defaultName: String,
+    extension: String,
+    filterDescription: String,
+): String? = showSaveFileDialog(
+    SaveFileDialogConfig(
+        title = title,
+        defaultFileName = defaultName,
+        filters = listOf(
+            HostFileDialogFilter(
+                description = "$filterDescription (*.$extension)",
+                extensions = listOf(extension),
+            ),
+        ),
+        isAcceptAllFileFilterUsed = false,
+        extensionPolicy = SaveFileExtensionPolicy.AppendIfMissing(defaultExtension = extension),
+    ),
+)

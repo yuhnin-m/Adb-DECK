@@ -8,6 +8,7 @@ import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.core.settings.resolvedAdbPath
 import com.adbdeck.feature.deeplinks.handlers.DeepLinksHistoryHandler
 import com.adbdeck.feature.deeplinks.handlers.DeepLinksLaunchHandler
 import com.adbdeck.feature.deeplinks.handlers.DeepLinksTemplatesHandler
@@ -70,7 +71,7 @@ class DefaultDeepLinksComponent(
     private var packageSuggestionsJob: Job? = null
     @Volatile
     private var currentAdbPath: String =
-        settingsRepository.getSettings().adbPath.ifBlank { ADB_EXECUTABLE_DEFAULT }
+        settingsRepository.resolvedAdbPath()
 
     private val _state = MutableStateFlow(DeepLinksState())
     override val state: StateFlow<DeepLinksState> = _state.asStateFlow()
@@ -98,7 +99,7 @@ class DefaultDeepLinksComponent(
         // Подписка на изменение adbPath, чтобы preview совпадал с фактическим запуском.
         scope.launch {
             settingsRepository.settingsFlow
-                .map { it.adbPath.ifBlank { ADB_EXECUTABLE_DEFAULT } }
+                .map { it.resolvedAdbPath() }
                 .distinctUntilChanged()
                 .collect { adbPath ->
                     currentAdbPath = adbPath
@@ -485,7 +486,6 @@ class DefaultDeepLinksComponent(
     }
 
     private companion object {
-        const val ADB_EXECUTABLE_DEFAULT = "adb"
         const val MAX_HISTORY = 50
         const val FEEDBACK_AUTO_DISMISS_MS = 3_000L
     }

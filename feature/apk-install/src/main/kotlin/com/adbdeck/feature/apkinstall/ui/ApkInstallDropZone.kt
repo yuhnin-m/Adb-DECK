@@ -1,11 +1,13 @@
 package com.adbdeck.feature.apkinstall.ui
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import java.awt.BorderLayout
 import java.awt.Color as AwtColor
 import java.awt.datatransfer.DataFlavor
@@ -16,11 +18,14 @@ import java.awt.dnd.DropTargetDragEvent
 import java.awt.dnd.DropTargetDropEvent
 import java.io.File
 import java.net.URI
+import kotlin.io.readText
 import javax.swing.BorderFactory
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.SwingConstants
 import kotlin.math.roundToInt
+
+private val ApkInstallDropZoneMinHeight = 132.dp
 
 /**
  * Drop-зона для APK-файла.
@@ -43,7 +48,7 @@ internal fun ApkInstallDropZone(
     }
 
     SwingPanel(
-        modifier = modifier,
+        modifier = modifier.heightIn(min = ApkInstallDropZoneMinHeight),
         factory = {
             ApkDropTargetPanel().apply {
                 onDropPath = { droppedPath ->
@@ -204,28 +209,34 @@ private fun extractDroppedFiles(transferable: Transferable): List<File> {
 
 /** Возвращает поддерживаемый текстовый payload из DnD-transfer. */
 private fun readDroppedText(transferable: Transferable): String {
-    val uriFlavor = runCatching {
-        DataFlavor("text/uri-list;class=java.lang.String")
-    }.getOrNull()
-
-    val fromUriList = uriFlavor?.let { flavor ->
-        runCatching {
-            if (transferable.isDataFlavorSupported(flavor)) {
-                transferable.getTransferData(flavor) as? String
-            } else {
-                null
-            }
-        }.getOrNull()
+    // На разных платформах URI-list может приходить как Reader/InputStream/String.
+    // Ищем подходящий text/uri-list flavor и читаем его как текст через DataFlavor API.
+    val fromUriList = transferable.transferDataFlavors
+        .asSequence()
+        .filter(::isUriListFlavor)
+        .mapNotNull { flavor -> readTextFromFlavor(transferable, flavor) }
+        .firstOrNull { it.isNotBlank() }
+    if (!fromUriList.isNullOrBlank()) {
+        return fromUriList
     }
-    if (!fromUriList.isNullOrBlank()) return fromUriList
 
-    return runCatching {
+    val fromStringFlavor = runCatching {
         if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
             transferable.getTransferData(DataFlavor.stringFlavor) as? String
         } else {
             null
         }
-    }.getOrNull().orEmpty()
+    }.getOrNull()
+    if (!fromStringFlavor.isNullOrBlank()) {
+        return fromStringFlavor
+    }
+
+    return transferable.transferDataFlavors
+        .asSequence()
+        .filter { it.isFlavorTextType }
+        .mapNotNull { flavor -> readTextFromFlavor(transferable, flavor) }
+        .firstOrNull { it.isNotBlank() }
+        .orEmpty()
 }
 
 /** Пытается распарсить строку из drop-transfer как file-uri или абсолютный путь. */
@@ -266,9 +277,24 @@ private fun hasSupportedTransferFlavor(flavors: Array<DataFlavor>): Boolean =
     flavors.any { flavor ->
         flavor == DataFlavor.javaFileListFlavor ||
             flavor == DataFlavor.stringFlavor ||
-            (flavor.primaryType.equals("text", ignoreCase = true) &&
-                flavor.subType.equals("uri-list", ignoreCase = true))
+            isUriListFlavor(flavor) ||
+            flavor.isFlavorTextType
     }
+
+/** Проверяет, является ли flavor текстовым списком URI (`text/uri-list`). */
+private fun isUriListFlavor(flavor: DataFlavor): Boolean =
+    flavor.primaryType.equals("text", ignoreCase = true) &&
+        flavor.subType.equals("uri-list", ignoreCase = true)
+
+/** Пытается прочитать текст из заданного text flavor. */
+private fun readTextFromFlavor(
+    transferable: Transferable,
+    flavor: DataFlavor,
+): String? = runCatching {
+    flavor.getReaderForText(transferable).use { reader ->
+        reader.readText()
+    }
+}.getOrNull()
 
 /** Конвертирует Compose-цвет в AWT-цвет (для SwingPanel). */
 private fun Color.toAwtColor(): AwtColor =

@@ -769,7 +769,7 @@ class DefaultScreenToolsComponent(
 
     /** Текущий путь к adb из настроек приложения. */
     private fun adbPath(): String =
-        settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        settingsRepository.resolvedAdbPath()
 
     /** Имя файла скриншота с читаемым timestamp. */
     private fun buildScreenshotFileName(

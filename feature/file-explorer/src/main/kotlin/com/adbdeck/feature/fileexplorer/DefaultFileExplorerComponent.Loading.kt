@@ -331,7 +331,7 @@ internal fun DefaultFileExplorerComponent.ensureActiveDeviceMatches(expectedDevi
 
 /** Путь к adb из настроек приложения. */
 internal fun DefaultFileExplorerComponent.adbPath(): String =
-    settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+    settingsRepository.resolvedAdbPath()
 
 /** Остановить все фоновые операции, связанные с device-панелью. */
 internal fun DefaultFileExplorerComponent.cancelDeviceOperations() {

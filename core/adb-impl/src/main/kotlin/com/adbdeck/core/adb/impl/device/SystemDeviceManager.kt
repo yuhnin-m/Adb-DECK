@@ -46,7 +46,7 @@ class SystemDeviceManager(
 
     /** Читает актуальный путь к adb из настроек. */
     private fun adbPath(): String =
-        settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        settingsRepository.resolvedAdbPath()
 
     /** Загружает сохраненные endpoints из настроек. */
     private fun loadEndpointsFromSettings(): List<DeviceEndpoint> =

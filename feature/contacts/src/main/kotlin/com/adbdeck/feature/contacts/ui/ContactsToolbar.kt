@@ -24,6 +24,11 @@ import com.adbdeck.core.adb.api.contacts.Contact
 import com.adbdeck.core.adb.api.contacts.ContactAccount
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.filedialogs.HostFileDialogFilter
+import com.adbdeck.core.ui.filedialogs.HostFileSelectionMode
+import com.adbdeck.core.ui.filedialogs.OpenFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileExtensionPolicy
 import com.adbdeck.core.ui.filedialogs.showOpenFileDialog
 import com.adbdeck.core.ui.filedialogs.showSaveFileDialog
 import com.adbdeck.core.ui.menubuttons.AdbMenuButtonOption
@@ -71,6 +76,7 @@ internal fun ContactsToolbar(
     val vcardFileDescription = stringResource(Res.string.contacts_file_desc_vcard)
     val pickJsonTitle = stringResource(Res.string.contacts_file_pick_json)
     val pickVcfTitle = stringResource(Res.string.contacts_file_pick_vcf)
+    val saveDialogTitle = stringResource(Res.string.contacts_file_save_title)
 
     val accountOptions = remember(accounts, selectedAccount, localAccountLabel) {
         val base = if (accounts.isNotEmpty()) {
@@ -182,28 +188,40 @@ internal fun ContactsToolbar(
             onOptionSelected = { action ->
                 when (action) {
                     ContactsExportAction.ALL_JSON -> {
-                        val path = showSaveFileDialog("contacts.json", "json", jsonFileDescription)
+                        val path = showContactsSaveFileDialog(
+                            title = saveDialogTitle,
+                            defaultName = "contacts.json",
+                            extension = "json",
+                            filterDescription = jsonFileDescription,
+                        )
                         if (path != null) component.onExportAllToJson(path)
                     }
                     ContactsExportAction.ALL_VCF -> {
-                        val path = showSaveFileDialog("contacts.vcf", "vcf", vcardFileDescription)
+                        val path = showContactsSaveFileDialog(
+                            title = saveDialogTitle,
+                            defaultName = "contacts.vcf",
+                            extension = "vcf",
+                            filterDescription = vcardFileDescription,
+                        )
                         if (path != null) component.onExportAllToVcf(path)
                     }
                     ContactsExportAction.SELECTED_JSON -> {
                         val contact = selectedContact ?: return@AdbOutlinedMenuButton
-                        val path = showSaveFileDialog(
-                            "${contact.displayName}.json",
-                            "json",
-                            jsonFileDescription,
+                        val path = showContactsSaveFileDialog(
+                            title = saveDialogTitle,
+                            defaultName = "${contact.displayName}.json",
+                            extension = "json",
+                            filterDescription = jsonFileDescription,
                         )
                         if (path != null) component.onExportContactToJson(contact, path)
                     }
                     ContactsExportAction.SELECTED_VCF -> {
                         val contact = selectedContact ?: return@AdbOutlinedMenuButton
-                        val path = showSaveFileDialog(
-                            "${contact.displayName}.vcf",
-                            "vcf",
-                            vcardFileDescription,
+                        val path = showContactsSaveFileDialog(
+                            title = saveDialogTitle,
+                            defaultName = "${contact.displayName}.vcf",
+                            extension = "vcf",
+                            filterDescription = vcardFileDescription,
                         )
                         if (path != null) component.onExportContactToVcf(contact, path)
                     }
@@ -219,11 +237,17 @@ internal fun ContactsToolbar(
             onOptionSelected = { action ->
                 when (action) {
                     ContactsImportAction.JSON -> {
-                        val path = showOpenFileDialog(pickJsonTitle, "json")
+                        val path = showContactsOpenFileDialog(
+                            title = pickJsonTitle,
+                            extension = "json",
+                        )
                         if (path != null) component.onImportFromJson(path)
                     }
                     ContactsImportAction.VCF -> {
-                        val path = showOpenFileDialog(pickVcfTitle, "vcf")
+                        val path = showContactsOpenFileDialog(
+                            title = pickVcfTitle,
+                            extension = "vcf",
+                        )
                         if (path != null) component.onImportFromVcf(path)
                     }
                 }
@@ -248,3 +272,48 @@ internal fun ContactsToolbar(
         )
     }
 }
+
+/**
+ * Диалог сохранения экспортируемого файла контактов.
+ *
+ * Добавляет расширение [extension], если пользователь его не указал.
+ */
+private fun showContactsSaveFileDialog(
+    title: String,
+    defaultName: String,
+    extension: String,
+    filterDescription: String,
+): String? = showSaveFileDialog(
+    SaveFileDialogConfig(
+        title = title,
+        defaultFileName = defaultName,
+        filters = listOf(
+            HostFileDialogFilter(
+                description = "$filterDescription (*.$extension)",
+                extensions = listOf(extension),
+            ),
+        ),
+        isAcceptAllFileFilterUsed = false,
+        extensionPolicy = SaveFileExtensionPolicy.AppendIfMissing(defaultExtension = extension),
+    ),
+)
+
+/**
+ * Диалог выбора файла для импорта контактов.
+ */
+private fun showContactsOpenFileDialog(
+    title: String,
+    extension: String,
+): String? = showOpenFileDialog(
+    OpenFileDialogConfig(
+        title = title,
+        selectionMode = HostFileSelectionMode.FILES_ONLY,
+        filters = listOf(
+            HostFileDialogFilter(
+                description = extension.uppercase(),
+                extensions = listOf(extension),
+            ),
+        ),
+        isAcceptAllFileFilterUsed = true,
+    ),
+)

@@ -115,7 +115,7 @@ class DefaultQuickTogglesComponent(
         setItemRunning(toggleId = toggleId, running = true, clearError = true)
 
         val job = scope.launch {
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val result = quickTogglesService.readStatus(
                 deviceId = deviceId,
                 adbPath = adbPath,
@@ -225,7 +225,7 @@ class DefaultQuickTogglesComponent(
         }
 
         val job = scope.launch {
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val setResult = quickTogglesService.setAnimationScale(
                 deviceId = deviceId,
                 adbPath = adbPath,
@@ -316,7 +316,7 @@ class DefaultQuickTogglesComponent(
         settingsJobs[toggleId]?.cancel()
         setItemRunning(toggleId = toggleId, running = true)
         val job = scope.launch {
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val result = quickTogglesService.openSettings(
                 deviceId = deviceId,
                 adbPath = adbPath,
@@ -401,7 +401,7 @@ class DefaultQuickTogglesComponent(
                 )
             }
 
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val snapshot = quickTogglesService.readStatuses(
                 deviceId = deviceId,
                 adbPath = adbPath,
@@ -447,7 +447,7 @@ class DefaultQuickTogglesComponent(
         setItemRunning(toggleId = toggleId, running = true, clearError = true)
 
         val job = scope.launch {
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val toggleResult = quickTogglesService.setToggle(
                 deviceId = deviceId,
                 adbPath = adbPath,
@@ -565,7 +565,7 @@ class DefaultQuickTogglesComponent(
         }
 
         val job = scope.launch {
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val values = quickTogglesService.readAnimationScales(
                 deviceId = deviceId,
                 adbPath = adbPath,

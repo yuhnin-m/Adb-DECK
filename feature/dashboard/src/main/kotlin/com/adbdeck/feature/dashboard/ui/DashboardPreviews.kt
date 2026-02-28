@@ -44,6 +44,8 @@ private class DashboardPreviewComponent : DashboardComponent {
     override fun onOpenContacts() = Unit
     override fun onOpenSystemMonitor() = Unit
     override fun onOpenSettings() = Unit
+    override fun onOpenAdbShell() = Unit
+    override fun onOpenRootAdbShell() = Unit
     override fun onRefreshDevices() = Unit
     override fun onCheckAdb() = Unit
     override fun onRefreshAdbServerStatus() = Unit
@@ -53,6 +55,7 @@ private class DashboardPreviewComponent : DashboardComponent {
     override fun onDismissAdbCheck() = Unit
     override fun onDismissRefreshError() = Unit
     override fun onDismissAdbServerError() = Unit
+    override fun onDismissTerminalLaunchError() = Unit
 }
 
 @Composable

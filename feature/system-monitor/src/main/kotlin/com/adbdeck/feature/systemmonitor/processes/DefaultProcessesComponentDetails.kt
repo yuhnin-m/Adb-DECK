@@ -30,7 +30,7 @@ internal fun DefaultProcessesComponent.handleSelectProcess(process: ProcessInfo)
     }
 
     val deviceId = selected.deviceId
-    val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+    val adbPath = settingsRepository.resolvedAdbPath()
 
     detailJob = scope.launch {
         val result = systemMonitorClient.getProcessDetails(deviceId, process.pid, adbPath)

@@ -1,13 +1,16 @@
 package com.adbdeck.feature.notifications.ui
 
 import com.adbdeck.core.adb.api.notifications.NotificationRecord
-import java.awt.EventQueue
-import java.io.File
+import com.adbdeck.core.ui.filedialogs.HostFileDialogFilter
+import com.adbdeck.core.ui.filedialogs.HostFileSelectionMode
+import com.adbdeck.core.ui.filedialogs.OpenFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileExtensionPolicy
+import com.adbdeck.core.ui.filedialogs.showOpenFileDialog
+import com.adbdeck.core.ui.filedialogs.showSaveFileDialog
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
 
 private val SHORT_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter
     .ofPattern("HH:mm:ss")
@@ -48,67 +51,34 @@ internal fun showNotificationSaveFileDialog(
     extension: String,
     dialogTitle: String,
     filterDescription: String,
-): String? {
-    val chooser = JFileChooser().apply {
-        this.dialogTitle = dialogTitle
-        this.selectedFile = File(defaultName)
-        this.fileFilter = FileNameExtensionFilter(filterDescription, extension)
-    }
-
-    fun extractSelectedPath(): String {
-        val selectedPath = chooser.selectedFile.absolutePath
-        return if (selectedPath.endsWith(".$extension", ignoreCase = true)) {
-            selectedPath
-        } else {
-            "$selectedPath.$extension"
-        }
-    }
-
-    if (EventQueue.isDispatchThread()) {
-        return if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-            extractSelectedPath()
-        } else {
-            null
-        }
-    }
-
-    var selectedPath: String? = null
-    EventQueue.invokeAndWait {
-        if (chooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
-            selectedPath = extractSelectedPath()
-        }
-    }
-    return selectedPath
-}
+): String? = showSaveFileDialog(
+    SaveFileDialogConfig(
+        title = dialogTitle,
+        defaultFileName = defaultName,
+        filters = listOf(
+            HostFileDialogFilter(
+                description = filterDescription,
+                extensions = listOf(extension),
+            ),
+        ),
+        // Сохраняем прежнее поведение Notifications: accept-all включен.
+        isAcceptAllFileFilterUsed = true,
+        extensionPolicy = SaveFileExtensionPolicy.AppendIfMissing(defaultExtension = extension),
+    ),
+)
 
 internal fun showNotificationOpenImageFileDialog(
     dialogTitle: String,
-): String? {
-    val chooser = JFileChooser().apply {
-        this.dialogTitle = dialogTitle
-        this.fileFilter = FileNameExtensionFilter(
-            "Images (PNG, JPG, JPEG, WEBP)",
-            "png",
-            "jpg",
-            "jpeg",
-            "webp",
-        )
-        isAcceptAllFileFilterUsed = true
-    }
-
-    if (EventQueue.isDispatchThread()) {
-        return if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            chooser.selectedFile?.absolutePath
-        } else {
-            null
-        }
-    }
-
-    var selectedPath: String? = null
-    EventQueue.invokeAndWait {
-        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            selectedPath = chooser.selectedFile?.absolutePath
-        }
-    }
-    return selectedPath
-}
+): String? = showOpenFileDialog(
+    OpenFileDialogConfig(
+        title = dialogTitle,
+        selectionMode = HostFileSelectionMode.FILES_ONLY,
+        filters = listOf(
+            HostFileDialogFilter(
+                description = "Images (PNG, JPG, JPEG, WEBP)",
+                extensions = listOf("png", "jpg", "jpeg", "webp"),
+            ),
+        ),
+        isAcceptAllFileFilterUsed = true,
+    ),
+)

@@ -55,6 +55,12 @@ interface DashboardComponent {
     /** Переход на экран настроек. */
     fun onOpenSettings()
 
+    /** Открыть терминал с `adb shell`. */
+    fun onOpenAdbShell()
+
+    /** Открыть терминал с `adb shell su`. */
+    fun onOpenRootAdbShell()
+
     /** Обновить список устройств и отобразить их количество на плитке. */
     fun onRefreshDevices()
 
@@ -81,4 +87,7 @@ interface DashboardComponent {
 
     /** Скрыть баннер ошибки действий ADB server. */
     fun onDismissAdbServerError()
+
+    /** Скрыть баннер ошибки запуска терминала. */
+    fun onDismissTerminalLaunchError()
 }

@@ -141,7 +141,7 @@ class DefaultLogcatComponent(
             _state.value.isRunning -> return
         }
 
-        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        val adbPath = settingsRepository.resolvedAdbPath()
         val maxLines = settingsRepository.getSettings().logcatMaxBufferedLines.coerceAtLeast(100)
         val current = _state.value
 
@@ -221,7 +221,7 @@ class DefaultLogcatComponent(
         }
 
         packageSuggestionsJob = scope.launch {
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
 
             packageClient.getPackages(deviceId = deviceId, adbPath = adbPath)
                 .onSuccess { packages ->

@@ -100,13 +100,14 @@ import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.core.ui.buttons.AdbPlainButton
+import com.adbdeck.core.ui.filedialogs.HostFileDialogFilter
+import com.adbdeck.core.ui.filedialogs.SaveFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileExtensionPolicy
+import com.adbdeck.core.ui.filedialogs.showSaveFileDialog
 import com.adbdeck.core.ui.sectioncards.AdbSectionCard
 import com.adbdeck.feature.packages.PackageDetailState
 import com.adbdeck.feature.packages.PackagesComponent
 import com.adbdeck.feature.packages.PackagesState
-import java.io.File
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -758,20 +759,22 @@ private fun showSaveApkDialog(
     filterDescription: String,
 ): String? {
     val defaultName = "$packageName.apk"
-    val chooser = JFileChooser(File(System.getProperty("user.home"))).apply {
-        this.dialogTitle = dialogTitle
-        selectedFile = File(defaultName)
-        fileFilter = FileNameExtensionFilter(filterDescription, "apk", "apks")
-        isAcceptAllFileFilterUsed = false
-    }
-
-    if (chooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) return null
-
-    var file = chooser.selectedFile
-    val hasKnownExtension = file.name.endsWith(".apk", ignoreCase = true) ||
-        file.name.endsWith(".apks", ignoreCase = true)
-    if (!hasKnownExtension) {
-        file = File("${file.absolutePath}.apk")
-    }
-    return file.absolutePath
+    return showSaveFileDialog(
+        SaveFileDialogConfig(
+            title = dialogTitle,
+            defaultFileName = defaultName,
+            initialPath = System.getProperty("user.home"),
+            filters = listOf(
+                HostFileDialogFilter(
+                    description = filterDescription,
+                    extensions = listOf("apk", "apks"),
+                ),
+            ),
+            isAcceptAllFileFilterUsed = false,
+            extensionPolicy = SaveFileExtensionPolicy.AppendIfMissing(
+                defaultExtension = "apk",
+                acceptedExtensions = setOf("apk", "apks"),
+            ),
+        ),
+    )
 }

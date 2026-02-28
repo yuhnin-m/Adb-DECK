@@ -19,6 +19,7 @@ internal fun FeedbackSection(
     onDismissAdbCheck: () -> Unit,
     onDismissRefreshError: () -> Unit,
     onDismissAdbServerError: () -> Unit,
+    onDismissTerminalLaunchError: () -> Unit,
 ) {
     when (val adbState = state.adbCheckState) {
         DashboardAdbCheckState.Idle,
@@ -70,6 +71,17 @@ internal fun FeedbackSection(
             message = message,
             type = AdbBannerType.ERROR,
             onDismiss = onDismissAdbServerError,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+
+    if (state.isTerminalLaunchFailed) {
+        val message = stringResource(Res.string.dashboard_terminal_launch_failed)
+        Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
+        AdbBanner(
+            message = message,
+            type = AdbBannerType.ERROR,
+            onDismiss = onDismissTerminalLaunchError,
             modifier = Modifier.fillMaxWidth(),
         )
     }

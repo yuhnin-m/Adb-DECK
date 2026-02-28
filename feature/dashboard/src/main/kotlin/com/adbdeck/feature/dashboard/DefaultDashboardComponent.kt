@@ -5,6 +5,8 @@ import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.adb.AdbServerState
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.core.settings.resolvedAdbPath
+import com.adbdeck.core.utils.TerminalLauncher
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
@@ -42,6 +44,7 @@ import kotlinx.coroutines.launch
  * @param onNavigateToContacts Callback навигации на экран Contacts.
  * @param onNavigateToSystemMonitor Callback навигации на экран System Monitor.
  * @param onNavigateToSettings Callback навигации на экран настроек.
+ * @param openAdbShellInTerminal Launcher системного терминала для быстрых shell-действий.
  */
 class DefaultDashboardComponent(
     componentContext: ComponentContext,
@@ -62,6 +65,7 @@ class DefaultDashboardComponent(
     private val onNavigateToContacts: () -> Unit,
     private val onNavigateToSystemMonitor: () -> Unit,
     private val onNavigateToSettings: () -> Unit,
+    private val openAdbShellInTerminal: (adbPath: String, deviceId: String?, root: Boolean) -> Unit = TerminalLauncher::openAdbShell,
 ) : DashboardComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -111,6 +115,14 @@ class DefaultDashboardComponent(
     override fun onOpenSystemMonitor() = onNavigateToSystemMonitor()
 
     override fun onOpenSettings() = onNavigateToSettings()
+
+    override fun onOpenAdbShell() {
+        openAdbShell(root = false)
+    }
+
+    override fun onOpenRootAdbShell() {
+        openAdbShell(root = true)
+    }
 
     override fun onRefreshDevices() {
         if (refreshJob?.isActive == true) return
@@ -245,6 +257,10 @@ class DefaultDashboardComponent(
         }
     }
 
+    override fun onDismissTerminalLaunchError() {
+        _state.update { it.copy(isTerminalLaunchFailed = false) }
+    }
+
     private fun observeDevices() {
         scope.launch {
             deviceManager.devicesFlow.collect { devices ->
@@ -262,7 +278,7 @@ class DefaultDashboardComponent(
     private fun observeAdbPath() {
         scope.launch {
             settingsRepository.settingsFlow
-                .map { it.adbPath.ifBlank { "adb" } }
+                .map { it.resolvedAdbPath() }
                 .distinctUntilChanged()
                 .collect { adbPath ->
                     _state.update { current ->
@@ -447,8 +463,25 @@ class DefaultDashboardComponent(
         }
     }
 
+    private fun openAdbShell(root: Boolean) {
+        scope.launch {
+            val adbPath = resolvedAdbPath()
+            val deviceId = deviceManager.selectedDeviceFlow.value
+                ?.deviceId
+                ?.trim()
+                ?.ifBlank { null }
+
+            val launchResult = runCatching {
+                openAdbShellInTerminal(adbPath, deviceId, root)
+            }
+            _state.update { current ->
+                current.copy(isTerminalLaunchFailed = launchResult.isFailure)
+            }
+        }
+    }
+
     private fun resolvedAdbPath(): String =
-        settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        settingsRepository.resolvedAdbPath()
 
     private fun AdbServerState.toDashboardState(): DashboardAdbServerState = when (this) {
         AdbServerState.RUNNING -> DashboardAdbServerState.RUNNING

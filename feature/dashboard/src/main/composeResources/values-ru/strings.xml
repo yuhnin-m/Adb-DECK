@@ -69,6 +69,10 @@
     <string name="dashboard_tile_contacts_subtitle">Управление контактами устройства</string>
     <string name="dashboard_tile_system_monitor_title">System Monitor</string>
     <string name="dashboard_tile_system_monitor_subtitle">Процессы и ресурсы устройства</string>
+    <string name="dashboard_tile_adb_shell_title">Open ADB Shell</string>
+    <string name="dashboard_tile_adb_shell_subtitle">Открыть сессию adb shell</string>
+    <string name="dashboard_tile_root_adb_shell_title">Open Root ADB Shell</string>
+    <string name="dashboard_tile_root_adb_shell_subtitle">Открыть терминал и запустить adb shell с root-правами</string>
 
     <string name="dashboard_tile_process_monitor_title">Process Monitor</string>
     <string name="dashboard_tile_process_monitor_subtitle">Мониторинг процессов</string>
@@ -90,5 +94,6 @@
     <string name="dashboard_adb_available">ADB доступен: %1$s</string>
     <string name="dashboard_adb_unavailable">ADB недоступен: %1$s</string>
     <string name="dashboard_refresh_failed">Не удалось обновить устройства: %1$s</string>
+    <string name="dashboard_terminal_launch_failed">Failed to launch terminal</string>
     <string name="dashboard_unknown_error">Неизвестная ошибка</string>
 </resources>

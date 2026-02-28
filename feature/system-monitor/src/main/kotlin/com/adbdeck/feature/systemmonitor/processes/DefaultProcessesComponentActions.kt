@@ -77,7 +77,7 @@ internal fun DefaultProcessesComponent.runAction(
     }
 
     val deviceId = selected.deviceId
-    val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+    val adbPath = settingsRepository.resolvedAdbPath()
 
     var shouldStart = false
     _state.update { current ->

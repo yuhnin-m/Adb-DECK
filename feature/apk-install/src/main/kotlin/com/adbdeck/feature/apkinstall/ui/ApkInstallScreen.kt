@@ -23,19 +23,6 @@ fun ApkInstallScreen(component: ApkInstallComponent) {
     val state by component.state.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        AdbBanner(
-            message = state.deviceMessage,
-            type = if (state.isDeviceReady) AdbBannerType.SUCCESS else AdbBannerType.WARNING,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = Dimensions.paddingMedium,
-                    vertical = Dimensions.paddingSmall,
-                ),
-        )
-
-        HorizontalDivider()
-
         ApkInstallContent(
             state = state,
             onApkPathChanged = component::onApkPathChanged,

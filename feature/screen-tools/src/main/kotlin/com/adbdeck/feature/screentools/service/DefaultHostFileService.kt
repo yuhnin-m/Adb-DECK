@@ -8,12 +8,14 @@ import adbdeck.feature.screen_tools.generated.resources.screen_tools_error_folde
 import adbdeck.feature.screen_tools.generated.resources.screen_tools_error_image_file_not_found
 import adbdeck.feature.screen_tools.generated.resources.screen_tools_error_image_read_failed
 import adbdeck.feature.screen_tools.generated.resources.screen_tools_error_open_unsupported
+import com.adbdeck.core.ui.filedialogs.HostFileSelectionMode
+import com.adbdeck.core.ui.filedialogs.OpenFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.showOpenFileDialog
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 import java.awt.Desktop
-import java.awt.EventQueue
 import java.awt.Image
 import java.awt.Toolkit
 import java.awt.datatransfer.ClipboardOwner
@@ -24,7 +26,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import javax.imageio.ImageIO
-import javax.swing.JFileChooser
 
 /**
  * Desktop-реализация [HostFileService].
@@ -79,21 +80,18 @@ class DefaultHostFileService : HostFileService {
     override suspend fun selectDirectory(initialPath: String): Result<String?> = runCatchingPreserveCancellation {
         val dialogTitle = getString(Res.string.screen_tools_dialog_choose_directory_title)
         withContext(Dispatchers.IO) {
-            val chooser = JFileChooser(
-                File(initialPath).takeIf { it.exists() } ?: File(HOME_DIR),
-            ).apply {
-                this.dialogTitle = dialogTitle
-                fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-                isAcceptAllFileFilterUsed = false
-            }
-
-            var selectedPath: String? = null
-            EventQueue.invokeAndWait {
-                if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                    selectedPath = chooser.selectedFile?.absolutePath
-                }
-            }
-            selectedPath
+            val chooserInitialPath = File(initialPath)
+                .takeIf { it.exists() }
+                ?.absolutePath
+                ?: HOME_DIR
+            showOpenFileDialog(
+                OpenFileDialogConfig(
+                    title = dialogTitle,
+                    initialPath = chooserInitialPath,
+                    selectionMode = HostFileSelectionMode.DIRECTORIES_ONLY,
+                    isAcceptAllFileFilterUsed = false,
+                ),
+            )
         }
     }
 

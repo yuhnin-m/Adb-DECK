@@ -124,7 +124,7 @@ class DefaultDeviceInfoComponent(
                 )
             }
 
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
 
             val sectionJobs = DeviceInfoSectionKind.entries.map { section ->
                 launch {

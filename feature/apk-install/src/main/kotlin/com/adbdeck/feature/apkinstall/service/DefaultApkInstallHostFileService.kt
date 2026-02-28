@@ -4,10 +4,11 @@ import adbdeck.feature.apk_install.generated.resources.Res
 import adbdeck.feature.apk_install.generated.resources.apk_install_dialog_apk_filter_label
 import adbdeck.feature.apk_install.generated.resources.apk_install_dialog_choose_apk_title
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
-import java.awt.EventQueue
+import com.adbdeck.core.ui.filedialogs.HostFileDialogFilter
+import com.adbdeck.core.ui.filedialogs.HostFileSelectionMode
+import com.adbdeck.core.ui.filedialogs.OpenFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.showOpenFileDialog
 import java.io.File
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
@@ -26,23 +27,21 @@ class DefaultApkInstallHostFileService : ApkInstallHostFileService {
         val dialogTitle = getString(Res.string.apk_install_dialog_choose_apk_title)
         val filterLabel = getString(Res.string.apk_install_dialog_apk_filter_label)
         withContext(Dispatchers.IO) {
-            val chooser = JFileChooser(resolveInitialDirectory(initialPath)).apply {
-                fileSelectionMode = JFileChooser.FILES_AND_DIRECTORIES
-                isAcceptAllFileFilterUsed = true
-                fileFilter = FileNameExtensionFilter(
-                    filterLabel,
-                    *INSTALLABLE_EXTENSIONS.toTypedArray(),
-                )
-                this.dialogTitle = dialogTitle
-            }
-
-            var selectedPath: String? = null
-            EventQueue.invokeAndWait {
-                if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                    selectedPath = chooser.selectedFile?.absolutePath
-                }
-            }
-            selectedPath
+            val initialDirectory = resolveInitialDirectory(initialPath).absolutePath
+            showOpenFileDialog(
+                OpenFileDialogConfig(
+                    title = dialogTitle,
+                    initialPath = initialDirectory,
+                    selectionMode = HostFileSelectionMode.FILES_AND_DIRECTORIES,
+                    filters = listOf(
+                        HostFileDialogFilter(
+                            description = filterLabel,
+                            extensions = INSTALLABLE_EXTENSIONS.toList(),
+                        ),
+                    ),
+                    isAcceptAllFileFilterUsed = true,
+                ),
+            )
         }
     }
 

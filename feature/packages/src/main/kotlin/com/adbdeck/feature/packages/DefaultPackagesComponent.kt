@@ -157,7 +157,7 @@ class DefaultPackagesComponent(
             if (device.state != DeviceState.DEVICE) return@launch
 
             val requestDeviceId = device.deviceId
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
 
             _state.update { it.copy(listState = PackagesListState.Loading) }
 
@@ -406,7 +406,7 @@ class DefaultPackagesComponent(
         detailJob = scope.launch {
             val device = deviceManager.selectedDeviceFlow.value ?: return@launch
             if (device.state != DeviceState.DEVICE) return@launch
-            val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+            val adbPath = settingsRepository.resolvedAdbPath()
             val requestDeviceId = device.deviceId
             val requestPackageName = pkg.packageName
 
@@ -666,7 +666,7 @@ class DefaultPackagesComponent(
             )
             return null
         }
-        val adbPath = settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        val adbPath = settingsRepository.resolvedAdbPath()
         activeDeviceId = device.deviceId
         return device.deviceId to adbPath
     }

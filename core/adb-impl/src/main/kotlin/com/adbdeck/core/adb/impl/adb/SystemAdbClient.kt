@@ -27,7 +27,7 @@ class SystemAdbClient(
     /** Возвращает путь к adb: override (если задан) или значение из настроек. */
     private fun adbPath(adbPathOverride: String? = null): String {
         val normalizedOverride = adbPathOverride?.trim()?.ifBlank { null }
-        return normalizedOverride ?: settingsRepository.getSettings().adbPath.ifBlank { "adb" }
+        return normalizedOverride ?: settingsRepository.resolvedAdbPath()
     }
 
     override suspend fun checkAvailability(adbPathOverride: String?): AdbCheckResult {

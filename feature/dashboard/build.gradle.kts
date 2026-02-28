@@ -24,6 +24,7 @@ dependencies {
     implementation(project(":core:i18n"))
     implementation(project(":core:adb-api"))
     implementation(project(":core:settings"))
+    implementation(project(":core:utils"))
 
     testImplementation(kotlin("test"))
     testImplementation(libs.coroutines.test)

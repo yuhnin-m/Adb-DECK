@@ -65,6 +65,10 @@ import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.filedialogs.HostFileDialogFilter
+import com.adbdeck.core.ui.filedialogs.SaveFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileExtensionPolicy
+import com.adbdeck.core.ui.filedialogs.showSaveFileDialog
 import com.adbdeck.core.ui.selection.AdbMultiSelectionState
 import com.adbdeck.core.ui.selection.clearSelection
 import com.adbdeck.core.ui.selection.onItemSelectionRequested
@@ -75,12 +79,9 @@ import com.adbdeck.feature.deviceinfo.DeviceInfoRow
 import com.adbdeck.feature.deviceinfo.DeviceInfoSection
 import com.adbdeck.feature.deviceinfo.DeviceInfoSectionKind
 import com.adbdeck.feature.deviceinfo.DeviceInfoSectionLoadState
-import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import javax.swing.JFileChooser
-import javax.swing.filechooser.FileNameExtensionFilter
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -534,14 +535,21 @@ private fun showSaveJsonDialog(
     dialogFilterDescription: String,
 ): String? {
     val safeDeviceId = deviceId.replace(Regex("[^a-zA-Z0-9._-]+"), "_")
-    val chooser = JFileChooser(File(System.getProperty("user.home"))).apply {
-        this.dialogTitle = dialogTitle
-        fileFilter = FileNameExtensionFilter("$dialogFilterDescription (*.json)", "json")
-        selectedFile = File("device-info-$safeDeviceId.json")
-    }
-
-    if (chooser.showSaveDialog(null) != JFileChooser.APPROVE_OPTION) return null
-    return chooser.selectedFile?.absolutePath
+    return showSaveFileDialog(
+        SaveFileDialogConfig(
+            title = dialogTitle,
+            defaultFileName = "device-info-$safeDeviceId.json",
+            initialPath = System.getProperty("user.home"),
+            filters = listOf(
+                HostFileDialogFilter(
+                    description = "$dialogFilterDescription (*.json)",
+                    extensions = listOf("json"),
+                ),
+            ),
+            // Сохраняем прежнее поведение: не добавляем расширение автоматически.
+            extensionPolicy = SaveFileExtensionPolicy.KeepSelected,
+        ),
+    )
 }
 
 private data class SelectableRow(
