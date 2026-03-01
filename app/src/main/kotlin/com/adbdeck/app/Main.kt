@@ -149,13 +149,6 @@ fun main() = application {
                             settingsRepository.saveSettings(settings.copy(theme = newTheme))
                         }
                     },
-                    currentLanguage = settings.language,
-                    onToggleLanguage = {
-                        val newLanguage = settings.language.nextForSidebar(startupLocale)
-                        scope.launch {
-                            settingsRepository.saveSettings(settings.copy(language = newLanguage))
-                        }
-                    },
                     deviceSelectorComponent = deviceSelectorComponent,
                     processHistoryStore = processHistoryStore,
                 )
@@ -168,18 +161,6 @@ private fun AppLanguage.resolveLocale(startupLocale: Locale): Locale = when (thi
     AppLanguage.SYSTEM -> startupLocale
     AppLanguage.ENGLISH -> Locale.US
     AppLanguage.RUSSIAN -> Locale.forLanguageTag("ru-RU")
-}
-
-private fun AppLanguage.nextForSidebar(startupLocale: Locale): AppLanguage {
-    val effective = when (this) {
-        AppLanguage.SYSTEM -> if (startupLocale.language.equals("ru", ignoreCase = true)) {
-            AppLanguage.RUSSIAN
-        } else {
-            AppLanguage.ENGLISH
-        }
-        else -> this
-    }
-    return if (effective == AppLanguage.RUSSIAN) AppLanguage.ENGLISH else AppLanguage.RUSSIAN
 }
 
 private fun applyJvmLocale(locale: Locale): Boolean {

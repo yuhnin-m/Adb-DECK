@@ -1,6 +1,8 @@
 package com.adbdeck.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,12 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.adbdeck.app.navigation.Screen
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
-import com.adbdeck.core.settings.AppLanguage
-import java.util.Locale
 
 /**
  * Боковая навигационная панель (Sidebar) главного окна
@@ -30,8 +32,9 @@ import java.util.Locale
  * @param onNavigate Callback навигации — вызывается при нажатии на пункт меню
  * @param isDarkTheme Текущий режим темы (для иконки переключателя)
  * @param onToggleTheme Callback переключения светлой / темной темы
- * @param currentLanguage Текущий язык интерфейса
- * @param onToggleLanguage Callback переключения языка (RU/EN)
+ * @param historyCount Количество записей в логе ADB (истории команд)
+ * @param isHistoryOpen Флаг, что панель лога ADB сейчас открыта
+ * @param onToggleHistory Callback открытия/закрытия панели лога ADB
  * @param devicesCount Количество видимых ADB-устройств
  * @param isLogcatRunning Флаг активного захвата logcat
  * @param hasUnsavedSettings Флаг несохраненных настроек
@@ -43,8 +46,9 @@ fun Sidebar(
     onNavigate: (Screen) -> Unit,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
-    currentLanguage: AppLanguage,
-    onToggleLanguage: () -> Unit,
+    historyCount: Int,
+    isHistoryOpen: Boolean,
+    onToggleHistory: () -> Unit,
     devicesCount: Int,
     isLogcatRunning: Boolean,
     hasUnsavedSettings: Boolean,
@@ -166,10 +170,11 @@ fun Sidebar(
 
         // ── Быстрые переключатели ────────────────────────────────
         SidebarQuickToggles(
-            currentLanguage = currentLanguage,
-            onToggleLanguage = onToggleLanguage,
             isDarkTheme = isDarkTheme,
             onToggleTheme = onToggleTheme,
+            historyCount = historyCount,
+            isHistoryOpen = isHistoryOpen,
+            onToggleHistory = onToggleHistory,
         )
     }
 
@@ -318,47 +323,125 @@ private fun SidebarBadge(
 
 @Composable
 private fun SidebarQuickToggles(
-    currentLanguage: AppLanguage,
-    onToggleLanguage: () -> Unit,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
+    historyCount: Int,
+    isHistoryOpen: Boolean,
+    onToggleHistory: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(Dimensions.navItemHeight)
-            .padding(horizontal = Dimensions.paddingDefault),
-        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        TextButton(
-            onClick = onToggleLanguage,
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 0.dp),
-        ) {
-            Text(
-                text = currentLanguage.toFlagEmoji(),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
+    val compactToggleHeight = Dimensions.navItemHeight - Dimensions.paddingSmall
 
-        TextButton(
-            onClick = onToggleTheme,
-            modifier = Modifier.weight(1f),
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(AdbCornerRadius.MEDIUM.value),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(Dimensions.paddingXSmall),
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = if (isDarkTheme) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-                contentDescription = if (isDarkTheme) "Переключить на светлую тему" else "Переключить на темную тему",
-                modifier = Modifier.size(Dimensions.iconSizeNav),
+            SidebarQuickToggleChip(
+                modifier = Modifier.size(compactToggleHeight),
+                icon = if (isDarkTheme) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
+                iconDescription = if (isDarkTheme) "Dark theme enabled" else "Light theme enabled",
+                label = null,
+                trailing = null,
+                containerColor = if (isDarkTheme) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.56f)
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                },
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                onClick = onToggleTheme,
             )
-            Spacer(Modifier.width(Dimensions.paddingXSmall))
-            Text(text = if (isDarkTheme) "Ночь" else "День")
+
+            SidebarQuickToggleChip(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.Terminal,
+                iconDescription = if (isHistoryOpen) "Close ADB log panel" else "Open ADB log panel",
+                label = "ADB Log",
+                trailing = historyCount.takeIf { it > 0 }?.toString(),
+                containerColor = if (isHistoryOpen) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.56f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHighest
+                },
+                contentColor = if (isHistoryOpen) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                height = compactToggleHeight,
+                onClick = onToggleHistory,
+            )
         }
     }
 }
 
-private fun AppLanguage.toFlagEmoji(): String = when (this) {
-    AppLanguage.SYSTEM -> if (Locale.getDefault().language.equals("ru", ignoreCase = true)) "🇷🇺" else "🇺🇸"
-    AppLanguage.ENGLISH -> "🇺🇸"
-    AppLanguage.RUSSIAN -> "🇷🇺"
+/**
+ * Компактный toggle для нижнего блока Sidebar.
+ * Используется как единый визуальный паттерн для темы и языка.
+ */
+@Composable
+private fun SidebarQuickToggleChip(
+    icon: ImageVector,
+    iconDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    label: String? = null,
+    trailing: String? = null,
+    height: androidx.compose.ui.unit.Dp = Dimensions.navItemHeight - Dimensions.paddingSmall,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    Row(
+        modifier = modifier
+            .height(height)
+            .clip(RoundedCornerShape(Dimensions.buttonCornerRadius))
+            .background(containerColor)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f),
+                shape = RoundedCornerShape(Dimensions.buttonCornerRadius),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = Dimensions.paddingSmall),
+        horizontalArrangement = if (label == null && trailing == null) {
+            Arrangement.Center
+        } else {
+            Arrangement.Start
+        },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = iconDescription,
+            modifier = Modifier.size(Dimensions.iconSizeSmall),
+            tint = contentColor,
+        )
+        if (!label.isNullOrBlank()) {
+            Spacer(Modifier.width(Dimensions.paddingSmall))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor,
+            )
+        }
+        if (!trailing.isNullOrBlank()) {
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = trailing,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor,
+            )
+        }
+    }
 }

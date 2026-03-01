@@ -20,7 +20,6 @@ import com.adbdeck.app.navigation.Screen
 import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.process.ProcessHistoryStore
-import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.feature.contacts.ui.ContactsScreen
 import com.adbdeck.feature.dashboard.ui.DashboardScreen
 import com.adbdeck.feature.deviceinfo.ui.DeviceInfoScreen
@@ -51,8 +50,6 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
  * @param rootComponent          Корневой навигационный компонент.
  * @param isDarkTheme            Текущий режим темы (для Sidebar).
  * @param onToggleTheme          Callback переключения темы.
- * @param currentLanguage        Текущий язык интерфейса.
- * @param onToggleLanguage       Callback переключения языка.
  * @param deviceSelectorComponent Компонент выбора устройства для TopBar.
  * @param processHistoryStore    In-memory история команд ProcessRunner.
  */
@@ -61,8 +58,6 @@ fun AppContent(
     rootComponent: RootComponent,
     isDarkTheme: Boolean,
     onToggleTheme: () -> Unit,
-    currentLanguage: AppLanguage,
-    onToggleLanguage: () -> Unit,
     deviceSelectorComponent: DeviceSelectorComponent,
     processHistoryStore: ProcessHistoryStore,
 ) {
@@ -138,8 +133,9 @@ fun AppContent(
                 onNavigate = rootComponent::navigate,
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme,
-                currentLanguage = currentLanguage,
-                onToggleLanguage = onToggleLanguage,
+                historyCount = processHistoryEntries.size,
+                isHistoryOpen = isHistoryPanelOpen,
+                onToggleHistory = { isHistoryPanelOpen = !isHistoryPanelOpen },
                 devicesCount = devices.size,
                 isLogcatRunning = isLogcatRunning,
                 hasUnsavedSettings = hasUnsavedSettings,
@@ -192,11 +188,7 @@ fun AppContent(
                     )
                 }
 
-                StatusBar(
-                    historyCount = processHistoryEntries.size,
-                    isHistoryOpen = isHistoryPanelOpen,
-                    onToggleHistory = { isHistoryPanelOpen = !isHistoryPanelOpen },
-                )
+                StatusBar()
             }
         }
     }

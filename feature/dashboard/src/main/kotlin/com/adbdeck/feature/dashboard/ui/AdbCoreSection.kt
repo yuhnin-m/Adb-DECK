@@ -2,6 +2,8 @@ package com.adbdeck.feature.dashboard.ui
 
 import adbdeck.feature.dashboard.generated.resources.Res
 import adbdeck.feature.dashboard.generated.resources.*
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -9,7 +11,9 @@ import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -53,6 +57,10 @@ import com.adbdeck.feature.dashboard.DashboardAdbServerAction
 import com.adbdeck.feature.dashboard.DashboardAdbServerState
 import org.jetbrains.compose.resources.stringResource
 
+private val AdbCoreWideLayoutMinWidth = 900.dp
+private val AdbCoreCompactButtonMaxWidth = 300.dp
+private const val AdbCoreEmptyValue = "—"
+
 @Composable
 internal fun AdbCoreSection(
     state: AdbCoreUiState,
@@ -67,7 +75,7 @@ internal fun AdbCoreSection(
     val statusLabel = stringResource(Res.string.dashboard_adb_server_row_status)
     val versionLabel = stringResource(Res.string.dashboard_adb_server_row_version)
     val devicesLabel = stringResource(Res.string.dashboard_adb_server_row_devices)
-    val versionValue = state.adbVersion?.ifBlank { "—" } ?: "—"
+    val versionValue = state.adbVersion?.ifBlank { AdbCoreEmptyValue } ?: AdbCoreEmptyValue
 
     val statusValue = when {
         state.isAdbFound && state.serverState == DashboardAdbServerState.RUNNING ->
@@ -116,6 +124,18 @@ internal fun AdbCoreSection(
         state.activeAction == DashboardAdbServerAction.STOP
     val toggleOnClick = if (isRunning) onStopServer else onStartServer
 
+    val toggleContainerColor = if (isRunning) {
+        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.38f)
+    } else {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)
+    }
+    val restartContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+    val settingsContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.52f)
+
+    val compactToggleLabel = stringResource(Res.string.dashboard_adb_server_action_compact_toggle)
+    val compactRestartLabel = stringResource(Res.string.dashboard_adb_server_action_compact_restart)
+    val compactSettingsLabel = stringResource(Res.string.dashboard_adb_server_action_compact_settings)
+
     val actionItems = listOf(
         AdbCoreActionCardUi(
             title = toggleTitle,
@@ -124,11 +144,7 @@ internal fun AdbCoreSection(
             enabled = canToggleServer,
             isLoading = toggleLoading,
             onClick = toggleOnClick,
-            containerColor = if (isRunning) {
-                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.38f)
-            } else {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)
-            },
+            containerColor = toggleContainerColor,
         ),
         AdbCoreActionCardUi(
             title = stringResource(Res.string.dashboard_adb_server_action_restart_title),
@@ -137,7 +153,7 @@ internal fun AdbCoreSection(
             enabled = canRestart,
             isLoading = state.activeAction == DashboardAdbServerAction.RESTART,
             onClick = onRestartServer,
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f),
+            containerColor = restartContainerColor,
         ),
         AdbCoreActionCardUi(
             title = stringResource(Res.string.dashboard_adb_server_action_open_settings_title),
@@ -146,7 +162,7 @@ internal fun AdbCoreSection(
             enabled = !isServerBusy,
             isLoading = false,
             onClick = onOpenSettings,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.52f),
+            containerColor = settingsContainerColor,
         ),
     )
 
@@ -169,33 +185,47 @@ internal fun AdbCoreSection(
             )
         },
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            AdbCoreInfoTable(
-                statusLabel = statusLabel,
-                statusValue = statusValue,
-                statusColor = statusColor,
-                versionLabel = versionLabel,
-                versionValue = versionValue,
-                devicesLabel = devicesLabel,
-                devicesValue = state.deviceCount.toString(),
-                modifier = Modifier.widthIn(min = 280.dp, max = 360.dp),
-            )
-            Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
-            VerticalDivider(
-                modifier = Modifier.fillMaxHeight(),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-            )
-            Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
-            AdbCoreActionsRow(
-                actions = actionItems,
-                modifier = Modifier.weight(1f),
-            )
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val isWideLayout = maxWidth >= AdbCoreWideLayoutMinWidth
+            Crossfade(targetState = isWideLayout, label = "adbCoreLayoutMode") { wide ->
+                if (wide) {
+                    AdbCoreWideLayout(
+                        statusLabel = statusLabel,
+                        statusValue = statusValue,
+                        statusColor = statusColor,
+                        versionLabel = versionLabel,
+                        versionValue = versionValue,
+                        devicesLabel = devicesLabel,
+                        devicesValue = state.deviceCount.toString(),
+                        actions = actionItems,
+                    )
+                } else {
+                    AdbCoreCompactLayout(
+                        statusLabel = statusLabel,
+                        statusValue = statusValue,
+                        statusColor = statusColor,
+                        versionLabel = versionLabel,
+                        versionValue = versionValue,
+                        devicesLabel = devicesLabel,
+                        devicesValue = state.deviceCount.toString(),
+                        toggleLabel = compactToggleLabel,
+                        toggleIcon = toggleIcon,
+                        canToggleServer = canToggleServer,
+                        toggleLoading = toggleLoading,
+                        onToggleServer = toggleOnClick,
+                        canRestart = canRestart,
+                        restartLoading = state.activeAction == DashboardAdbServerAction.RESTART,
+                        onRestartServer = onRestartServer,
+                        canOpenSettings = !isServerBusy,
+                        onOpenSettings = onOpenSettings,
+                        restartLabel = compactRestartLabel,
+                        settingsLabel = compactSettingsLabel,
+                        toggleContainerColor = toggleContainerColor,
+                        restartContainerColor = restartContainerColor,
+                        settingsContainerColor = settingsContainerColor,
+                    )
+                }
+            }
         }
     }
 }
@@ -209,6 +239,217 @@ private data class AdbCoreActionCardUi(
     val onClick: () -> Unit,
     val containerColor: Color,
 )
+
+@Composable
+private fun AdbCoreWideLayout(
+    statusLabel: String,
+    statusValue: String,
+    statusColor: Color,
+    versionLabel: String,
+    versionValue: String,
+    devicesLabel: String,
+    devicesValue: String,
+    actions: List<AdbCoreActionCardUi>,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AdbCoreInfoTable(
+            statusLabel = statusLabel,
+            statusValue = statusValue,
+            statusColor = statusColor,
+            versionLabel = versionLabel,
+            versionValue = versionValue,
+            devicesLabel = devicesLabel,
+            devicesValue = devicesValue,
+            modifier = Modifier.widthIn(min = 280.dp, max = 360.dp),
+        )
+        Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
+        VerticalDivider(
+            modifier = Modifier.fillMaxHeight(),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+        )
+        Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
+        AdbCoreActionsRow(
+            actions = actions,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun AdbCoreCompactLayout(
+    statusLabel: String,
+    statusValue: String,
+    statusColor: Color,
+    versionLabel: String,
+    versionValue: String,
+    devicesLabel: String,
+    devicesValue: String,
+    toggleLabel: String,
+    toggleIcon: ImageVector,
+    canToggleServer: Boolean,
+    toggleLoading: Boolean,
+    onToggleServer: () -> Unit,
+    canRestart: Boolean,
+    restartLoading: Boolean,
+    onRestartServer: () -> Unit,
+    canOpenSettings: Boolean,
+    onOpenSettings: () -> Unit,
+    restartLabel: String,
+    settingsLabel: String,
+    toggleContainerColor: Color,
+    restartContainerColor: Color,
+    settingsContainerColor: Color,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        verticalAlignment = Alignment.Top,
+    ) {
+        AdbCoreInfoTable(
+            statusLabel = statusLabel,
+            statusValue = statusValue,
+            statusColor = statusColor,
+            versionLabel = versionLabel,
+            versionValue = versionValue,
+            devicesLabel = devicesLabel,
+            devicesValue = devicesValue,
+            modifier = Modifier.widthIn(min = 280.dp, max = 360.dp),
+        )
+        Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
+        VerticalDivider(
+            modifier = Modifier.fillMaxHeight(),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+        )
+        Spacer(modifier = Modifier.width(Dimensions.paddingMedium))
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            AdbCoreCompactSoftButton(
+                onClick = onToggleServer,
+                text = toggleLabel,
+                leadingIcon = toggleIcon,
+                enabled = canToggleServer,
+                loading = toggleLoading,
+                containerColor = toggleContainerColor,
+                modifier = Modifier
+                    .widthIn(max = AdbCoreCompactButtonMaxWidth)
+                    .weight(1f),
+            )
+            AdbCoreCompactSoftButton(
+                onClick = onRestartServer,
+                text = restartLabel,
+                leadingIcon = Icons.Outlined.RestartAlt,
+                enabled = canRestart,
+                loading = restartLoading,
+                containerColor = restartContainerColor,
+                modifier = Modifier
+                    .widthIn(max = AdbCoreCompactButtonMaxWidth)
+                    .weight(1f),
+            )
+            AdbCoreCompactSoftButton(
+                onClick = onOpenSettings,
+                text = settingsLabel,
+                leadingIcon = Icons.Outlined.Settings,
+                enabled = canOpenSettings,
+                loading = false,
+                containerColor = settingsContainerColor,
+                modifier = Modifier
+                    .widthIn(max = AdbCoreCompactButtonMaxWidth)
+                    .weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdbCoreCompactSoftButton(
+    onClick: () -> Unit,
+    text: String,
+    leadingIcon: ImageVector,
+    enabled: Boolean,
+    loading: Boolean,
+    containerColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val isEnabled = enabled && !loading
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val background = resolveActionContainerColor(
+        baseColor = containerColor,
+        isEnabled = isEnabled,
+        isHovered = isHovered,
+        isPressed = isPressed,
+    )
+    val animatedBackground by animateColorAsState(
+        targetValue = background,
+        label = "adbCoreCompactButtonContainerColor",
+    )
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = AdbButtonSize.SMALL.height)
+            .clickable(
+                enabled = isEnabled,
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            ),
+        shape = MaterialTheme.shapes.small,
+        color = animatedBackground,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = Dimensions.paddingSmall),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            if (loading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(14.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                Icon(
+                    imageVector = leadingIcon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            Spacer(modifier = Modifier.width(Dimensions.paddingXSmall))
+
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
 
 @Composable
 private fun AdbCoreInfoTable(
@@ -306,12 +547,16 @@ private fun AdbCoreActionCard(
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
     val isPressed by interactionSource.collectIsPressedAsState()
-    val animatedContainerColor = when {
-        !isEnabled -> action.containerColor.copy(alpha = 0.62f)
-        isPressed -> action.containerColor.copy(alpha = 0.9f)
-        isHovered -> action.containerColor.copy(alpha = 0.96f)
-        else -> action.containerColor
-    }
+    val animatedContainerColor = resolveActionContainerColor(
+        baseColor = action.containerColor,
+        isEnabled = isEnabled,
+        isHovered = isHovered,
+        isPressed = isPressed,
+    )
+    val animatedContainerColorState by animateColorAsState(
+        targetValue = animatedContainerColor,
+        label = "adbCoreWideCardContainerColor",
+    )
 
     Surface(
         modifier = modifier
@@ -323,7 +568,7 @@ private fun AdbCoreActionCard(
                 onClick = action.onClick,
             ),
         shape = MaterialTheme.shapes.small,
-        color = animatedContainerColor,
+        color = animatedContainerColorState,
         border = BorderStroke(
             width = 1.dp,
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
@@ -364,5 +609,24 @@ private fun AdbCoreActionCard(
                 )
             }
         }
+    }
+}
+
+/**
+ * Keeps action surfaces in one palette for wide cards and compact buttons.
+ * Hover/press use subtle alpha shifts to avoid overly bright states.
+ */
+private fun resolveActionContainerColor(
+    baseColor: Color,
+    isEnabled: Boolean,
+    isHovered: Boolean,
+    isPressed: Boolean,
+): Color {
+    val baseAlpha = baseColor.alpha
+    return when {
+        !isEnabled -> baseColor.copy(alpha = (baseAlpha * 0.75f).coerceIn(0f, 1f))
+        isPressed -> baseColor.copy(alpha = (baseAlpha + 0.08f).coerceIn(0f, 1f))
+        isHovered -> baseColor.copy(alpha = (baseAlpha + 0.04f).coerceIn(0f, 1f))
+        else -> baseColor
     }
 }

@@ -27,6 +27,8 @@ class SystemApkInstallClient(
         private const val SUCCESS_MARKER = "Success"
         private val INSTALLABLE_EXTENSIONS = setOf("apk", "aab", "apks", "xapk")
         private val ARCHIVE_EXTENSIONS = setOf("apks", "xapk")
+        private const val APK_EXTENSION = "apk"
+        private const val AAB_EXTENSION = "aab"
     }
 
     override suspend fun installApk(
@@ -52,16 +54,15 @@ class SystemApkInstallClient(
 
             target.isFile -> {
                 val extension = target.extension.lowercase()
-                when {
-                    extension == "apk" -> installSingleApk(
+                when (extension) {
+                    APK_EXTENSION -> installSingleApk(
                         deviceId = deviceId,
                         apkFile = target,
                         adbPath = adbPath,
                         options = options,
                         onProgress = onProgress,
                     )
-
-                    extension in ARCHIVE_EXTENSIONS -> installArchiveWithSplits(
+                    in ARCHIVE_EXTENSIONS -> installArchiveWithSplits(
                         deviceId = deviceId,
                         archiveFile = target,
                         adbPath = adbPath,
@@ -69,18 +70,16 @@ class SystemApkInstallClient(
                         bundletoolPath = options.bundletoolPath,
                         onProgress = onProgress,
                     )
-
-                    extension == "aab" -> installAabBundle(
+                    AAB_EXTENSION -> installAabBundle(
                         deviceId = deviceId,
                         aabFile = target,
                         adbPath = adbPath,
                         bundletoolPath = options.bundletoolPath,
                         onProgress = onProgress,
                     )
-
                     else -> error(
                         "Unsupported package format: ${target.absolutePath}. " +
-                            "Supported: ${INSTALLABLE_EXTENSIONS.joinToString(", ")} or split directory"
+                                "Supported: ${INSTALLABLE_EXTENSIONS.joinToString(", ")} or split directory"
                     )
                 }
             }
