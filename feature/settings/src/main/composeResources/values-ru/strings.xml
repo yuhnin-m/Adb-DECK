@@ -14,6 +14,7 @@
     <string name="settings_field_bundletool_placeholder">bundletool</string>
     <string name="settings_field_bundletool_help">Можно указать путь к исполняемому файлу bundletool или к bundletool-all.jar.</string>
 
+    <string name="settings_action_check">Проверить</string>
     <string name="settings_action_check_adb">Проверить ADB</string>
     <string name="settings_action_check_bundletool">Проверить bundletool</string>
     <string name="settings_action_choose_path">Выбрать файл…</string>
@@ -25,6 +26,7 @@
     <string name="settings_theme_dark">Темная</string>
     <string name="settings_theme_system">Системная</string>
     <string name="settings_language_title">Язык</string>
+    <string name="settings_language_title_bilingual">Язык / Language</string>
     <string name="settings_language_system">Системный</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_russian">Русский</string>
@@ -48,6 +50,11 @@
     <string name="settings_stepper_decrease">Уменьшить значение</string>
     <string name="settings_stepper_increase">Увеличить значение</string>
 
+    <string name="settings_adb_download">Скачать: https://developer.android.com/tools/releases/platform-tools</string>
+    <string name="settings_adb_examples_macos">macOS: /opt/homebrew/bin/adb или ~/Library/Android/sdk/platform-tools/adb</string>
+    <string name="settings_adb_examples_linux">Linux: /usr/local/bin/adb или ~/Android/Sdk/platform-tools/adb</string>
+    <string name="settings_adb_examples_windows">Windows: C:\\platform-tools\\adb.exe</string>
+
     <string name="settings_bundletool_download">Скачать bundletool: https://github.com/google/bundletool/releases</string>
     <string name="settings_bundletool_examples_macos">macOS: /opt/homebrew/bin/bundletool или ~/Tools/bundletool/bundletool-all.jar</string>
     <string name="settings_bundletool_examples_linux">Linux: /usr/local/bin/bundletool или ~/tools/bundletool/bundletool-all.jar</string>
@@ -57,10 +64,21 @@
     <string name="settings_field_scrcpy_placeholder">scrcpy</string>
     <string name="settings_field_scrcpy_help">Оставьте "scrcpy", если исполняемый файл находится в PATH системы.</string>
     <string name="settings_action_check_scrcpy">Проверить scrcpy</string>
+    <string name="settings_action_adb_install_guide">Инструкция по установке ADB</string>
+    <string name="settings_action_bundletool_install_guide">Инструкция по установке bundletool</string>
+    <string name="settings_action_scrcpy_install_guide">Инструкция по установке scrcpy</string>
     <string name="settings_scrcpy_download">Скачать scrcpy: https://github.com/Genymobile/scrcpy/releases</string>
     <string name="settings_scrcpy_examples_macos">macOS: /opt/homebrew/bin/scrcpy или ~/Tools/scrcpy/scrcpy</string>
     <string name="settings_scrcpy_examples_linux">Linux: /usr/local/bin/scrcpy или ~/tools/scrcpy/scrcpy</string>
     <string name="settings_scrcpy_examples_windows">Windows: C:\\tools\\scrcpy\\scrcpy.exe</string>
+
+    <string name="settings_section_appearance">Внешний вид</string>
+    <string name="settings_section_external_tools">Внешние инструменты</string>
+    <string name="settings_language_description">Язык отображения интерфейса</string>
+    <string name="settings_theme_description">Цветовая тема приложения</string>
+    <string name="settings_tool_adb_title">ADB</string>
+    <string name="settings_tool_bundletool_title">Bundletool</string>
+    <string name="settings_tool_scrcpy_title">scrcpy</string>
 
     <string name="settings_status_available">Доступен: %1$s</string>
     <string name="settings_status_not_found">Не найден: %1$s</string>

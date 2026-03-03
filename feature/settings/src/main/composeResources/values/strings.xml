@@ -14,6 +14,7 @@
     <string name="settings_field_bundletool_placeholder">bundletool</string>
     <string name="settings_field_bundletool_help">You can specify bundletool executable path or bundletool-all.jar.</string>
 
+    <string name="settings_action_check">Check</string>
     <string name="settings_action_check_adb">Check ADB</string>
     <string name="settings_action_check_bundletool">Check bundletool</string>
     <string name="settings_action_choose_path">Choose file…</string>
@@ -25,6 +26,7 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_theme_system">System</string>
     <string name="settings_language_title">Language</string>
+    <string name="settings_language_title_bilingual">Language / Язык</string>
     <string name="settings_language_system">System</string>
     <string name="settings_language_english">English</string>
     <string name="settings_language_russian">Russian</string>
@@ -48,6 +50,11 @@
     <string name="settings_stepper_decrease">Decrease value</string>
     <string name="settings_stepper_increase">Increase value</string>
 
+    <string name="settings_adb_download">Download: https://developer.android.com/tools/releases/platform-tools</string>
+    <string name="settings_adb_examples_macos">macOS: /opt/homebrew/bin/adb or ~/Library/Android/sdk/platform-tools/adb</string>
+    <string name="settings_adb_examples_linux">Linux: /usr/local/bin/adb or ~/Android/Sdk/platform-tools/adb</string>
+    <string name="settings_adb_examples_windows">Windows: C:\\platform-tools\\adb.exe</string>
+
     <string name="settings_bundletool_download">Download bundletool: https://github.com/google/bundletool/releases</string>
     <string name="settings_bundletool_examples_macos">macOS: /opt/homebrew/bin/bundletool or ~/Tools/bundletool/bundletool-all.jar</string>
     <string name="settings_bundletool_examples_linux">Linux: /usr/local/bin/bundletool or ~/tools/bundletool/bundletool-all.jar</string>
@@ -57,10 +64,21 @@
     <string name="settings_field_scrcpy_placeholder">scrcpy</string>
     <string name="settings_field_scrcpy_help">Leave "scrcpy" if executable is available in system PATH.</string>
     <string name="settings_action_check_scrcpy">Check scrcpy</string>
+    <string name="settings_action_adb_install_guide">ADB installation guide</string>
+    <string name="settings_action_bundletool_install_guide">bundletool installation guide</string>
+    <string name="settings_action_scrcpy_install_guide">scrcpy installation guide</string>
     <string name="settings_scrcpy_download">Download scrcpy: https://github.com/Genymobile/scrcpy/releases</string>
     <string name="settings_scrcpy_examples_macos">macOS: /opt/homebrew/bin/scrcpy or ~/Tools/scrcpy/scrcpy</string>
     <string name="settings_scrcpy_examples_linux">Linux: /usr/local/bin/scrcpy or ~/tools/scrcpy/scrcpy</string>
     <string name="settings_scrcpy_examples_windows">Windows: C:\\tools\\scrcpy\\scrcpy.exe</string>
+
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_external_tools">External Tools</string>
+    <string name="settings_language_description">Display language of the app interface</string>
+    <string name="settings_theme_description">Visual theme of the app</string>
+    <string name="settings_tool_adb_title">ADB</string>
+    <string name="settings_tool_bundletool_title">Bundletool</string>
+    <string name="settings_tool_scrcpy_title">scrcpy</string>
 
     <string name="settings_status_available">Available: %1$s</string>
     <string name="settings_status_not_found">Not found: %1$s</string>
