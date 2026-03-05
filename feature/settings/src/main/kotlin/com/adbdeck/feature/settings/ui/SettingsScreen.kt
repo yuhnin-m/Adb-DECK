@@ -237,15 +237,17 @@ private fun AppearanceSection(
             AdbSegmentedOption(value = AppTheme.DARK, label = themeDark),
         )
     }
+    val appearanceContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f)
+    val appearanceBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
 
     AdbSectionCard(
         title = sectionTitle,
         titleUppercase = true,
-        titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        titleColor = MaterialTheme.colorScheme.primary,
         titleTextStyle = MaterialTheme.typography.labelSmall,
         shape = MaterialTheme.shapes.medium,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+        containerColor = appearanceContainerColor,
+        border = BorderStroke(1.dp, appearanceBorderColor),
         contentPadding = PaddingValues(0.dp),
         contentSpacing = 0.dp,
         modifier = Modifier.fillMaxWidth(),
@@ -360,15 +362,17 @@ private fun ToolsSection(
     val scrcpyMacos = stringResource(Res.string.settings_scrcpy_examples_macos)
     val scrcpyLinux = stringResource(Res.string.settings_scrcpy_examples_linux)
     val scrcpyWindows = stringResource(Res.string.settings_scrcpy_examples_windows)
+    val toolsContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f)
+    val toolsBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
 
     AdbSectionCard(
         title = sectionTitle,
         titleUppercase = true,
-        titleColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        titleColor = MaterialTheme.colorScheme.primary,
         titleTextStyle = MaterialTheme.typography.labelSmall,
         shape = MaterialTheme.shapes.medium,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+        containerColor = toolsContainerColor,
+        border = BorderStroke(1.dp, toolsBorderColor),
         contentPadding = PaddingValues(0.dp),
         contentSpacing = 0.dp,
         modifier = Modifier.fillMaxWidth(),
