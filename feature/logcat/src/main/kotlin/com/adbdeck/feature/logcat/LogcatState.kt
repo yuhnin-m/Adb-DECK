@@ -16,7 +16,7 @@ import com.adbdeck.core.adb.api.logcat.LogcatLevel
  *
  * @param searchQuery      Текстовый поиск в tag + message.
  * @param tagFilter        Фильтр по тегу (case-insensitive substring).
- * @param packageFilter    Фильтр по имени пакета / класса (применяется к tag).
+ * @param packageFilter    Фильтр по имени пакета/процесса (через сопоставление PID -> package/process).
  * @param packageSuggestions Подсказки имён пакетов для autocomplete в фильтре.
  * @param isPackageSuggestionsLoading Идёт ли загрузка подсказок пакетов.
  * @param levelFilter      Минимальный уровень логирования (`null` = все).

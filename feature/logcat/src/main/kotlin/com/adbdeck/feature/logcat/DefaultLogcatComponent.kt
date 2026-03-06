@@ -6,6 +6,8 @@ import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.adb.api.logcat.LogcatParser
 import com.adbdeck.core.adb.api.logcat.LogcatStreamer
+import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
+import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
@@ -20,6 +22,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+
+private const val PACKAGE_PID_REFRESH_INTERVAL_MS = 3_000L
 
 /**
  * Реализация [LogcatComponent].
@@ -50,6 +54,7 @@ class DefaultLogcatComponent(
     componentContext: ComponentContext,
     private val deviceManager: DeviceManager,
     private val logcatStreamer: LogcatStreamer,
+    private val systemMonitorClient: SystemMonitorClient,
     private val packageClient: PackageClient,
     private val settingsRepository: SettingsRepository,
 ) : LogcatComponent, ComponentContext by componentContext {
@@ -83,7 +88,11 @@ class DefaultLogcatComponent(
 
     private var streamJob: Job? = null
     private var packageSuggestionsJob: Job? = null
+    private var packagePidRefreshJob: Job? = null
+    private var packagePidRefreshDeviceId: String? = null
+    private var packagePidSnapshotJob: Job? = null
     private var packageSuggestionsDeviceId: String? = null
+    private var pidPackageIndex: Map<String, Set<String>> = emptyMap()
 
     init {
         // Батчер: каждые 200 мс сливает канал в единый state.update
@@ -111,6 +120,10 @@ class DefaultLogcatComponent(
                 if (packageSuggestionsDeviceId != nextDeviceId) {
                     packageSuggestionsDeviceId = nextDeviceId
                     loadPackageSuggestions(deviceId = nextDeviceId)
+                    pidPackageIndex = emptyMap()
+                    packagePidSnapshotJob?.cancel()
+                    updatePackagePidRefreshJob()
+                    refreshPackagePidIndexOnce()
                 }
             }
         }
@@ -159,6 +172,8 @@ class DefaultLogcatComponent(
                 filteredEntries = trimmedFiltered,
             )
         }
+        refreshPackagePidIndexOnce()
+        updatePackagePidRefreshJob()
 
         streamJob = scope.launch {
             try {
@@ -171,6 +186,7 @@ class DefaultLogcatComponent(
                 _state.update { it.copy(error = LogcatError.StreamFailure(details = e.message)) }
             } finally {
                 _state.update { it.copy(isRunning = false) }
+                updatePackagePidRefreshJob()
             }
         }
     }
@@ -195,6 +211,7 @@ class DefaultLogcatComponent(
         streamJob?.cancel()
         streamJob = null
         _state.update { it.copy(isRunning = false, error = reason) }
+        updatePackagePidRefreshJob()
     }
 
     /**
@@ -313,7 +330,13 @@ class DefaultLogcatComponent(
 
     override fun onSearchChanged(query: String) = updateFilter { copy(searchQuery = query) }
     override fun onTagFilterChanged(tag: String) = updateFilter { copy(tagFilter = tag) }
-    override fun onPackageFilterChanged(pkg: String) = updateFilter { copy(packageFilter = pkg) }
+
+    override fun onPackageFilterChanged(pkg: String) {
+        updateFilter { copy(packageFilter = pkg) }
+        refreshPackagePidIndexOnce()
+        updatePackagePidRefreshJob()
+    }
+
     override fun onLevelFilterChanged(level: LogcatLevel?) = updateFilter { copy(levelFilter = level) }
 
     private inline fun updateFilter(transform: LogcatState.() -> LogcatState) {
@@ -353,9 +376,134 @@ class DefaultLogcatComponent(
             if (!matchesSearch) return false
         }
         if (filter.tag.isNotEmpty() && !entry.tag.contains(filter.tag, ignoreCase = true)) return false
-        if (filter.pkg.isNotEmpty() && !entry.tag.contains(filter.pkg, ignoreCase = true)) return false
+        if (filter.pkg.isNotEmpty() && !matchesPackageFilter(entry, filter.pkg)) return false
         if (filter.level != null && entry.level.priority < filter.level.priority) return false
         return true
+    }
+
+    /**
+     * Проверяет соответствие package-фильтру по PID строки лога.
+     *
+     * Индекс PID пополняется снапшотами процессов через [SystemMonitorClient].
+     */
+    private fun matchesPackageFilter(entry: LogcatEntry, packageFilter: String): Boolean {
+        if (entry.pid.isBlank()) return false
+        val candidates = pidPackageIndex[entry.pid] ?: return false
+        return candidates.any { candidate ->
+            candidate.contains(packageFilter, ignoreCase = true)
+        }
+    }
+
+    /**
+     * Обновляет периодический refresh `PID -> package/process` только когда это нужно.
+     *
+     * Требуется, чтобы package filter оставался корректным при рестартах процессов.
+     */
+    private fun updatePackagePidRefreshJob() {
+        val state = _state.value
+        val deviceId = selectedOnlineDeviceId()
+        val shouldRun = state.isRunning && state.packageFilter.isNotBlank() && deviceId != null
+
+        if (!shouldRun) {
+            packagePidRefreshJob?.cancel()
+            packagePidRefreshJob = null
+            packagePidRefreshDeviceId = null
+            return
+        }
+
+        if (packagePidRefreshJob?.isActive == true && packagePidRefreshDeviceId == deviceId) return
+
+        packagePidRefreshJob?.cancel()
+        packagePidRefreshDeviceId = deviceId
+        packagePidRefreshJob = scope.launch {
+            while (isActive) {
+                val currentDeviceId = selectedOnlineDeviceId()
+                val currentState = _state.value
+                if (currentDeviceId != deviceId || !currentState.isRunning || currentState.packageFilter.isBlank()) {
+                    break
+                }
+
+                refreshPackagePidIndex(deviceId = deviceId)
+                delay(PACKAGE_PID_REFRESH_INTERVAL_MS)
+            }
+        }
+    }
+
+    /**
+     * Однократный refresh индекса PID.
+     *
+     * Запускается при изменении package filter и при старте стрима для быстрого отклика.
+     */
+    private fun refreshPackagePidIndexOnce() {
+        val packageFilter = _state.value.packageFilter
+        val deviceId = selectedOnlineDeviceId()
+        if (packageFilter.isBlank() || deviceId == null) return
+
+        packagePidSnapshotJob?.cancel()
+        packagePidSnapshotJob = scope.launch {
+            refreshPackagePidIndex(deviceId = deviceId)
+        }
+    }
+
+    /**
+     * Забирает список процессов устройства и пополняет индекс `PID -> package/process`.
+     *
+     * Старые PID не удаляются, чтобы фильтрация сохранялась для уже полученных строк;
+     * актуальные PID переопределяются свежими значениями.
+     */
+    private suspend fun refreshPackagePidIndex(deviceId: String) {
+        val adbPath = settingsRepository.resolvedAdbPath()
+        systemMonitorClient.getProcessSnapshot(deviceId = deviceId, adbPath = adbPath)
+            .onSuccess { snapshot ->
+                val fresh = mutableMapOf<String, Set<String>>()
+                snapshot.processes.forEach { process ->
+                    val pid = process.pid.toString()
+                    val candidates = buildPackageCandidates(process)
+                    if (candidates.isNotEmpty()) {
+                        fresh[pid] = candidates
+                    }
+                }
+
+                if (fresh.isEmpty()) return@onSuccess
+
+                val merged = pidPackageIndex.toMutableMap()
+                fresh.forEach { (pid, candidates) ->
+                    merged[pid] = candidates
+                }
+                pidPackageIndex = merged
+
+                if (_state.value.packageFilter.isNotBlank()) {
+                    reapplyAllFilters()
+                }
+            }
+    }
+
+    /**
+     * Кандидаты для package match: packageName и processName (+ базовое имя до `:`).
+     */
+    private fun buildPackageCandidates(process: ProcessInfo): Set<String> {
+        val out = linkedSetOf<String>()
+        fun add(value: String) {
+            val normalized = value.trim()
+            if (normalized.isNotEmpty()) {
+                out.add(normalized)
+                out.add(normalized.substringBefore(':'))
+            }
+        }
+        add(process.packageName)
+        add(process.name)
+        return out
+    }
+
+    private fun selectedOnlineDeviceId(): String? = deviceManager.selectedDeviceFlow.value
+        ?.takeIf { it.state == DeviceState.DEVICE }
+        ?.deviceId
+
+    private fun reapplyAllFilters() {
+        _state.update { current ->
+            val filter = buildFilter(current)
+            current.copy(filteredEntries = applyFilters(current.entries, filter))
+        }
     }
 
     // Отображение вывода

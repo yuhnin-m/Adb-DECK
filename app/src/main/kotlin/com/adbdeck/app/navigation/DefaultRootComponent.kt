@@ -216,6 +216,7 @@ class DefaultRootComponent(
                 componentContext = componentContext,
                 deviceManager = deviceManager,
                 logcatStreamer = logcatStreamer,
+                systemMonitorClient = systemMonitorClient,
                 packageClient = packageClient,
                 settingsRepository = settingsRepository,
             ).also { component ->

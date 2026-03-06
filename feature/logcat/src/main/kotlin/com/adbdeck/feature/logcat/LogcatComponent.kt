@@ -30,7 +30,7 @@ interface LogcatComponent {
     /** Изменить фильтр по тегу (case-insensitive substring). */
     fun onTagFilterChanged(tag: String)
 
-    /** Изменить фильтр по пакету / классу (применяется к tag). */
+    /** Изменить фильтр по пакету / процессу (через PID сопоставление процессов). */
     fun onPackageFilterChanged(pkg: String)
 
     /** Установить минимальный уровень лога (`null` = все уровни). */
