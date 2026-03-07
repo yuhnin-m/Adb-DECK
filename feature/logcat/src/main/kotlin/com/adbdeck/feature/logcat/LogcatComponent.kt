@@ -59,6 +59,14 @@ interface LogcatComponent {
      */
     fun onAutoScrollChanged(value: Boolean)
 
+    /**
+     * Включить/выключить плавную по-кадровую публикацию новых строк.
+     *
+     * `true` — "живой" поток с небольшим интервалом между публикациями.
+     * `false` — публикация без искусственной задержки.
+     */
+    fun onSmoothStreamAnimationChanged(value: Boolean)
+
     // ── Font settings ──────────────────────────────────────────
 
     /** Изменить шрифтовое семейство строк лога. */

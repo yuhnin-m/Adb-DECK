@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import adbdeck.feature.logcat.generated.resources.Res
 import adbdeck.feature.logcat.generated.resources.*
+import androidx.compose.animation.core.snap
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
@@ -490,6 +492,7 @@ private fun CompactTextField(
  * - FAB «стрелка вниз» появляется, когда автоскролл отключен.
  */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun LogList(
     state: LogcatState,
     component: LogcatComponent,
@@ -587,10 +590,21 @@ private fun LogList(
                         items = state.filteredEntries,
                         key = { entry -> entry.id },
                     ) { entry ->
+                        val itemAnimationModifier = if (state.smoothStreamAnimation) {
+                            // Оставляем только перемещение без fade, чтобы избежать "моргания" viewport.
+                            Modifier.animateItem(
+                                fadeInSpec = snap(),
+                                fadeOutSpec = snap(),
+                            )
+                        } else {
+                            Modifier
+                        }
+
                         LogEntryRow(
                             entry = entry,
                             state = state,
                             selected = entry.id in selectedEntryIds,
+                            modifier = itemAnimationModifier,
                             hasAnySelection = selectedEntryIds.isNotEmpty(),
                             onClick = {
                                 listFocusRequester.requestFocus()

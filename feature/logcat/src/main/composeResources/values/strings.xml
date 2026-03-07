@@ -44,6 +44,7 @@
     <string name="logcat_settings_mode_compact">Compact</string>
     <string name="logcat_settings_mode_full">Full</string>
     <string name="logcat_settings_use_colors_label">Use colors</string>
+    <string name="logcat_settings_smooth_stream_label">Smooth live stream</string>
     <string name="logcat_settings_font_section_title">Font</string>
     <string name="logcat_settings_font_mono">Mono</string>
     <string name="logcat_settings_font_sans">Sans</string>

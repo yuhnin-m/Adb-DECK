@@ -23,6 +23,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+private const val STREAM_FRAME_DELAY_MS = 16L
+private const val STREAM_DRAIN_TARGET_FRAMES = 3
+private const val STREAM_MAX_FRAME_CHUNK = 512
+private const val STREAM_FORCE_FLUSH_THRESHOLD = 4_096
+private const val STREAM_STAGING_CAPACITY = 16_384
 private const val PACKAGE_PID_REFRESH_INTERVAL_MS = 3_000L
 
 /**
@@ -34,7 +39,8 @@ private const val PACKAGE_PID_REFRESH_INTERVAL_MS = 3_000L
  *   → logcatStreamer.stream() : Flow<String>   [callbackFlow, IO]
  *   → LogcatParser.parse()
  *   → pendingChannel : Channel<LogcatEntry>    [capacity = 4096]
- *   → Batcher (каждые 200 мс, Main dispatcher)
+ *   → stagingBuffer : ArrayDeque<LogcatEntry>
+ *   → Publisher (кадр ≈ 16 мс, Main dispatcher)
  *   → _state.update()
  *   → UI
  * ```
@@ -42,10 +48,11 @@ private const val PACKAGE_PID_REFRESH_INTERVAL_MS = 3_000L
  * ## Безопасность ресурсов
  * - OS-процесс уничтожается при отмене [streamJob] через [awaitClose] в [SystemLogcatStreamer].
  * - [coroutineScope] Essenty отменяется при разрушении Decompose-компонента.
- * - [pendingChannel] дренируется перед [onClear], чтобы батчер не вернул старые данные.
+ * - [pendingChannel] и staging-буфер дренируются перед [onClear], чтобы старые строки не вернулись.
  *
  * ## Производительность
- * - UI обновляется ≤ 5 раз/сек (батч 200 мс) вместо раза на каждую строку.
+ * - Публикация строк идёт по кадрам (~16 мс) с адаптивным размером чанка.
+ * - При росте очереди включается ускоренный drain, чтобы UI не отставал от потока.
  * - Буфер ограничен [maxBufferedLines] — FIFO, старые строки удаляются.
  * - [applyFilters] O(n) только на изменение данных или фильтра.
  * - LazyColumn использует `key { entry.id }` — нет лишних recomposition.
@@ -70,6 +77,7 @@ class DefaultLogcatComponent(
                 showMillis = s.logcatShowMillis,
                 coloredLevels = s.logcatColoredLevels,
                 autoScroll = s.logcatAutoScroll,
+                smoothStreamAnimation = s.logcatSmoothStreamAnimation,
                 maxBufferedLines = s.logcatMaxBufferedLines.coerceAtLeast(100),
                 activeDeviceId = deviceManager.selectedDeviceFlow.value?.deviceId,
                 fontFamily = LogcatFontFamily.fromString(s.logcatFontFamily),
@@ -80,10 +88,11 @@ class DefaultLogcatComponent(
     override val state: StateFlow<LogcatState> = _state.asStateFlow()
 
     /**
-     * Channel между IO-читателем и UI-батчером.
+     * Channel между IO-читателем и UI-публикатором.
      * При переполнении `trySend` отбрасывает строки (acceptable — лучше drop, чем OOM).
      */
     private val pendingChannel = Channel<LogcatEntry>(capacity = 4096)
+    private val stagingBuffer = ArrayDeque<LogcatEntry>()
     private val entriesBuffer = ArrayDeque<LogcatEntry>()
 
     private var streamJob: Job? = null
@@ -95,11 +104,12 @@ class DefaultLogcatComponent(
     private var pidPackageIndex: Map<String, Set<String>> = emptyMap()
 
     init {
-        // Батчер: каждые 200 мс сливает канал в единый state.update
+        // Публикатор: каждый кадр (~16 мс) подбирает часть строк из staging-буфера.
         scope.launch {
             while (isActive) {
-                delay(200)
-                drainAndUpdateState()
+                drainPendingToStaging()
+                publishStagedFrame()
+                delay(STREAM_FRAME_DELAY_MS)
             }
         }
 
@@ -194,8 +204,9 @@ class DefaultLogcatComponent(
     override fun onStop() = stopStream(reason = null)
 
     override fun onClear() {
-        // Вычистим канал иначе сборщик добавит старые данные после очистки
+        // Вычистим каналы/буферы, иначе публикатор вернет старые данные после очистки.
         while (pendingChannel.tryReceive().isSuccess) { /* drain */ }
+        stagingBuffer.clear()
         entriesBuffer.clear()
         _state.update {
             it.copy(
@@ -285,18 +296,61 @@ class DefaultLogcatComponent(
         repeat(overflow) { entriesBuffer.removeFirst() }
     }
 
-    // Сборщик
+    // Публикация строк
 
     /**
-     *  собирает их пачкой и обновляет state редко, но крупно
-     *  adb logcat может выдавать тысячи строк в секунду
+     * Забирает все новые строки из входного канала и кладет в staging-буфер.
+     *
+     * staging-буфер ограничен, чтобы не рос без границ при экстремальной нагрузке.
      */
-    private fun drainAndUpdateState() {
-        val batch = mutableListOf<LogcatEntry>()
+    private fun drainPendingToStaging() {
         while (true) {
             val next = pendingChannel.tryReceive().getOrNull() ?: break
-            batch.add(next)
+            stagingBuffer.addLast(next)
         }
+
+        val overflow = (stagingBuffer.size - STREAM_STAGING_CAPACITY).coerceAtLeast(0)
+        repeat(overflow) { stagingBuffer.removeFirst() }
+    }
+
+    /**
+     * Публикует порцию строк в UI за один кадр.
+     *
+     * В smooth-режиме размер порции адаптируется по backlog.
+     * При сильном отставании включается "быстрый слив", чтобы не копить хвост.
+     */
+    private fun publishStagedFrame() {
+        if (stagingBuffer.isEmpty()) return
+
+        val currentState = _state.value
+        val chunkSize = calculateFrameChunkSize(
+            backlog = stagingBuffer.size,
+            smoothEnabled = currentState.smoothStreamAnimation,
+        )
+        if (chunkSize <= 0) return
+
+        val actual = minOf(chunkSize, stagingBuffer.size)
+        val batch = ArrayList<LogcatEntry>(actual)
+        repeat(actual) { batch.add(stagingBuffer.removeFirst()) }
+        appendBatchToState(batch)
+    }
+
+    private fun calculateFrameChunkSize(backlog: Int, smoothEnabled: Boolean): Int {
+        if (backlog <= 0) return 0
+        if (!smoothEnabled) return backlog
+        if (backlog >= STREAM_FORCE_FLUSH_THRESHOLD) return backlog
+
+        val adaptive = (backlog + STREAM_DRAIN_TARGET_FRAMES - 1) / STREAM_DRAIN_TARGET_FRAMES
+        return adaptive.coerceIn(1, STREAM_MAX_FRAME_CHUNK)
+    }
+
+    /**
+     * Добавляет batch в state с инкрементальным обновлением списков.
+     *
+     * Если буфер не переполнен, используем `current.entries + batch`, чтобы избежать полного
+     * пересчета списка на каждом кадре.
+     */
+    private fun appendBatchToState(batch: List<LogcatEntry>) {
         if (batch.isEmpty()) return
 
         _state.update { current ->
@@ -305,10 +359,14 @@ class DefaultLogcatComponent(
             trimBufferTo(current.maxBufferedLines)
             val overflow = (previousSize + batch.size - current.maxBufferedLines).coerceAtLeast(0)
 
-            val newEntries = entriesBuffer.toList()
+            val newEntries = if (overflow == 0) {
+                current.entries + batch
+            } else {
+                entriesBuffer.toList()
+            }
+
             val filter = buildFilter(current)
             val hasActiveFilter = hasActiveFilter(filter)
-
             val newFiltered = when {
                 !hasActiveFilter -> newEntries
                 overflow == 0 -> {
@@ -522,28 +580,33 @@ class DefaultLogcatComponent(
     override fun onToggleShowMillis() = _state.update { it.copy(showMillis = !it.showMillis) }
     override fun onToggleColoredLevels() = _state.update { it.copy(coloredLevels = !it.coloredLevels) }
     override fun onAutoScrollChanged(value: Boolean) = _state.update { it.copy(autoScroll = value) }
+    override fun onSmoothStreamAnimationChanged(value: Boolean) {
+        _state.update { it.copy(smoothStreamAnimation = value) }
+        saveLogcatVisualSettings()
+    }
 
     // ── Font ───────────────────────────────────────────────────────────────────
 
     override fun onFontFamilyChanged(family: LogcatFontFamily) {
         _state.update { it.copy(fontFamily = family) }
-        saveFontSettings()
+        saveLogcatVisualSettings()
     }
 
     override fun onFontSizeChanged(size: Int) {
         val coerced = size.coerceIn(8, 24)
         _state.update { it.copy(fontSizeSp = coerced) }
-        saveFontSettings()
+        saveLogcatVisualSettings()
     }
 
-    /** Сохраняет только шрифтовые настройки асинхронно. */
-    private fun saveFontSettings() {
+    /** Сохраняет визуальные logcat-настройки асинхронно. */
+    private fun saveLogcatVisualSettings() {
         scope.launch {
             val current = settingsRepository.getSettings()
             settingsRepository.saveSettings(
                 current.copy(
                     logcatFontFamily = _state.value.fontFamily.name,
                     logcatFontSizeSp = _state.value.fontSizeSp,
+                    logcatSmoothStreamAnimation = _state.value.smoothStreamAnimation,
                 )
             )
         }

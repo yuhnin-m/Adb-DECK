@@ -95,6 +95,7 @@ private class LogcatPreviewComponent : LogcatComponent {
     override fun onToggleShowMillis() = Unit
     override fun onToggleColoredLevels() = Unit
     override fun onAutoScrollChanged(value: Boolean) = Unit
+    override fun onSmoothStreamAnimationChanged(value: Boolean) = Unit
     override fun onFontFamilyChanged(family: com.adbdeck.feature.logcat.LogcatFontFamily) = Unit
     override fun onFontSizeChanged(size: Int) = Unit
 }

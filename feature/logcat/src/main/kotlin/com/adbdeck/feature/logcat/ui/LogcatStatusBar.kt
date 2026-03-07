@@ -84,7 +84,7 @@ internal fun LogcatStatusBar(state: LogcatState) {
             )
         }
 
-        if (state.totalLineCount > 0) {
+        if (state.entries.isNotEmpty()) {
             val hasFilter = state.levelFilter != null ||
                     state.searchQuery.isNotBlank() ||
                     state.tagFilter.isNotBlank() ||
@@ -94,12 +94,12 @@ internal fun LogcatStatusBar(state: LogcatState) {
                     stringResource(
                         Res.string.logcat_status_lines_filtered,
                         state.filteredEntries.size,
-                        state.totalLineCount,
+                        state.entries.size,
                     )
                 } else {
                     stringResource(
                         Res.string.logcat_status_lines_total,
-                        state.totalLineCount,
+                        state.entries.size,
                     )
                 },
                 style = MaterialTheme.typography.labelSmall,

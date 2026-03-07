@@ -27,6 +27,7 @@ import com.adbdeck.core.adb.api.logcat.LogcatLevel
  * @param showMillis       Отображать миллисекунды.
  * @param coloredLevels    Цветовая подсветка по уровню.
  * @param autoScroll       Автоскролл вниз при поступлении новых строк.
+ * @param smoothStreamAnimation Включена ли плавная по-кадровая публикация новых строк.
  * @param maxBufferedLines Лимит буфера (из AppSettings на момент старта).
  * @param fontFamily       Шрифтовое семейство для строк лога.
  * @param fontSizeSp       Размер шрифта строк лога в sp (диапазон 8–24).
@@ -53,6 +54,7 @@ data class LogcatState(
     val showMillis: Boolean = true,
     val coloredLevels: Boolean = true,
     val autoScroll: Boolean = true,
+    val smoothStreamAnimation: Boolean = true,
     val maxBufferedLines: Int = 5_000,
     val fontFamily: LogcatFontFamily = LogcatFontFamily.MONOSPACE,
     val fontSizeSp: Int = 12,

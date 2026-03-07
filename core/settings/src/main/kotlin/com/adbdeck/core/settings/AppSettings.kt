@@ -22,6 +22,7 @@ import kotlinx.serialization.Serializable
  * @param logcatColoredLevels    Цветовая подсветка уровней лога.
  * @param logcatMaxBufferedLines Максимум строк в in-memory буфере (FIFO, удаляются старые).
  * @param logcatAutoScroll       Автоматический скролл вниз при поступлении новых строк.
+ * @param logcatSmoothStreamAnimation Плавная по-кадровая публикация новых строк (эффект "живого" потока).
  * @param logcatFontFamily       Семейство шрифта (имя enum LogcatFontFamily, напр. "MONOSPACE").
  * @param logcatFontSizeSp       Размер шрифта в sp (диапазон 8–24).
  *
@@ -49,6 +50,7 @@ data class AppSettings(
     val logcatColoredLevels: Boolean = true,
     val logcatMaxBufferedLines: Int = 5_000,
     val logcatAutoScroll: Boolean = true,
+    val logcatSmoothStreamAnimation: Boolean = true,
     val logcatFontFamily: String = "MONOSPACE",
     val logcatFontSizeSp: Int = 12,
 

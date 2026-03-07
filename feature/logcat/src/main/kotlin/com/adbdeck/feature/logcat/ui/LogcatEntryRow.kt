@@ -60,6 +60,7 @@ internal fun LogEntryRow(
     entry: LogcatEntry,
     state: LogcatState,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
     hasAnySelection: Boolean,
     onCopyLine: () -> Unit,
@@ -74,7 +75,7 @@ internal fun LogEntryRow(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(selectionColor)
             .onPointerEvent(PointerEventType.Press) { event ->

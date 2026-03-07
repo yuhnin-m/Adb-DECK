@@ -108,7 +108,12 @@ internal fun LogcatSettingsPanel(
                 LabeledSwitchRow(
                     label = stringResource(Res.string.logcat_settings_use_colors_label),
                     checked = state.coloredLevels,
-                    onCheckedChange = component::onToggleColoredLevels,
+                    onCheckedChange = { component.onToggleColoredLevels() },
+                )
+                LabeledSwitchRow(
+                    label = stringResource(Res.string.logcat_settings_smooth_stream_label),
+                    checked = state.smoothStreamAnimation,
+                    onCheckedChange = component::onSmoothStreamAnimationChanged,
                 )
             }
 
@@ -157,17 +162,17 @@ internal fun LogcatSettingsPanel(
                 LabeledSwitchRow(
                     label = stringResource(Res.string.logcat_settings_show_date_label),
                     checked = state.showDate,
-                    onCheckedChange = component::onToggleShowDate,
+                    onCheckedChange = { component.onToggleShowDate() },
                 )
                 LabeledSwitchRow(
                     label = stringResource(Res.string.logcat_settings_show_time_label),
                     checked = state.showTime,
-                    onCheckedChange = component::onToggleShowTime,
+                    onCheckedChange = { component.onToggleShowTime() },
                 )
                 LabeledSwitchRow(
                     label = stringResource(Res.string.logcat_settings_show_millis_label),
                     checked = state.showMillis,
-                    onCheckedChange = component::onToggleShowMillis,
+                    onCheckedChange = { component.onToggleShowMillis() },
                 )
             }
         }
@@ -213,7 +218,7 @@ private fun LogcatSettingsSection(
 private fun LabeledSwitchRow(
     label: String,
     checked: Boolean,
-    onCheckedChange: () -> Unit,
+    onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -226,7 +231,7 @@ private fun LabeledSwitchRow(
         Spacer(modifier = Modifier.weight(1f))
         Switch(
             checked = checked,
-            onCheckedChange = { onCheckedChange() },
+            onCheckedChange = onCheckedChange,
         )
     }
 }
