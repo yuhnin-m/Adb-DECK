@@ -19,6 +19,30 @@ adb logcat [-v <format>] [filter-specs...]
 
 ---
 
+### Импорт / экспорт логов
+
+#### Импорт
+- Кнопка **Импорт / Экспорт** → пункт **Импорт лога**
+- Поддерживаемые форматы:
+  - обычный текстовый `threadtime` (`adb logcat -v threadtime`)
+  - JSON-экспорт Android Studio (`.logcat`, поле `logcatMessages`)
+- После импорта экран переключается в **режим файла**:
+  - live-стрим остановлен;
+  - вместо **Start / Stop** показывается кнопка **Закрыть файл**;
+  - поиск, фильтры и скролл продолжают работать;
+  - автодополнение фильтра по пакету отключено.
+
+#### Закрытие файла
+- **Закрыть файл** очищает импортированные записи и возвращает Logcat в обычный LIVE-режим.
+
+#### Экспорт
+- Перед экспортом live-мониторинг останавливается.
+- Затем открывается системный диалог выбора пути.
+- Экспортируется **текущий список `state.entries`**.
+- Формат экспорта: plain text `logcat` (строка на запись), пригодный для повторного импорта.
+
+---
+
 ### Фильтрация
 
 #### По уровню лога
@@ -77,7 +101,7 @@ adb logcat [-v <format>] [filter-specs...]
 
 ### Дополнительно
 - Автопрокрутка вниз при новых записях (toggle)
-- Статусбар: количество записей в буфере, статус стриминга (Running / Stopped)
+- Статусбар: количество записей в буфере, статус стриминга/режима файла
 - Плавное смещение элементов списка при добавлении новых строк (`animateItem`).
 
 ## Архитектура модуля
@@ -85,10 +109,11 @@ adb logcat [-v <format>] [filter-specs...]
 ```
 feature/logcat/
 ├── LogcatComponent             — публичный интерфейс: start/stop, filter, display settings
-├── DefaultLogcatComponent      — стриминг через ProcessRunner, управление буфером
+├── DefaultLogcatComponent      — стриминг через ProcessRunner, управление буфером + file mode
 ├── LogcatState                 — Running status, буфер записей, фильтры,
 │                                 LogcatDisplayMode (COMPACT/FULL),
 │                                 LogcatFontFamily, шрифт
+├── LogcatFileCodec             — импорт/экспорт (threadtime + Android Studio JSON)
 ├── LogcatError                 — типы ошибок
 ├── LogcatDisplayMode           — COMPACT / FULL
 ├── LogcatFontFamily            — доступные шрифты

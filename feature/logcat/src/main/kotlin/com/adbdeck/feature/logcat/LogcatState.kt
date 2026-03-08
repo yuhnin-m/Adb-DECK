@@ -19,6 +19,8 @@ import com.adbdeck.core.adb.api.logcat.LogcatLevel
  * @param packageFilter    Фильтр по имени пакета/процесса (через сопоставление PID -> package/process).
  * @param packageSuggestions Подсказки имён пакетов для autocomplete в фильтре.
  * @param isPackageSuggestionsLoading Идёт ли загрузка подсказок пакетов.
+ * @param isFileMode       `true`, если открыт импортированный лог-файл (режим просмотра файла).
+ * @param openedFileName   Имя открытого файла лога в режиме [isFileMode] (без пути).
  * @param levelFilter      Минимальный уровень логирования (`null` = все).
  *
  * @param displayMode      Компактный или полный режим отображения.
@@ -46,6 +48,8 @@ data class LogcatState(
     val packageFilter: String = "",
     val packageSuggestions: List<String> = emptyList(),
     val isPackageSuggestionsLoading: Boolean = false,
+    val isFileMode: Boolean = false,
+    val openedFileName: String? = null,
     val levelFilter: LogcatLevel? = null,
 
     val displayMode: LogcatDisplayMode = LogcatDisplayMode.COMPACT,

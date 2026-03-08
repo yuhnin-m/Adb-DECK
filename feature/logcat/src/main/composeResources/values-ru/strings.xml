@@ -1,8 +1,15 @@
 <resources>
     <string name="logcat_toolbar_level_button">Уровень: %1$s</string>
     <string name="logcat_level_all_short">Все</string>
+    <string name="logcat_toolbar_import_export">Импорт/Экспорт</string>
+    <string name="logcat_toolbar_import">Импорт Logcat лога в файл</string>
+    <string name="logcat_toolbar_export">Экспорт Logcat лога из файла</string>
+    <string name="logcat_toolbar_close_file">Закрыть файл</string>
+    <string name="logcat_import_dialog_title">Импорт Logcat файла</string>
+    <string name="logcat_export_dialog_title">Экспорт Logcat файла</string>
+    <string name="logcat_file_filter_description">Logcat файлы (*.logcat, *.txt, *.log, *.json)</string>
 
-    <string name="logcat_toolbar_copy_selected">Скопировать выделенное (%1$d)</string>
+    <string name="logcat_toolbar_copy_selected">Копировать (%1$d)</string>
 
     <string name="logcat_level_verbose">Подробно (V)</string>
     <string name="logcat_level_debug">Отладка (D)</string>
@@ -22,15 +29,21 @@
     <string name="logcat_error_device_unavailable">Устройство %1$s недоступно (%2$s).</string>
     <string name="logcat_error_stream_generic">Ошибка потока logcat</string>
     <string name="logcat_error_stream_with_reason">Ошибка потока logcat: %1$s</string>
+    <string name="logcat_error_import_generic">Ошибка импорта logcat файла</string>
+    <string name="logcat_error_import_with_reason">Ошибка импорта logcat файла: %1$s</string>
+    <string name="logcat_error_export_generic">Ошибка экспорта logcat файла</string>
+    <string name="logcat_error_export_with_reason">Ошибка экспорта logcat файла: %1$s</string>
     <string name="logcat_empty_no_device_title">Устройство не выбрано</string>
     <string name="logcat_empty_no_device_subtitle">Выберите устройство в верхней панели, затем нажмите Старт</string>
     <string name="logcat_empty_waiting_stream">Ожидание вывода logcat...</string>
     <string name="logcat_empty_no_results">Нет записей, соответствующих фильтрам</string>
+    <string name="logcat_empty_file_mode">Открытый файл не содержит записей</string>
     <string name="logcat_empty_start_hint">Нажмите Старт для начала захвата logcat</string>
 
     <string name="logcat_context_select_all_filtered">Выделить все отфильтрованные</string>
 
     <string name="logcat_status_streaming">Поток</string>
+    <string name="logcat_status_file_mode">Файл</string>
     <string name="logcat_status_error">Ошибка</string>
     <string name="logcat_status_stopped">Остановлен</string>
     <string name="logcat_status_paused">Пауза</string>

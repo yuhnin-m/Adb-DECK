@@ -1,6 +1,13 @@
 <resources>
     <string name="logcat_toolbar_level_button">Level: %1$s</string>
     <string name="logcat_level_all_short">All</string>
+    <string name="logcat_toolbar_import_export">Import / Export</string>
+    <string name="logcat_toolbar_import">Import log</string>
+    <string name="logcat_toolbar_export">Export log</string>
+    <string name="logcat_toolbar_close_file">Close file</string>
+    <string name="logcat_import_dialog_title">Import Logcat file</string>
+    <string name="logcat_export_dialog_title">Export Logcat file</string>
+    <string name="logcat_file_filter_description">Logcat files (*.logcat, *.txt, *.log, *.json)</string>
 
     <string name="logcat_toolbar_copy_selected">Copy selected (%1$d)</string>
 
@@ -22,15 +29,21 @@
     <string name="logcat_error_device_unavailable">Device %1$s is unavailable (%2$s).</string>
     <string name="logcat_error_stream_generic">Logcat stream error</string>
     <string name="logcat_error_stream_with_reason">Logcat stream error: %1$s</string>
+    <string name="logcat_error_import_generic">Logcat import failed</string>
+    <string name="logcat_error_import_with_reason">Logcat import failed: %1$s</string>
+    <string name="logcat_error_export_generic">Logcat export failed</string>
+    <string name="logcat_error_export_with_reason">Logcat export failed: %1$s</string>
     <string name="logcat_empty_no_device_title">No device selected</string>
     <string name="logcat_empty_no_device_subtitle">Select a device in the top bar, then press Start</string>
     <string name="logcat_empty_waiting_stream">Waiting for logcat output...</string>
     <string name="logcat_empty_no_results">No records match the active filters</string>
+    <string name="logcat_empty_file_mode">Opened file does not contain records</string>
     <string name="logcat_empty_start_hint">Press Start to begin capturing logcat</string>
 
     <string name="logcat_context_select_all_filtered">Select all filtered</string>
 
     <string name="logcat_status_streaming">Streaming</string>
+    <string name="logcat_status_file_mode">File</string>
     <string name="logcat_status_error">Error</string>
     <string name="logcat_status_stopped">Stopped</string>
     <string name="logcat_status_paused">Paused</string>

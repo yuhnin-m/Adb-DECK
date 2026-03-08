@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.decompose.extensions.compose)
     implementation(libs.coroutines.core)
     implementation(libs.essenty.lifecycle.coroutines)
+    implementation(libs.serialization.json)
 
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))

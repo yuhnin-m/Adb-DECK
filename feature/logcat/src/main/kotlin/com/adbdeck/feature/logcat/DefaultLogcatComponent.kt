@@ -12,7 +12,9 @@ import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import java.io.File
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val STREAM_FRAME_DELAY_MS = 16L
 private const val STREAM_DRAIN_TARGET_FRAMES = 3
@@ -101,7 +104,9 @@ class DefaultLogcatComponent(
     private var packagePidRefreshDeviceId: String? = null
     private var packagePidSnapshotJob: Job? = null
     private var packageSuggestionsDeviceId: String? = null
+    private var fileTransferJob: Job? = null
     private var pidPackageIndex: Map<String, Set<String>> = emptyMap()
+    private var entryPackageIndex: Map<Long, Set<String>> = emptyMap()
 
     init {
         // Публикатор: каждый кадр (~16 мс) подбирает часть строк из staging-буфера.
@@ -116,8 +121,13 @@ class DefaultLogcatComponent(
         // Остановка потока при смене активного устройства
         scope.launch {
             deviceManager.selectedDeviceFlow.collect { device ->
-                val streamingFor = _state.value.activeDeviceId
-                if (_state.value.isRunning && device?.deviceId != streamingFor) {
+                val currentState = _state.value
+                if (currentState.isFileMode) {
+                    return@collect
+                }
+
+                val streamingFor = currentState.activeDeviceId
+                if (currentState.isRunning && device?.deviceId != streamingFor) {
                     stopStream(reason = null)
                 }
 
@@ -161,6 +171,7 @@ class DefaultLogcatComponent(
                 }
                 return
             }
+            _state.value.isFileMode -> return
             _state.value.isRunning -> return
         }
 
@@ -204,10 +215,7 @@ class DefaultLogcatComponent(
     override fun onStop() = stopStream(reason = null)
 
     override fun onClear() {
-        // Вычистим каналы/буферы, иначе публикатор вернет старые данные после очистки.
-        while (pendingChannel.tryReceive().isSuccess) { /* drain */ }
-        stagingBuffer.clear()
-        entriesBuffer.clear()
+        resetEntriesAndBuffers()
         _state.update {
             it.copy(
                 entries = emptyList(),
@@ -215,6 +223,100 @@ class DefaultLogcatComponent(
                 totalLineCount = 0,
                 error = null,
             )
+        }
+    }
+
+    override fun onImportFromFile(path: String) {
+        fileTransferJob?.cancel()
+        fileTransferJob = scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    val content = File(path).readText()
+                    LogcatFileCodec.importText(content)
+                }
+            }.onSuccess { imported ->
+                stopStream(reason = null)
+                resetEntriesAndBuffers()
+                pidPackageIndex = emptyMap()
+                packagePidSnapshotJob?.cancel()
+                packagePidRefreshJob?.cancel()
+                packagePidRefreshJob = null
+                packagePidRefreshDeviceId = null
+
+                entriesBuffer.addAll(imported.entries)
+                entryPackageIndex = imported.packageIndexByEntryId
+
+                _state.update { current ->
+                    val updated = current.copy(
+                        isRunning = false,
+                        isFileMode = true,
+                        openedFileName = File(path).name,
+                        activeDeviceId = null,
+                        entries = imported.entries,
+                        totalLineCount = imported.entries.size,
+                        packageSuggestions = emptyList(),
+                        isPackageSuggestionsLoading = false,
+                        error = null,
+                    )
+                    val filter = buildFilter(updated)
+                    updated.copy(filteredEntries = applyFilters(updated.entries, filter))
+                }
+            }.onFailure { error ->
+                _state.update {
+                    it.copy(error = LogcatError.ImportFailure(details = error.message))
+                }
+            }
+        }
+    }
+
+    override fun onCloseImportedFile() {
+        if (!_state.value.isFileMode) return
+
+        fileTransferJob?.cancel()
+        stopStream(reason = null)
+        resetEntriesAndBuffers()
+        pidPackageIndex = emptyMap()
+        packagePidSnapshotJob?.cancel()
+
+        val nextDeviceId = selectedOnlineDeviceId()
+
+        _state.update {
+            it.copy(
+                isRunning = false,
+                isFileMode = false,
+                openedFileName = null,
+                activeDeviceId = nextDeviceId,
+                entries = emptyList(),
+                filteredEntries = emptyList(),
+                totalLineCount = 0,
+                error = null,
+            )
+        }
+
+        packageSuggestionsDeviceId = nextDeviceId
+        loadPackageSuggestions(deviceId = nextDeviceId)
+        refreshPackagePidIndexOnce()
+        updatePackagePidRefreshJob()
+    }
+
+    override fun onExportToFile(path: String) {
+        fileTransferJob?.cancel()
+        fileTransferJob = scope.launch {
+            stopStream(reason = null)
+
+            val snapshot = _state.value.entries
+            runCatching {
+                val payload = LogcatFileCodec.exportAsText(snapshot)
+                withContext(Dispatchers.IO) {
+                    File(path).writeText(payload)
+                }
+            }.onSuccess {
+                _state.update { it.copy(error = null) }
+            }.onFailure { error ->
+                _state.update {
+                    it.copy(error = LogcatError.ExportFailure(details = error.message))
+                }
+            }
         }
     }
 
@@ -226,10 +328,33 @@ class DefaultLogcatComponent(
     }
 
     /**
+     * Полностью очищает очереди/буферы logcat.
+     *
+     * Важно дренировать [pendingChannel], иначе публикатор вернет старые строки
+     * в UI уже после очистки.
+     */
+    private fun resetEntriesAndBuffers() {
+        while (pendingChannel.tryReceive().isSuccess) { /* drain */ }
+        stagingBuffer.clear()
+        entriesBuffer.clear()
+        entryPackageIndex = emptyMap()
+    }
+
+    /**
      * Загружает список пакетов активного устройства для autocomplete-фильтра.
      */
     private fun loadPackageSuggestions(deviceId: String?) {
         packageSuggestionsJob?.cancel()
+
+        if (_state.value.isFileMode) {
+            _state.update {
+                it.copy(
+                    packageSuggestions = emptyList(),
+                    isPackageSuggestionsLoading = false,
+                )
+            }
+            return
+        }
 
         if (deviceId == null) {
             _state.update {
@@ -391,6 +516,7 @@ class DefaultLogcatComponent(
 
     override fun onPackageFilterChanged(pkg: String) {
         updateFilter { copy(packageFilter = pkg) }
+        if (_state.value.isFileMode) return
         refreshPackagePidIndexOnce()
         updatePackagePidRefreshJob()
     }
@@ -445,6 +571,19 @@ class DefaultLogcatComponent(
      * Индекс PID пополняется снапшотами процессов через [SystemMonitorClient].
      */
     private fun matchesPackageFilter(entry: LogcatEntry, packageFilter: String): Boolean {
+        val importedCandidates = entryPackageIndex[entry.id]
+        if (importedCandidates != null) {
+            return importedCandidates.any { candidate ->
+                candidate.contains(packageFilter, ignoreCase = true)
+            }
+        }
+
+        // В file mode fallback на raw/message, если в файле нет package/process метаданных.
+        if (_state.value.isFileMode) {
+            if (entry.raw.contains(packageFilter, ignoreCase = true)) return true
+            if (entry.message.contains(packageFilter, ignoreCase = true)) return true
+        }
+
         if (entry.pid.isBlank()) return false
         val candidates = pidPackageIndex[entry.pid] ?: return false
         return candidates.any { candidate ->
@@ -460,7 +599,10 @@ class DefaultLogcatComponent(
     private fun updatePackagePidRefreshJob() {
         val state = _state.value
         val deviceId = selectedOnlineDeviceId()
-        val shouldRun = state.isRunning && state.packageFilter.isNotBlank() && deviceId != null
+        val shouldRun = !state.isFileMode &&
+            state.isRunning &&
+            state.packageFilter.isNotBlank() &&
+            deviceId != null
 
         if (!shouldRun) {
             packagePidRefreshJob?.cancel()
@@ -493,6 +635,7 @@ class DefaultLogcatComponent(
      * Запускается при изменении package filter и при старте стрима для быстрого отклика.
      */
     private fun refreshPackagePidIndexOnce() {
+        if (_state.value.isFileMode) return
         val packageFilter = _state.value.packageFilter
         val deviceId = selectedOnlineDeviceId()
         if (packageFilter.isBlank() || deviceId == null) return

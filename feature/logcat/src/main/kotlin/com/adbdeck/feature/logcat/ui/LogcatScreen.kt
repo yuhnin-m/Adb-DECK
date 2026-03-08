@@ -20,10 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ClearAll
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.ImportExport
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +63,8 @@ import androidx.compose.ui.unit.dp
 import adbdeck.feature.logcat.generated.resources.Res
 import adbdeck.feature.logcat.generated.resources.*
 import androidx.compose.animation.core.snap
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.unit.Constraints
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
 import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
@@ -67,6 +73,15 @@ import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
+import com.adbdeck.core.ui.filedialogs.HostFileDialogFilter
+import com.adbdeck.core.ui.filedialogs.HostFileSelectionMode
+import com.adbdeck.core.ui.filedialogs.OpenFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileDialogConfig
+import com.adbdeck.core.ui.filedialogs.SaveFileExtensionPolicy
+import com.adbdeck.core.ui.filedialogs.showOpenFileDialog
+import com.adbdeck.core.ui.filedialogs.showSaveFileDialog
+import com.adbdeck.core.ui.menubuttons.AdbMenuButtonOption
+import com.adbdeck.core.ui.menubuttons.AdbOutlinedMenuButton
 import com.adbdeck.core.ui.selection.AdbMultiSelectionState
 import com.adbdeck.core.ui.selection.clearSelection
 import com.adbdeck.core.ui.selection.onItemSelectionRequested
@@ -76,12 +91,11 @@ import com.adbdeck.core.ui.textfields.AdbOutlinedAutocompleteTextField
 import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
 import com.adbdeck.core.ui.textfields.AdbTextFieldSize
 import com.adbdeck.core.ui.textfields.AdbTextFieldType
-import com.adbdeck.core.ui.splitbuttons.AdbSplitButton
-import com.adbdeck.core.ui.splitbuttons.AdbSplitMenuItem
-import com.adbdeck.core.ui.splitbuttons.AdbSplitButtonSize
 import com.adbdeck.feature.logcat.LogcatComponent
 import com.adbdeck.feature.logcat.LogcatError
 import com.adbdeck.feature.logcat.LogcatState
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
@@ -207,6 +221,19 @@ fun LogcatScreen(component: LogcatComponent) {
     }
 }
 
+private enum class LogcatTransferAction {
+    IMPORT,
+    EXPORT,
+}
+
+private enum class LogcatToolbarMeasureSlot {
+    EXPANDED_PROBE,
+    FINAL_ROW,
+}
+
+private val LOGCAT_EXPORT_FILE_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss")
+private val LOGCAT_TOOLBAR_COMPACT_MENU_WIDTH = 52.dp
+
 // ── Toolbar ──────────────────────────────────────────────────────────────────
 
 /**
@@ -214,8 +241,9 @@ fun LogcatScreen(component: LogcatComponent) {
  *
  * Содержит:
  * - запуск/остановку потока;
+ * - импорт/экспорт логов;
  * - очистку буфера;
- * - split-button выбора минимального уровня;
+ * - выбор минимального уровня логирования;
  * - кнопку открытия панели настроек.
  */
 @Composable
@@ -230,99 +258,117 @@ private fun LogcatToolbar(
     onToggleSettings: () -> Unit,
 ) {
     val levelMenuItems = rememberLogcatLevelMenuItems()
+    val startLabel = stringResource(AdbCommonStringRes.actionStart)
+    val stopLabel = stringResource(AdbCommonStringRes.actionStop)
+    val clearLabel = stringResource(AdbCommonStringRes.actionClear)
+    val clearSelectionLabel = stringResource(AdbCommonStringRes.actionClearSelection)
+    val settingsLabel = stringResource(AdbCommonStringRes.actionSettings)
+    val closeSettingsLabel = stringResource(AdbCommonStringRes.actionCloseSettings)
     val levelButtonText = stringResource(
         Res.string.logcat_toolbar_level_button,
         state.levelFilter?.code ?: stringResource(Res.string.logcat_level_all_short),
     )
+    val transferButtonLabel = stringResource(Res.string.logcat_toolbar_import_export)
+    val transferImportLabel = stringResource(Res.string.logcat_toolbar_import)
+    val transferExportLabel = stringResource(Res.string.logcat_toolbar_export)
+    val importDialogTitle = stringResource(Res.string.logcat_import_dialog_title)
+    val exportDialogTitle = stringResource(Res.string.logcat_export_dialog_title)
+    val fileFilterDescription = stringResource(Res.string.logcat_file_filter_description)
+    val closeFileLabel = stringResource(Res.string.logcat_toolbar_close_file)
+    val transferOptions = remember(transferImportLabel, transferExportLabel) {
+        listOf(
+            AdbMenuButtonOption(
+                value = LogcatTransferAction.IMPORT,
+                label = transferImportLabel,
+            ),
+            AdbMenuButtonOption(
+                value = LogcatTransferAction.EXPORT,
+                label = transferExportLabel,
+            ),
+        )
+    }
 
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
     ) {
-        Row(
+        SubcomposeLayout(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Dimensions.paddingSmall, vertical = Dimensions.paddingDefault),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
-        ) {
-            // ── Start / Stop ───────────────────────────────────────
-            if (!state.isRunning) {
-                AdbFilledButton(
-                    onClick = component::onStart,
-                    text = stringResource(AdbCommonStringRes.actionStart),
-                    type = AdbButtonType.NEUTRAL,
-                    size = AdbButtonSize.MEDIUM,
-                    cornerRadius = AdbCornerRadius.LARGE,
-                    leadingIcon = Icons.Outlined.PlayArrow,
+        ) { constraints ->
+            val expandedProbe = subcompose(LogcatToolbarMeasureSlot.EXPANDED_PROBE) {
+                LogcatToolbarActionsRow(
+                    compact = false,
+                    withFlexibleSpacer = false,
+                    state = state,
+                    component = component,
+                    selectedCount = selectedCount,
+                    onCopySelected = onCopySelected,
+                    onResetSelection = onResetSelection,
+                    onClearAndResetSelection = onClearAndResetSelection,
+                    isSettingsOpen = isSettingsOpen,
+                    onToggleSettings = onToggleSettings,
+                    levelMenuItems = levelMenuItems,
+                    levelButtonText = levelButtonText,
+                    transferButtonLabel = transferButtonLabel,
+                    transferOptions = transferOptions,
+                    importDialogTitle = importDialogTitle,
+                    exportDialogTitle = exportDialogTitle,
+                    fileFilterDescription = fileFilterDescription,
+                    closeFileLabel = closeFileLabel,
+                    startLabel = startLabel,
+                    stopLabel = stopLabel,
+                    clearLabel = clearLabel,
+                    clearSelectionLabel = clearSelectionLabel,
+                    settingsLabel = settingsLabel,
+                    closeSettingsLabel = closeSettingsLabel,
                 )
-            } else {
-                AdbFilledButton(
-                    onClick = component::onStop,
-                    text = stringResource(AdbCommonStringRes.actionStop),
-                    type = AdbButtonType.DANGER,
-                    size = AdbButtonSize.MEDIUM,
-                    cornerRadius = AdbCornerRadius.LARGE,
-                    leadingIcon = Icons.Outlined.Stop,
-                )
+            }.map { measurable ->
+                measurable.measure(Constraints())
             }
 
-            // ── Clear ──────────────────────────────────────────────
-            AdbOutlinedButton(
-                onClick = onClearAndResetSelection,
-                text = stringResource(AdbCommonStringRes.actionClear),
-                type = AdbButtonType.NEUTRAL,
-                size = AdbButtonSize.MEDIUM,
-                cornerRadius = AdbCornerRadius.LARGE,
-            )
+            val expandedRequiredWidth = expandedProbe.maxOfOrNull { it.width } ?: 0
+            val useCompact = expandedRequiredWidth > constraints.maxWidth
 
-            if (selectedCount > 0) {
-                AdbOutlinedButton(
-                    onClick = onCopySelected,
-                    text = stringResource(Res.string.logcat_toolbar_copy_selected, selectedCount),
-                    type = AdbButtonType.SUCCESS,
-                    size = AdbButtonSize.MEDIUM,
-                    cornerRadius = AdbCornerRadius.LARGE,
+            val finalRow = subcompose(LogcatToolbarMeasureSlot.FINAL_ROW) {
+                LogcatToolbarActionsRow(
+                    compact = useCompact,
+                    withFlexibleSpacer = true,
+                    state = state,
+                    component = component,
+                    selectedCount = selectedCount,
+                    onCopySelected = onCopySelected,
+                    onResetSelection = onResetSelection,
+                    onClearAndResetSelection = onClearAndResetSelection,
+                    isSettingsOpen = isSettingsOpen,
+                    onToggleSettings = onToggleSettings,
+                    levelMenuItems = levelMenuItems,
+                    levelButtonText = levelButtonText,
+                    transferButtonLabel = transferButtonLabel,
+                    transferOptions = transferOptions,
+                    importDialogTitle = importDialogTitle,
+                    exportDialogTitle = exportDialogTitle,
+                    fileFilterDescription = fileFilterDescription,
+                    closeFileLabel = closeFileLabel,
+                    startLabel = startLabel,
+                    stopLabel = stopLabel,
+                    clearLabel = clearLabel,
+                    clearSelectionLabel = clearSelectionLabel,
+                    settingsLabel = settingsLabel,
+                    closeSettingsLabel = closeSettingsLabel,
                 )
-
-                AdbOutlinedButton(
-                    onClick = onResetSelection,
-                    text = stringResource(AdbCommonStringRes.actionClearSelection),
-                    type = AdbButtonType.NEUTRAL,
-                    size = AdbButtonSize.MEDIUM,
-                    cornerRadius = AdbCornerRadius.LARGE,
-                    leadingIcon = Icons.Outlined.Close,
-                )
+            }.map { measurable ->
+                measurable.measure(constraints)
             }
 
-            Spacer(Modifier.weight(1f))
-
-            AdbSplitButton(
-                text = levelButtonText,
-                onPrimaryClick = { component.onLevelFilterChanged(null) },
-                menuItems = levelMenuItems,
-                selectedMenuValue = state.levelFilter,
-                onMenuItemClick = { selected ->
-                    component.onLevelFilterChanged(
-                        if (selected != null && state.levelFilter == selected) null else selected
-                    )
-                },
-                size = AdbSplitButtonSize.MEDIUM,
-                cornerRadius = AdbCornerRadius.XLARGE
-            )
-
-            AdbOutlinedButton(
-                onClick = onToggleSettings,
-                text = if (isSettingsOpen) {
-                    stringResource(AdbCommonStringRes.actionCloseSettings)
-                } else {
-                    stringResource(AdbCommonStringRes.actionSettings)
-                },
-                type = AdbButtonType.NEUTRAL,
-                size = AdbButtonSize.MEDIUM,
-                cornerRadius = AdbCornerRadius.LARGE,
-                leadingIcon = Icons.Outlined.Settings,
-            )
+            val layoutWidth = finalRow.maxOfOrNull { it.width } ?: constraints.minWidth
+            val layoutHeight = finalRow.maxOfOrNull { it.height } ?: 0
+            layout(layoutWidth, layoutHeight) {
+                finalRow.forEach { placeable ->
+                    placeable.placeRelative(0, 0)
+                }
+            }
         }
     }
 }
@@ -331,7 +377,7 @@ private fun LogcatToolbar(
  * Пункты меню выбора минимального уровня логирования.
  */
 @Composable
-private fun rememberLogcatLevelMenuItems(): List<AdbSplitMenuItem<LogcatLevel?>> {
+private fun rememberLogcatLevelMenuItems(): List<AdbMenuButtonOption<LogcatLevel?>> {
     val allLabel = stringResource(Res.string.logcat_level_all_short)
     val verboseLabel = stringResource(Res.string.logcat_level_verbose)
     val debugLabel = stringResource(Res.string.logcat_level_debug)
@@ -350,34 +396,201 @@ private fun rememberLogcatLevelMenuItems(): List<AdbSplitMenuItem<LogcatLevel?>>
         fatalLabel,
     ) {
         listOf(
-            AdbSplitMenuItem(
+            AdbMenuButtonOption(
                 value = null,
                 label = allLabel,
             ),
-            AdbSplitMenuItem(
+            AdbMenuButtonOption(
                 value = LogcatLevel.VERBOSE,
                 label = verboseLabel,
             ),
-            AdbSplitMenuItem(
+            AdbMenuButtonOption(
                 value = LogcatLevel.DEBUG,
                 label = debugLabel,
             ),
-            AdbSplitMenuItem(
+            AdbMenuButtonOption(
                 value = LogcatLevel.INFO,
                 label = infoLabel,
             ),
-            AdbSplitMenuItem(
+            AdbMenuButtonOption(
                 value = LogcatLevel.WARNING,
                 label = warningLabel,
             ),
-            AdbSplitMenuItem(
+            AdbMenuButtonOption(
                 value = LogcatLevel.ERROR,
                 label = errorLabel,
             ),
-            AdbSplitMenuItem(
+            AdbMenuButtonOption(
                 value = LogcatLevel.FATAL,
                 label = fatalLabel,
             ),
+        )
+    }
+}
+
+@Composable
+private fun LogcatToolbarActionsRow(
+    compact: Boolean,
+    withFlexibleSpacer: Boolean,
+    state: LogcatState,
+    component: LogcatComponent,
+    selectedCount: Int,
+    onCopySelected: () -> Unit,
+    onResetSelection: () -> Unit,
+    onClearAndResetSelection: () -> Unit,
+    isSettingsOpen: Boolean,
+    onToggleSettings: () -> Unit,
+    levelMenuItems: List<AdbMenuButtonOption<LogcatLevel?>>,
+    levelButtonText: String,
+    transferButtonLabel: String,
+    transferOptions: List<AdbMenuButtonOption<LogcatTransferAction>>,
+    importDialogTitle: String,
+    exportDialogTitle: String,
+    fileFilterDescription: String,
+    closeFileLabel: String,
+    startLabel: String,
+    stopLabel: String,
+    clearLabel: String,
+    clearSelectionLabel: String,
+    settingsLabel: String,
+    closeSettingsLabel: String,
+) {
+    val settingsButtonText = if (isSettingsOpen) closeSettingsLabel else settingsLabel
+    val copySelectedLabel = stringResource(Res.string.logcat_toolbar_copy_selected, selectedCount)
+    val compactMenuModifier = if (compact) Modifier.width(LOGCAT_TOOLBAR_COMPACT_MENU_WIDTH) else Modifier
+
+    val primaryActionText = when {
+        state.isFileMode -> closeFileLabel
+        state.isRunning -> stopLabel
+        else -> startLabel
+    }
+    val primaryActionIcon = when {
+        state.isFileMode -> Icons.Outlined.Close
+        state.isRunning -> Icons.Outlined.Stop
+        else -> Icons.Outlined.PlayArrow
+    }
+    val primaryActionType = when {
+        state.isRunning && !state.isFileMode -> AdbButtonType.DANGER
+        else -> AdbButtonType.NEUTRAL
+    }
+    val primaryAction: () -> Unit = when {
+        state.isFileMode -> component::onCloseImportedFile
+        state.isRunning -> component::onStop
+        else -> component::onStart
+    }
+
+    Row(
+        modifier = if (withFlexibleSpacer) Modifier.fillMaxWidth() else Modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
+    ) {
+        AdbFilledButton(
+            onClick = primaryAction,
+            text = if (compact) null else primaryActionText,
+            contentDescription = if (compact) primaryActionText else null,
+            type = primaryActionType,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.LARGE,
+            leadingIcon = primaryActionIcon,
+        )
+
+        AdbOutlinedMenuButton(
+            text = if (compact) "" else transferButtonLabel,
+            options = transferOptions,
+            onOptionSelected = { action ->
+                when (action) {
+                    LogcatTransferAction.IMPORT -> {
+                        val selectedPath = showLogcatImportDialog(
+                            title = importDialogTitle,
+                            filterDescription = fileFilterDescription,
+                        )
+                        if (selectedPath != null) {
+                            component.onImportFromFile(selectedPath)
+                        }
+                    }
+
+                    LogcatTransferAction.EXPORT -> {
+                        // По требованию: сначала стоп потока, затем выбор пути сохранения.
+                        component.onStop()
+                        val selectedPath = showLogcatExportDialog(
+                            title = exportDialogTitle,
+                            defaultFileName = defaultLogcatExportFileName(),
+                            filterDescription = fileFilterDescription,
+                        )
+                        if (selectedPath != null) {
+                            component.onExportToFile(selectedPath)
+                        }
+                    }
+                }
+            },
+            contentDescription = if (compact) transferButtonLabel else null,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.LARGE,
+            leadingIcon = Icons.Outlined.ImportExport,
+            modifier = compactMenuModifier,
+        )
+
+        AdbOutlinedButton(
+            onClick = onClearAndResetSelection,
+            text = if (compact) null else clearLabel,
+            contentDescription = if (compact) clearLabel else null,
+            type = AdbButtonType.NEUTRAL,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.LARGE,
+            leadingIcon = Icons.Outlined.ClearAll,
+        )
+
+        if (selectedCount > 0) {
+            AdbOutlinedButton(
+                onClick = onCopySelected,
+                text = if (compact) null else copySelectedLabel,
+                contentDescription = if (compact) copySelectedLabel else null,
+                type = AdbButtonType.SUCCESS,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.LARGE,
+                leadingIcon = Icons.Outlined.ContentCopy,
+            )
+
+            AdbOutlinedButton(
+                onClick = onResetSelection,
+                text = if (compact) null else clearSelectionLabel,
+                contentDescription = if (compact) clearSelectionLabel else null,
+                type = AdbButtonType.NEUTRAL,
+                size = AdbButtonSize.MEDIUM,
+                cornerRadius = AdbCornerRadius.LARGE,
+                leadingIcon = Icons.Outlined.Close,
+            )
+        }
+
+        if (withFlexibleSpacer) {
+            Spacer(Modifier.weight(1f))
+        }
+
+        AdbOutlinedMenuButton(
+            text = if (compact) "" else levelButtonText,
+            options = levelMenuItems,
+            selectedOption = state.levelFilter,
+            showSelectedCheckmark = true,
+            onOptionSelected = { selected ->
+                component.onLevelFilterChanged(
+                    if (selected != null && state.levelFilter == selected) null else selected
+                )
+            },
+            contentDescription = if (compact) levelButtonText else null,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.XLARGE,
+            leadingIcon = Icons.Outlined.Tune,
+            modifier = compactMenuModifier,
+        )
+
+        AdbOutlinedButton(
+            onClick = onToggleSettings,
+            text = if (compact) null else settingsButtonText,
+            contentDescription = if (compact) settingsButtonText else null,
+            type = AdbButtonType.NEUTRAL,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.LARGE,
+            leadingIcon = Icons.Outlined.Settings,
         )
     }
 }
@@ -417,12 +630,12 @@ private fun FilterBar(
             CompactTextField(
                 value = state.packageFilter,
                 onValueChange = component::onPackageFilterChanged,
-                placeholder = if (state.isPackageSuggestionsLoading) {
+                placeholder = if (state.isPackageSuggestionsLoading && !state.isFileMode) {
                     stringResource(Res.string.logcat_filter_package_loading_placeholder)
                 } else {
                     stringResource(Res.string.logcat_filter_package_placeholder)
                 },
-                suggestions = state.packageSuggestions,
+                suggestions = if (state.isFileMode) emptyList() else state.packageSuggestions,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -675,19 +888,6 @@ private fun EmptyLogState(state: LogcatState) {
                     )
                 }
 
-                state.activeDeviceId == null -> {
-                    Text(
-                        text = stringResource(Res.string.logcat_empty_no_device_title),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
-                    Text(
-                        text = stringResource(Res.string.logcat_empty_no_device_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
-                }
-
                 state.isRunning && state.entries.isEmpty() -> {
                     Text(
                         text = stringResource(Res.string.logcat_empty_waiting_stream),
@@ -701,6 +901,27 @@ private fun EmptyLogState(state: LogcatState) {
                     Text(
                         text = stringResource(Res.string.logcat_empty_no_results),
                         style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+
+                state.isFileMode -> {
+                    Text(
+                        text = stringResource(Res.string.logcat_empty_file_mode),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+
+                state.activeDeviceId == null -> {
+                    Text(
+                        text = stringResource(Res.string.logcat_empty_no_device_title),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                    Text(
+                        text = stringResource(Res.string.logcat_empty_no_device_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
                 }
@@ -721,3 +942,53 @@ private data class LogSelectionModifiers(
     val shiftPressed: Boolean = false,
     val additivePressed: Boolean = false,
 )
+
+/**
+ * Диалог выбора лог-файла для импорта.
+ */
+private fun showLogcatImportDialog(
+    title: String,
+    filterDescription: String,
+): String? = showOpenFileDialog(
+    OpenFileDialogConfig(
+        title = title,
+        selectionMode = HostFileSelectionMode.FILES_ONLY,
+        filters = listOf(
+            HostFileDialogFilter(
+                description = filterDescription,
+                extensions = listOf("logcat", "txt", "log", "json"),
+            ),
+        ),
+        isAcceptAllFileFilterUsed = true,
+    ),
+)
+
+/**
+ * Диалог выбора пути сохранения экспортируемого лог-файла.
+ */
+private fun showLogcatExportDialog(
+    title: String,
+    defaultFileName: String,
+    filterDescription: String,
+): String? = showSaveFileDialog(
+    SaveFileDialogConfig(
+        title = title,
+        defaultFileName = defaultFileName,
+        filters = listOf(
+            HostFileDialogFilter(
+                description = filterDescription,
+                extensions = listOf("logcat", "txt", "log"),
+            ),
+        ),
+        isAcceptAllFileFilterUsed = true,
+        extensionPolicy = SaveFileExtensionPolicy.AppendIfMissing(defaultExtension = "logcat"),
+    ),
+)
+
+/**
+ * Имя файла экспорта по умолчанию в формате `adbdeck-logcat_yyyy-MM-dd_HHmmss.logcat`.
+ */
+private fun defaultLogcatExportFileName(): String {
+    val timestamp = LocalDateTime.now().format(LOGCAT_EXPORT_FILE_TIME_FORMATTER)
+    return "adbdeck-logcat_${timestamp}.logcat"
+}

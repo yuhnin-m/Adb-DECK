@@ -243,6 +243,9 @@ private class PreviewLogcatComponent : LogcatComponent {
     override fun onStart() = Unit
     override fun onStop() = Unit
     override fun onClear() = Unit
+    override fun onImportFromFile(path: String) = Unit
+    override fun onCloseImportedFile() = Unit
+    override fun onExportToFile(path: String) = Unit
     override fun onSearchChanged(query: String) = Unit
     override fun onTagFilterChanged(tag: String) = Unit
     override fun onPackageFilterChanged(pkg: String) = Unit

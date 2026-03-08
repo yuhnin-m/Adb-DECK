@@ -32,4 +32,22 @@ sealed interface LogcatError {
     data class StreamFailure(
         val details: String?,
     ) : LogcatError
+
+    /**
+     * Ошибка импорта logcat-файла.
+     *
+     * @param details Дополнительный текст ошибки (если есть).
+     */
+    data class ImportFailure(
+        val details: String?,
+    ) : LogcatError
+
+    /**
+     * Ошибка экспорта logcat-файла.
+     *
+     * @param details Дополнительный текст ошибки (если есть).
+     */
+    data class ExportFailure(
+        val details: String?,
+    ) : LogcatError
 }

@@ -48,6 +48,7 @@ data class AdbMenuButtonOption<T>(
  * @param trailingIcon Иконка справа от текста (по умолчанию стрелка вниз).
  * @param selectedOption Выбранное значение (для отметки в меню).
  * @param showSelectedCheckmark Показывать отметку у выбранного пункта.
+ * @param contentDescription Текст для accessibility (актуально для icon-only).
  */
 @Composable
 fun <T> AdbOutlinedMenuButton(
@@ -62,6 +63,7 @@ fun <T> AdbOutlinedMenuButton(
     trailingIcon: ImageVector = Icons.Outlined.KeyboardArrowDown,
     selectedOption: T? = null,
     showSelectedCheckmark: Boolean = false,
+    contentDescription: String? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val canOpenMenu = enabled && options.isNotEmpty()
@@ -72,6 +74,7 @@ fun <T> AdbOutlinedMenuButton(
             text = text,
             leadingIcon = leadingIcon,
             trailingIcon = trailingIcon,
+            contentDescription = contentDescription,
             enabled = canOpenMenu,
             size = size,
             cornerRadius = cornerRadius,

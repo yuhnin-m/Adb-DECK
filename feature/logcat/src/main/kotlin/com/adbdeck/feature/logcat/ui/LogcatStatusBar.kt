@@ -28,7 +28,7 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * Строка состояния потока logcat.
  *
- * Показывает: индикатор (зеленый/серый), статус, устройство, счетчик строк, ошибку.
+ * Показывает: индикатор (stream/file/error), статус, устройство/файл, счетчик строк, ошибку.
  */
 @Composable
 internal fun LogcatStatusBar(state: LogcatState) {
@@ -44,6 +44,7 @@ internal fun LogcatStatusBar(state: LogcatState) {
         // Индикатор состояния
         val dotColor = when {
             state.isRunning -> Color(0xFF4CAF50)
+            state.isFileMode -> MaterialTheme.colorScheme.primary
             state.error != null -> MaterialTheme.colorScheme.error
             else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
         }
@@ -56,6 +57,7 @@ internal fun LogcatStatusBar(state: LogcatState) {
         Text(
             text = when {
                 state.isRunning -> stringResource(Res.string.logcat_status_streaming)
+                state.isFileMode -> stringResource(Res.string.logcat_status_file_mode)
                 state.error != null -> stringResource(Res.string.logcat_status_error)
                 else -> stringResource(Res.string.logcat_status_stopped)
             },
@@ -63,7 +65,8 @@ internal fun LogcatStatusBar(state: LogcatState) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        state.activeDeviceId?.let { id ->
+        val endpointLabel = state.openedFileName ?: state.activeDeviceId
+        endpointLabel?.let { id ->
             Text("│", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
             Text(
                 text = id,
@@ -142,6 +145,22 @@ internal fun localizeLogcatError(error: LogcatError?): String {
                 stringResource(Res.string.logcat_error_stream_with_reason, details)
             } else {
                 stringResource(Res.string.logcat_error_stream_generic)
+            }
+        }
+        is LogcatError.ImportFailure -> {
+            val details = error.details.orEmpty().trim()
+            if (details.isNotEmpty()) {
+                stringResource(Res.string.logcat_error_import_with_reason, details)
+            } else {
+                stringResource(Res.string.logcat_error_import_generic)
+            }
+        }
+        is LogcatError.ExportFailure -> {
+            val details = error.details.orEmpty().trim()
+            if (details.isNotEmpty()) {
+                stringResource(Res.string.logcat_error_export_with_reason, details)
+            } else {
+                stringResource(Res.string.logcat_error_export_generic)
             }
         }
     }
