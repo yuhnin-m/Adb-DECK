@@ -18,6 +18,7 @@
     <string name="settings_action_check_adb">Check ADB</string>
     <string name="settings_action_check_bundletool">Check bundletool</string>
     <string name="settings_action_choose_path">Choose file…</string>
+    <string name="settings_action_auto_detect_adb">Auto Detect ADB</string>
     <string name="settings_action_checking">Checking…</string>
     <string name="settings_action_save">Save</string>
     <string name="settings_action_saving">Saving…</string>
@@ -85,4 +86,9 @@
     <string name="settings_feedback_saved">Settings saved</string>
     <string name="settings_feedback_save_failed">Failed to save settings</string>
     <string name="settings_feedback_logcat_save_failed">Failed to save Logcat settings</string>
+    <string name="settings_help_loading">Loading instruction…</string>
+    <string name="settings_help_load_failed">Failed to load local instruction page</string>
+    <string name="settings_feedback_adb_autodetect_not_found">ADB was not found in PATH or standard SDK paths</string>
+    <string name="settings_feedback_adb_autodetect_multiple">Found %1$d ADB paths. Choose one from the list.</string>
+    <string name="settings_feedback_adb_autodetect_applied">ADB path applied: %1$s</string>
 </resources>

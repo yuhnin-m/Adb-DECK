@@ -15,6 +15,8 @@
     <string name="apk_install_feedback_install_success">Package installed successfully</string>
     <string name="apk_install_feedback_install_failed">Failed to install package</string>
     <string name="apk_install_feedback_install_interrupted">Package installation interrupted because active device changed</string>
+    <string name="apk_install_feedback_copy_status_success">Result copied to clipboard</string>
+    <string name="apk_install_feedback_copy_status_failed">Failed to copy result</string>
     <string name="apk_install_feedback_picker_failed">Failed to open file picker</string>
     <string name="apk_install_feedback_invalid_apk">Supported targets: .apk, .aab, .apks, .xapk or directory with split APK files</string>
     <string name="apk_install_feedback_apk_not_found">Install target not found: %1$s</string>
@@ -31,6 +33,7 @@
     <string name="apk_install_section_file_title">Install target</string>
     <string name="apk_install_field_apk_path_placeholder">Path to .apk / .aab / .apks / .xapk or split directory</string>
     <string name="apk_install_action_choose_apk">Choose file/folder…</string>
+    <string name="apk_install_toggle_allow_test_only">Allow test-only APK (-t)</string>
     <string name="apk_install_action_install">Install</string>
 
     <string name="apk_install_section_drop_title">Drag and drop</string>
@@ -38,6 +41,7 @@
     <string name="apk_install_drop_disabled">Select active device to install package</string>
 
     <string name="apk_install_section_status_title">Install status</string>
+    <string name="apk_install_action_copy_result">Copy result</string>
     <string name="apk_install_section_log_title">Install log</string>
     <string name="apk_install_action_clear_log">Clear log</string>
     <string name="apk_install_empty_log">Installation output and error details will appear here</string>

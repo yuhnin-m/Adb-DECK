@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<style>
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    margin: 24px;
+    line-height: 1.6;
+    color: #2b2b2b;
+}
+
+h2 {
+    margin-top: 28px;
+    font-size: 20px;
+}
+
+p {
+    margin: 10px 0;
+}
+
+ol, ul {
+    padding-left: 20px;
+}
+
+.button {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    background: #1976d2;
+    color: white;
+}
+
+.button:hover {
+    background: #125ea8;
+}
+
+code {
+    background: #f4f4f4;
+    padding: 3px 6px;
+    border-radius: 6px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>Что такое ADB</h2>
+
+<p>
+ADB (Android Debug Bridge) — официальный инструмент Google для подключения компьютера к Android-устройству.
+Он распространяется в составе пакета <b>Android Platform Tools</b>.
+</p>
+
+<h2>Скачать ADB</h2>
+
+<p>Скачайте Platform Tools с официального сайта Google.</p>
+
+<a class="button"
+href="https://developer.android.com/tools/releases/platform-tools">
+Download Platform Tools
+</a>
+
+<p>После загрузки распакуйте архив в любую папку.</p>
+
+<h2>Настройка в ADB Deck</h2>
+
+<ol>
+<li>Скачайте архив <b>Platform Tools</b></li>
+<li>Распакуйте архив</li>
+<li>Откройте <b>Settings → ADB</b> в ADB Deck</li>
+<li>Нажмите <b>Select ADB</b></li>
+<li>Выберите файл <code>adb</code> из папки <code>platform-tools</code></li>
+<li>Нажмите кнопку <b>Check</b>, чтобы проверить ADB</li>
+</ol>
+
+<h2>Где искать файл adb</h2>
+
+<p>Если у вас установлен Android Studio, ADB обычно уже находится в системе.</p>
+
+<h3>macOS</h3>
+
+<ul>
+<li><code>~/Library/Android/sdk/platform-tools/adb</code></li>
+<li><code>~/Android/Sdk/platform-tools/adb</code></li>
+<li><code>/opt/homebrew/bin/adb</code></li>
+<li><code>/usr/local/bin/adb</code></li>
+</ul>
+
+<h3>Linux</h3>
+
+<ul>
+<li><code>~/Android/Sdk/platform-tools/adb</code></li>
+<li><code>~/Android/sdk/platform-tools/adb</code></li>
+<li><code>/usr/bin/adb</code></li>
+<li><code>/usr/local/bin/adb</code></li>
+</ul>
+
+<h3>Windows</h3>
+
+<ul>
+<li><code>C:\Users\USERNAME\AppData\Local\Android\Sdk\platform-tools\adb.exe</code></li>
+<li><code>C:\Android\sdk\platform-tools\adb.exe</code></li>
+<li><code>C:\Program Files\Android\Android Studio\platform-tools\adb.exe</code></li>
+</ul>
+
+</body>
+</html>

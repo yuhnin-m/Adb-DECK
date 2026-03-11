@@ -18,7 +18,9 @@ private class PreviewApkInstallComponent(
     override fun onApkPathChanged(path: String) = Unit
     override fun onPickApkFile() = Unit
     override fun onApkPathDropped(path: String) = Unit
+    override fun onAllowTestOnlyChanged(allow: Boolean) = Unit
     override fun onInstallApk() = Unit
+    override fun onCopyStatusResult() = Unit
     override fun onClearLog() = Unit
     override fun onDismissFeedback() = Unit
 }

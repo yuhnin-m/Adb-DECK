@@ -38,6 +38,9 @@ private class SettingsPreviewComponent : SettingsComponent {
     )
 
     override fun onAdbPathChanged(path: String) = Unit
+    override fun onAutoDetectAdb() = Unit
+    override fun onSelectAutoDetectedAdbPath(path: String) = Unit
+    override fun onDismissAutoDetectedAdbCandidates() = Unit
     override fun onBundletoolPathChanged(path: String) = Unit
     override fun onSave() = Unit
     override fun onCheckAdb() = Unit

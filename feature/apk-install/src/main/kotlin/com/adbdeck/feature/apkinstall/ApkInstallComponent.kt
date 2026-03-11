@@ -24,8 +24,14 @@ interface ApkInstallComponent {
      */
     fun onApkPathDropped(path: String)
 
+    /** Переключить установку test-only пакетов (`adb install -t`). */
+    fun onAllowTestOnlyChanged(allow: Boolean)
+
     /** Запустить установку выбранного APK. */
     fun onInstallApk()
+
+    /** Скопировать текущий текст результата установки в clipboard. */
+    fun onCopyStatusResult()
 
     /** Очистить лог установки. */
     fun onClearLog()

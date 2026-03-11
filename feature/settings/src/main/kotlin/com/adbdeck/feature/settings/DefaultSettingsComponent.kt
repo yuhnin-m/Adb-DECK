@@ -1,6 +1,9 @@
 package com.adbdeck.feature.settings
 
 import adbdeck.feature.settings.generated.resources.Res
+import adbdeck.feature.settings.generated.resources.settings_feedback_adb_autodetect_applied
+import adbdeck.feature.settings.generated.resources.settings_feedback_adb_autodetect_multiple
+import adbdeck.feature.settings.generated.resources.settings_feedback_adb_autodetect_not_found
 import adbdeck.feature.settings.generated.resources.settings_feedback_logcat_save_failed
 import adbdeck.feature.settings.generated.resources.settings_feedback_save_failed
 import adbdeck.feature.settings.generated.resources.settings_feedback_saved
@@ -18,6 +21,7 @@ import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,6 +58,7 @@ class DefaultSettingsComponent(
     private var persistedEditable = EditableSettingsSnapshot.from(settingsRepository.getSettings())
 
     private var adbCheckJob: Job? = null
+    private var adbAutoDetectJob: Job? = null
     private var bundletoolCheckJob: Job? = null
     private var scrcpyCheckJob: Job? = null
     private var logcatSaveJob: Job? = null
@@ -72,6 +77,8 @@ class DefaultSettingsComponent(
         _state.update { current ->
             current.copy(
                 adbPath = path,
+                isAdbAutoDetecting = false,
+                adbAutoDetectCandidates = emptyList(),
                 adbCheckState = ToolCheckState.Idle,
                 hasPendingChanges = hasPendingChanges(
                     adbPath = path,
@@ -234,6 +241,90 @@ class DefaultSettingsComponent(
                 }
             }
             adbCheckJob = null
+        }
+    }
+
+    override fun onAutoDetectAdb() {
+        if (adbAutoDetectJob?.isActive == true) return
+
+        adbAutoDetectJob = scope.launch {
+            _state.update {
+                it.copy(
+                    isAdbAutoDetecting = true,
+                    adbAutoDetectCandidates = emptyList(),
+                )
+            }
+
+            val candidates = runCatching { detectAdbCandidates() }.getOrElse {
+                emptyList()
+            }
+
+            when (candidates.size) {
+                0 -> {
+                    _state.update {
+                        it.copy(
+                            isAdbAutoDetecting = false,
+                            adbAutoDetectCandidates = emptyList(),
+                        )
+                    }
+                    showFeedback(
+                        message = getString(Res.string.settings_feedback_adb_autodetect_not_found),
+                        isError = true,
+                    )
+                }
+
+                1 -> {
+                    val detectedPath = candidates.first()
+                    onAdbPathChanged(detectedPath)
+                    showFeedback(
+                        message = getString(
+                            Res.string.settings_feedback_adb_autodetect_applied,
+                            detectedPath,
+                        ),
+                        isError = false,
+                    )
+                }
+
+                else -> {
+                    _state.update {
+                        it.copy(
+                            isAdbAutoDetecting = false,
+                            adbAutoDetectCandidates = candidates,
+                        )
+                    }
+                    showFeedback(
+                        message = getString(
+                            Res.string.settings_feedback_adb_autodetect_multiple,
+                            candidates.size,
+                        ),
+                        isError = false,
+                    )
+                }
+            }
+
+            adbAutoDetectJob = null
+        }
+    }
+
+    override fun onSelectAutoDetectedAdbPath(path: String) {
+        val normalizedPath = path.trim()
+        if (normalizedPath.isBlank()) return
+
+        onAdbPathChanged(normalizedPath)
+        scope.launch {
+            showFeedback(
+                message = getString(
+                    Res.string.settings_feedback_adb_autodetect_applied,
+                    normalizedPath,
+                ),
+                isError = false,
+            )
+        }
+    }
+
+    override fun onDismissAutoDetectedAdbCandidates() {
+        _state.update {
+            it.copy(adbAutoDetectCandidates = emptyList())
         }
     }
 
@@ -424,6 +515,95 @@ class DefaultSettingsComponent(
         }
     }
 
+    private fun detectAdbCandidates(): List<String> {
+        val ordered = linkedSetOf<String>()
+        detectAdbFromPath().forEach { candidate ->
+            addAdbCandidateIfExists(ordered, candidate)
+        }
+        standardAdbPaths().forEach { candidate ->
+            addAdbCandidateIfExists(ordered, candidate)
+        }
+        return ordered.toList()
+    }
+
+    private fun detectAdbFromPath(): List<String> {
+        val command = when (detectHostOs()) {
+            HostOs.WINDOWS -> listOf("where", "adb")
+            else -> listOf("which", "-a", "adb")
+        }
+        return runCommandForLines(command)
+    }
+
+    private fun standardAdbPaths(): List<String> {
+        val home = System.getProperty("user.home").orEmpty()
+        return when (detectHostOs()) {
+            HostOs.MAC -> listOf(
+                File(home, "Library/Android/sdk/platform-tools/adb").path,
+                File(home, "Android/Sdk/platform-tools/adb").path,
+                "/opt/homebrew/bin/adb",
+                "/usr/local/bin/adb",
+            )
+
+            HostOs.LINUX -> listOf(
+                File(home, "Android/Sdk/platform-tools/adb").path,
+                File(home, "Android/sdk/platform-tools/adb").path,
+                "/usr/bin/adb",
+                "/usr/local/bin/adb",
+            )
+
+            HostOs.WINDOWS -> buildList {
+                val localAppData = System.getenv("LOCALAPPDATA").orEmpty()
+                if (localAppData.isNotBlank()) {
+                    add(File(localAppData, "Android/Sdk/platform-tools/adb.exe").path)
+                }
+                add("C:\\Android\\sdk\\platform-tools\\adb.exe")
+                add("C:\\Program Files\\Android\\Android Studio\\platform-tools\\adb.exe")
+            }
+
+            HostOs.UNKNOWN -> emptyList()
+        }
+    }
+
+    private fun addAdbCandidateIfExists(
+        target: MutableSet<String>,
+        rawPath: String,
+    ) {
+        val normalized = normalizeCandidatePath(rawPath) ?: return
+        val file = File(normalized)
+        if (!file.isFile) return
+        if (detectHostOs() != HostOs.WINDOWS && !file.canExecute()) return
+        target.add(normalized)
+    }
+
+    private fun normalizeCandidatePath(rawPath: String): String? {
+        val cleaned = rawPath.trim().removeSurrounding("\"")
+        if (cleaned.isBlank()) return null
+        return File(cleaned).absoluteFile.normalize().path
+    }
+
+    private fun runCommandForLines(command: List<String>): List<String> = runCatching {
+        val process = ProcessBuilder(command)
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader().use { reader ->
+            reader.lineSequence().toList()
+        }
+        process.waitFor()
+        output
+    }.getOrElse { emptyList() }
+
+    private fun detectHostOs(): HostOs {
+        val osName = System.getProperty("os.name")
+            ?.lowercase()
+            .orEmpty()
+        return when {
+            osName.contains("win") -> HostOs.WINDOWS
+            osName.contains("mac") -> HostOs.MAC
+            osName.contains("nix") || osName.contains("nux") || osName.contains("linux") -> HostOs.LINUX
+            else -> HostOs.UNKNOWN
+        }
+    }
+
     private fun hasPendingChanges(
         adbPath: String,
         bundletoolPath: String,
@@ -487,6 +667,13 @@ class DefaultSettingsComponent(
                 language = settings.language,
             )
         }
+    }
+
+    private enum class HostOs {
+        MAC,
+        LINUX,
+        WINDOWS,
+        UNKNOWN,
     }
 
     private companion object {

@@ -345,6 +345,7 @@ class SystemApkInstallClient(
         if (options.reinstall) add("-r")
         if (options.allowDowngrade) add("-d")
         if (options.grantRuntimePermissions) add("-g")
+        if (options.allowTestOnly) add("-t")
         addAll(targets)
     }
 

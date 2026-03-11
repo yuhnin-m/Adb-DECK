@@ -27,6 +27,8 @@ data class SettingsFeedback(
  */
 data class SettingsUiState(
     val adbPath: String = DEFAULT_ADB_EXECUTABLE,
+    val isAdbAutoDetecting: Boolean = false,
+    val adbAutoDetectCandidates: List<String> = emptyList(),
     val bundletoolPath: String = "bundletool",
     val scrcpyPath: String = "scrcpy",
     val adbCheckState: ToolCheckState = ToolCheckState.Idle,

@@ -28,6 +28,7 @@ data class ApkInstallState(
     val activeDeviceId: String? = null,
     val deviceMessage: String = "",
     val apkPath: String = "",
+    val allowTestOnlyInstall: Boolean = false,
     val isInstalling: Boolean = false,
     val installingDeviceId: String? = null,
     val status: ApkInstallStatus = ApkInstallStatus(message = ""),

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -37,7 +36,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -58,7 +56,9 @@ import com.adbdeck.feature.dashboard.DashboardAdbServerState
 import org.jetbrains.compose.resources.stringResource
 
 private val AdbCoreWideLayoutMinWidth = 900.dp
+private val AdbCoreWideActionCardMaxWidth = 260.dp
 private val AdbCoreCompactButtonMaxWidth = 300.dp
+private val AdbCoreActionsTopSpacerHeight = AdbButtonSize.XSMALL.height + Dimensions.paddingXSmall
 private const val AdbCoreEmptyValue = "—"
 
 @Composable
@@ -132,9 +132,11 @@ internal fun AdbCoreSection(
     val restartContainerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
     val settingsContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.52f)
 
-    val compactToggleLabel = stringResource(Res.string.dashboard_adb_server_action_compact_toggle)
-    val compactRestartLabel = stringResource(Res.string.dashboard_adb_server_action_compact_restart)
-    val compactSettingsLabel = stringResource(Res.string.dashboard_adb_server_action_compact_settings)
+    val compactRestartLabel = stringResource(Res.string.dashboard_adb_server_action_restart_title)
+    val compactSettingsLabel = stringResource(Res.string.dashboard_adb_server_action_open_settings_title)
+    val canOpenSettings = !isServerBusy
+    val refreshLoading = state.activeAction == DashboardAdbServerAction.REFRESH
+    val restartLoading = state.activeAction == DashboardAdbServerAction.RESTART
 
     val actionItems = listOf(
         AdbCoreActionCardUi(
@@ -151,7 +153,7 @@ internal fun AdbCoreSection(
             subtitle = stringResource(Res.string.dashboard_adb_server_action_restart_subtitle),
             icon = Icons.Outlined.RestartAlt,
             enabled = canRestart,
-            isLoading = state.activeAction == DashboardAdbServerAction.RESTART,
+            isLoading = restartLoading,
             onClick = onRestartServer,
             containerColor = restartContainerColor,
         ),
@@ -159,72 +161,62 @@ internal fun AdbCoreSection(
             title = stringResource(Res.string.dashboard_adb_server_action_open_settings_title),
             subtitle = stringResource(Res.string.dashboard_adb_server_action_open_settings_subtitle),
             icon = Icons.Outlined.Settings,
-            enabled = !isServerBusy,
+            enabled = canOpenSettings,
             isLoading = false,
             onClick = onOpenSettings,
             containerColor = settingsContainerColor,
         ),
     )
 
-    AdbSectionCard(
-        title = sectionTitle,
-        titleUppercase = true,
-        contentSpacing = Dimensions.paddingMedium,
-        contentPadding = PaddingValues(
-            horizontal = Dimensions.paddingLarge,
-            vertical = Dimensions.paddingMedium,
-        ),
-        headerTrailing = {
-            AdbOutlinedButton(
-                onClick = onRefreshStatus,
-                leadingIcon = Icons.Outlined.Refresh,
-                contentDescription = refreshStatusDescription,
-                enabled = !isServerBusy,
-                loading = state.activeAction == DashboardAdbServerAction.REFRESH,
-                size = AdbButtonSize.XSMALL,
-            )
-        },
-    ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val isWideLayout = maxWidth >= AdbCoreWideLayoutMinWidth
-            Crossfade(targetState = isWideLayout, label = "adbCoreLayoutMode") { wide ->
-                if (wide) {
-                    AdbCoreWideLayout(
-                        statusLabel = statusLabel,
-                        statusValue = statusValue,
-                        statusColor = statusColor,
-                        versionLabel = versionLabel,
-                        versionValue = versionValue,
-                        devicesLabel = devicesLabel,
-                        devicesValue = state.deviceCount.toString(),
-                        actions = actionItems,
-                    )
-                } else {
-                    AdbCoreCompactLayout(
-                        statusLabel = statusLabel,
-                        statusValue = statusValue,
-                        statusColor = statusColor,
-                        versionLabel = versionLabel,
-                        versionValue = versionValue,
-                        devicesLabel = devicesLabel,
-                        devicesValue = state.deviceCount.toString(),
-                        toggleLabel = compactToggleLabel,
-                        toggleIcon = toggleIcon,
-                        canToggleServer = canToggleServer,
-                        toggleLoading = toggleLoading,
-                        onToggleServer = toggleOnClick,
-                        canRestart = canRestart,
-                        restartLoading = state.activeAction == DashboardAdbServerAction.RESTART,
-                        onRestartServer = onRestartServer,
-                        canOpenSettings = !isServerBusy,
-                        onOpenSettings = onOpenSettings,
-                        restartLabel = compactRestartLabel,
-                        settingsLabel = compactSettingsLabel,
-                        toggleContainerColor = toggleContainerColor,
-                        restartContainerColor = restartContainerColor,
-                        settingsContainerColor = settingsContainerColor,
-                    )
-                }
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val isWideLayout = maxWidth >= AdbCoreWideLayoutMinWidth
+        Crossfade(targetState = isWideLayout, label = "adbCoreLayoutMode") { wide ->
+            if (wide) {
+                AdbCoreWideLayout(
+                    sectionTitle = sectionTitle,
+                    refreshStatusDescription = refreshStatusDescription,
+                    onRefreshStatus = onRefreshStatus,
+                    canRefreshStatus = !isServerBusy,
+                    refreshLoading = refreshLoading,
+                    statusLabel = statusLabel,
+                    statusValue = statusValue,
+                    statusColor = statusColor,
+                    versionLabel = versionLabel,
+                    versionValue = versionValue,
+                    devicesLabel = devicesLabel,
+                    devicesValue = state.deviceCount.toString(),
+                    actions = actionItems,
+                )
+            } else {
+                AdbCoreCompactLayout(
+                    sectionTitle = sectionTitle,
+                    refreshStatusDescription = refreshStatusDescription,
+                    onRefreshStatus = onRefreshStatus,
+                    canRefreshStatus = !isServerBusy,
+                    refreshLoading = refreshLoading,
+                    statusLabel = statusLabel,
+                    statusValue = statusValue,
+                    statusColor = statusColor,
+                    versionLabel = versionLabel,
+                    versionValue = versionValue,
+                    devicesLabel = devicesLabel,
+                    devicesValue = state.deviceCount.toString(),
+                    toggleLabel = toggleTitle,
+                    toggleIcon = toggleIcon,
+                    canToggleServer = canToggleServer,
+                    toggleLoading = toggleLoading,
+                    onToggleServer = toggleOnClick,
+                    canRestart = canRestart,
+                    restartLoading = restartLoading,
+                    onRestartServer = onRestartServer,
+                    canOpenSettings = canOpenSettings,
+                    onOpenSettings = onOpenSettings,
+                    restartLabel = compactRestartLabel,
+                    settingsLabel = compactSettingsLabel,
+                    toggleContainerColor = toggleContainerColor,
+                    restartContainerColor = restartContainerColor,
+                    settingsContainerColor = settingsContainerColor,
+                )
             }
         }
     }
@@ -242,6 +234,11 @@ private data class AdbCoreActionCardUi(
 
 @Composable
 private fun AdbCoreWideLayout(
+    sectionTitle: String,
+    refreshStatusDescription: String,
+    onRefreshStatus: () -> Unit,
+    canRefreshStatus: Boolean,
+    refreshLoading: Boolean,
     statusLabel: String,
     statusValue: String,
     statusColor: Color,
@@ -256,9 +253,14 @@ private fun AdbCoreWideLayout(
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
         horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
     ) {
-        AdbCoreInfoTable(
+        AdbCoreStatusCard(
+            sectionTitle = sectionTitle,
+            refreshStatusDescription = refreshStatusDescription,
+            onRefreshStatus = onRefreshStatus,
+            canRefreshStatus = canRefreshStatus,
+            refreshLoading = refreshLoading,
             statusLabel = statusLabel,
             statusValue = statusValue,
             statusColor = statusColor,
@@ -266,23 +268,25 @@ private fun AdbCoreWideLayout(
             versionValue = versionValue,
             devicesLabel = devicesLabel,
             devicesValue = devicesValue,
-            modifier = Modifier.widthIn(min = 280.dp, max = 360.dp),
+            modifier = Modifier.widthIn(min = 300.dp, max = 360.dp),
         )
-        Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
-        VerticalDivider(
-            modifier = Modifier.fillMaxHeight(),
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-        )
-        Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
         AdbCoreActionsRow(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
             actions = actions,
-            modifier = Modifier.weight(1f),
+            topSpacerHeight = AdbCoreActionsTopSpacerHeight,
         )
     }
 }
 
 @Composable
 private fun AdbCoreCompactLayout(
+    sectionTitle: String,
+    refreshStatusDescription: String,
+    onRefreshStatus: () -> Unit,
+    canRefreshStatus: Boolean,
+    refreshLoading: Boolean,
     statusLabel: String,
     statusValue: String,
     statusColor: Color,
@@ -310,7 +314,109 @@ private fun AdbCoreCompactLayout(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
         verticalAlignment = Alignment.Top,
+    ) {
+        AdbCoreStatusCard(
+            sectionTitle = sectionTitle,
+            refreshStatusDescription = refreshStatusDescription,
+            onRefreshStatus = onRefreshStatus,
+            canRefreshStatus = canRefreshStatus,
+            refreshLoading = refreshLoading,
+            statusLabel = statusLabel,
+            statusValue = statusValue,
+            statusColor = statusColor,
+            versionLabel = versionLabel,
+            versionValue = versionValue,
+            devicesLabel = devicesLabel,
+            devicesValue = devicesValue,
+            modifier = Modifier.weight(1f),
+        )
+
+        Column(
+            modifier = Modifier
+                .widthIn(max = AdbCoreCompactButtonMaxWidth)
+                .fillMaxHeight(),
+        ) {
+            Spacer(modifier = Modifier.height(AdbCoreActionsTopSpacerHeight))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(
+                    space = Dimensions.paddingXSmall,
+                    alignment = Alignment.Bottom,
+                ),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                AdbCoreCompactSoftButton(
+                    onClick = onToggleServer,
+                    text = toggleLabel,
+                    leadingIcon = toggleIcon,
+                    enabled = canToggleServer,
+                    loading = toggleLoading,
+                    containerColor = toggleContainerColor,
+                    modifier = Modifier.widthIn(max = AdbCoreCompactButtonMaxWidth),
+                )
+                AdbCoreCompactSoftButton(
+                    onClick = onRestartServer,
+                    text = restartLabel,
+                    leadingIcon = Icons.Outlined.RestartAlt,
+                    enabled = canRestart,
+                    loading = restartLoading,
+                    containerColor = restartContainerColor,
+                    modifier = Modifier.widthIn(max = AdbCoreCompactButtonMaxWidth),
+                )
+                AdbCoreCompactSoftButton(
+                    onClick = onOpenSettings,
+                    text = settingsLabel,
+                    leadingIcon = Icons.Outlined.Settings,
+                    enabled = canOpenSettings,
+                    loading = false,
+                    containerColor = settingsContainerColor,
+                    modifier = Modifier.widthIn(max = AdbCoreCompactButtonMaxWidth),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdbCoreStatusCard(
+    sectionTitle: String,
+    refreshStatusDescription: String,
+    onRefreshStatus: () -> Unit,
+    canRefreshStatus: Boolean,
+    refreshLoading: Boolean,
+    statusLabel: String,
+    statusValue: String,
+    statusColor: Color,
+    versionLabel: String,
+    versionValue: String,
+    devicesLabel: String,
+    devicesValue: String,
+    modifier: Modifier = Modifier,
+) {
+    AdbSectionCard(
+        title = sectionTitle,
+        modifier = modifier,
+        titleUppercase = true,
+        contentSpacing = Dimensions.paddingMedium,
+        contentPadding = PaddingValues(
+            horizontal = Dimensions.paddingLarge,
+            vertical = Dimensions.paddingMedium,
+        ),
+        headerTrailing = {
+            AdbOutlinedButton(
+                onClick = onRefreshStatus,
+                leadingIcon = Icons.Outlined.Refresh,
+                contentDescription = refreshStatusDescription,
+                enabled = canRefreshStatus,
+                loading = refreshLoading,
+                size = AdbButtonSize.XSMALL,
+            )
+        },
     ) {
         AdbCoreInfoTable(
             statusLabel = statusLabel,
@@ -320,56 +426,7 @@ private fun AdbCoreCompactLayout(
             versionValue = versionValue,
             devicesLabel = devicesLabel,
             devicesValue = devicesValue,
-            modifier = Modifier.widthIn(min = 280.dp, max = 360.dp),
         )
-        Spacer(modifier = Modifier.width(Dimensions.paddingSmall))
-        VerticalDivider(
-            modifier = Modifier.fillMaxHeight(),
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-        )
-        Spacer(modifier = Modifier.width(Dimensions.paddingMedium))
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(Dimensions.paddingXSmall),
-            horizontalAlignment = Alignment.Start,
-        ) {
-            AdbCoreCompactSoftButton(
-                onClick = onToggleServer,
-                text = toggleLabel,
-                leadingIcon = toggleIcon,
-                enabled = canToggleServer,
-                loading = toggleLoading,
-                containerColor = toggleContainerColor,
-                modifier = Modifier
-                    .widthIn(max = AdbCoreCompactButtonMaxWidth)
-                    .weight(1f),
-            )
-            AdbCoreCompactSoftButton(
-                onClick = onRestartServer,
-                text = restartLabel,
-                leadingIcon = Icons.Outlined.RestartAlt,
-                enabled = canRestart,
-                loading = restartLoading,
-                containerColor = restartContainerColor,
-                modifier = Modifier
-                    .widthIn(max = AdbCoreCompactButtonMaxWidth)
-                    .weight(1f),
-            )
-            AdbCoreCompactSoftButton(
-                onClick = onOpenSettings,
-                text = settingsLabel,
-                leadingIcon = Icons.Outlined.Settings,
-                enabled = canOpenSettings,
-                loading = false,
-                containerColor = settingsContainerColor,
-                modifier = Modifier
-                    .widthIn(max = AdbCoreCompactButtonMaxWidth)
-                    .weight(1f),
-            )
-        }
     }
 }
 
@@ -401,7 +458,7 @@ private fun AdbCoreCompactSoftButton(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = AdbButtonSize.SMALL.height)
+            .height(AdbButtonSize.SMALL.height)
             .clickable(
                 enabled = isEnabled,
                 interactionSource = interactionSource,
@@ -523,17 +580,31 @@ private fun AdbCoreInfoRow(
 @Composable
 private fun AdbCoreActionsRow(
     actions: List<AdbCoreActionCardUi>,
+    topSpacerHeight: androidx.compose.ui.unit.Dp = 0.dp,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
-        modifier = modifier.fillMaxWidth(),
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
     ) {
-        actions.forEach { action ->
-            AdbCoreActionCard(
-                action = action,
-                modifier = Modifier.weight(1f),
-            )
+        Spacer(modifier = Modifier.height(topSpacerHeight))
+
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(),
+        ) {
+            actions.forEach { action ->
+                AdbCoreActionCard(
+                    action = action,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .widthIn(max = AdbCoreWideActionCardMaxWidth),
+                )
+            }
         }
     }
 }

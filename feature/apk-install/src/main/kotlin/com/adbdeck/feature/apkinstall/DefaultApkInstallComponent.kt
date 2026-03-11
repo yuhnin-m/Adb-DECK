@@ -13,6 +13,8 @@ import com.adbdeck.feature.apkinstall.service.ApkInstallHostFileService
 import com.adbdeck.feature.apkinstall.service.ApkInstallService
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.io.File
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.Job
@@ -122,6 +124,16 @@ class DefaultApkInstallComponent(
         }
     }
 
+    override fun onAllowTestOnlyChanged(allow: Boolean) {
+        _state.update { current ->
+            if (current.isInstalling) {
+                current
+            } else {
+                current.copy(allowTestOnlyInstall = allow)
+            }
+        }
+    }
+
     override fun onInstallApk() {
         if (installJob?.isActive == true || _state.value.isInstalling) {
             showFeedbackResource(
@@ -140,6 +152,7 @@ class DefaultApkInstallComponent(
             return
         }
 
+        val allowTestOnly = _state.value.allowTestOnlyInstall
         installJob = scope.launch {
             val rawPath = _state.value.apkPath
             when (val validation = hostFileService.validateApkPath(rawPath)) {
@@ -152,8 +165,38 @@ class DefaultApkInstallComponent(
                 }
 
                 is ApkFileValidationResult.Valid -> {
-                    startInstall(deviceId = deviceId, apkPath = validation.absolutePath, apkFileName = validation.fileName)
+                    startInstall(
+                        deviceId = deviceId,
+                        apkPath = validation.absolutePath,
+                        apkFileName = validation.fileName,
+                        allowTestOnly = allowTestOnly,
+                    )
                 }
+            }
+        }
+    }
+
+    override fun onCopyStatusResult() {
+        val statusMessage = _state.value.status.message.trim()
+        if (statusMessage.isBlank()) {
+            showFeedbackResource(
+                messageRes = Res.string.apk_install_feedback_copy_status_failed,
+                isError = true,
+            )
+            return
+        }
+
+        scope.launch {
+            copyToClipboard(statusMessage).onSuccess {
+                showFeedbackResource(
+                    messageRes = Res.string.apk_install_feedback_copy_status_success,
+                    isError = false,
+                )
+            }.onFailure {
+                showFeedbackResource(
+                    messageRes = Res.string.apk_install_feedback_copy_status_failed,
+                    isError = true,
+                )
             }
         }
     }
@@ -222,6 +265,7 @@ class DefaultApkInstallComponent(
         deviceId: String,
         apkPath: String,
         apkFileName: String,
+        allowTestOnly: Boolean,
     ) {
         val statusInstalling = getString(Res.string.apk_install_status_installing)
         val logStarted = getString(Res.string.apk_install_log_started, apkPath)
@@ -242,6 +286,7 @@ class DefaultApkInstallComponent(
             localApkPath = apkPath,
             adbPath = adbPath(),
             options = ApkInstallOptions(
+                allowTestOnly = allowTestOnly,
                 bundletoolPath = settingsRepository.getSettings().bundletoolPath,
             ),
         ) { progress, message ->
@@ -430,6 +475,11 @@ class DefaultApkInstallComponent(
                 }
             }
         }
+    }
+
+    private fun copyToClipboard(text: String): Result<Unit> = runCatching {
+        val selection = StringSelection(text)
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, null)
     }
 
     /** Добавляет строку в лог с ограничением размера списка. */

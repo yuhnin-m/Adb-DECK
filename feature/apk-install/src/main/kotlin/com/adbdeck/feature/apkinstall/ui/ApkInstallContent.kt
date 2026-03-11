@@ -3,6 +3,7 @@ package com.adbdeck.feature.apkinstall.ui
 import adbdeck.feature.apk_install.generated.resources.Res
 import adbdeck.feature.apk_install.generated.resources.apk_install_action_choose_apk
 import adbdeck.feature.apk_install.generated.resources.apk_install_action_clear_log
+import adbdeck.feature.apk_install.generated.resources.apk_install_action_copy_result
 import adbdeck.feature.apk_install.generated.resources.apk_install_action_install
 import adbdeck.feature.apk_install.generated.resources.apk_install_drop_disabled
 import adbdeck.feature.apk_install.generated.resources.apk_install_drop_enabled
@@ -13,6 +14,7 @@ import adbdeck.feature.apk_install.generated.resources.apk_install_section_drop_
 import adbdeck.feature.apk_install.generated.resources.apk_install_section_file_title
 import adbdeck.feature.apk_install.generated.resources.apk_install_section_log_title
 import adbdeck.feature.apk_install.generated.resources.apk_install_section_status_title
+import adbdeck.feature.apk_install.generated.resources.apk_install_toggle_allow_test_only
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,15 +30,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
@@ -63,7 +69,9 @@ internal fun ApkInstallContent(
     onApkPathChanged: (String) -> Unit,
     onPickApkFile: () -> Unit,
     onApkPathDropped: (String) -> Unit,
+    onAllowTestOnlyChanged: (Boolean) -> Unit,
     onInstallApk: () -> Unit,
+    onCopyStatusResult: () -> Unit,
     onClearLog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -96,6 +104,25 @@ internal fun ApkInstallContent(
                     singleLine = true,
                     size = AdbTextFieldSize.MEDIUM,
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.apk_install_toggle_allow_test_only),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
+                        Switch(
+                            checked = state.allowTestOnlyInstall,
+                            onCheckedChange = onAllowTestOnlyChanged,
+                            enabled = canEditPath,
+                        )
+                    }
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -138,6 +165,7 @@ internal fun ApkInstallContent(
 
             ApkInstallStatusCard(
                 state = state,
+                onCopyStatusResult = onCopyStatusResult,
                 modifier = Modifier.fillMaxWidth(),
             )
 
@@ -214,6 +242,7 @@ internal fun ApkInstallContent(
 @Composable
 private fun ApkInstallStatusCard(
     state: ApkInstallState,
+    onCopyStatusResult: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val status = state.status
@@ -227,6 +256,15 @@ private fun ApkInstallStatusCard(
         title = stringResource(Res.string.apk_install_section_status_title),
         titleTextStyle = MaterialTheme.typography.titleMedium,
         modifier = modifier,
+        headerTrailing = {
+            AdbPlainButton(
+                onClick = onCopyStatusResult,
+                enabled = status.message.isNotBlank(),
+                text = stringResource(Res.string.apk_install_action_copy_result),
+                size = AdbButtonSize.MEDIUM,
+                type = AdbButtonType.NEUTRAL,
+            )
+        },
     ) {
         Text(
             text = status.message,

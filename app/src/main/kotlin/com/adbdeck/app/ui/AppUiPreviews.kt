@@ -284,6 +284,9 @@ private class PreviewSettingsComponent : SettingsComponent {
     )
 
     override fun onAdbPathChanged(path: String) = Unit
+    override fun onAutoDetectAdb() = Unit
+    override fun onSelectAutoDetectedAdbPath(path: String) = Unit
+    override fun onDismissAutoDetectedAdbCandidates() = Unit
     override fun onBundletoolPathChanged(path: String) = Unit
     override fun onScrcpyPathChanged(path: String) = Unit
     override fun onSave() = Unit
@@ -559,7 +562,9 @@ private class PreviewApkInstallComponent : ApkInstallComponent {
     override fun onApkPathChanged(path: String) = Unit
     override fun onPickApkFile() = Unit
     override fun onApkPathDropped(path: String) = Unit
+    override fun onAllowTestOnlyChanged(allow: Boolean) = Unit
     override fun onInstallApk() = Unit
+    override fun onCopyStatusResult() = Unit
     override fun onClearLog() = Unit
     override fun onDismissFeedback() = Unit
 }

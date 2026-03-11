@@ -18,6 +18,7 @@
     <string name="settings_action_check_adb">Проверить ADB</string>
     <string name="settings_action_check_bundletool">Проверить bundletool</string>
     <string name="settings_action_choose_path">Выбрать файл…</string>
+    <string name="settings_action_auto_detect_adb">Auto Detect ADB</string>
     <string name="settings_action_checking">Проверяется…</string>
     <string name="settings_action_save">Сохранить</string>
     <string name="settings_action_saving">Сохранение…</string>
@@ -85,4 +86,9 @@
     <string name="settings_feedback_saved">Настройки сохранены</string>
     <string name="settings_feedback_save_failed">Не удалось сохранить настройки</string>
     <string name="settings_feedback_logcat_save_failed">Не удалось сохранить настройки Logcat</string>
+    <string name="settings_help_loading">Загрузка инструкции…</string>
+    <string name="settings_help_load_failed">Не удалось загрузить локальную страницу инструкции</string>
+    <string name="settings_feedback_adb_autodetect_not_found">ADB не найден в PATH и стандартных SDK-путях</string>
+    <string name="settings_feedback_adb_autodetect_multiple">Найдено %1$d путей ADB. Выберите один из списка.</string>
+    <string name="settings_feedback_adb_autodetect_applied">Путь к ADB применен: %1$s</string>
 </resources>

@@ -28,7 +28,9 @@ fun ApkInstallScreen(component: ApkInstallComponent) {
             onApkPathChanged = component::onApkPathChanged,
             onPickApkFile = component::onPickApkFile,
             onApkPathDropped = component::onApkPathDropped,
+            onAllowTestOnlyChanged = component::onAllowTestOnlyChanged,
             onInstallApk = component::onInstallApk,
+            onCopyStatusResult = component::onCopyStatusResult,
             onClearLog = component::onClearLog,
             modifier = Modifier.weight(1f),
         )

@@ -1,34 +1,28 @@
 package com.adbdeck.feature.settings.ui
 
 import adbdeck.feature.settings.generated.resources.Res
-import adbdeck.feature.settings.generated.resources.settings_adb_download
-import adbdeck.feature.settings.generated.resources.settings_adb_examples_linux
-import adbdeck.feature.settings.generated.resources.settings_adb_examples_macos
-import adbdeck.feature.settings.generated.resources.settings_adb_examples_windows
+import adbdeck.feature.settings.generated.resources.settings_action_adb_install_guide
 import adbdeck.feature.settings.generated.resources.settings_action_check
 import adbdeck.feature.settings.generated.resources.settings_action_checking
 import adbdeck.feature.settings.generated.resources.settings_action_choose_path
+import adbdeck.feature.settings.generated.resources.settings_action_auto_detect_adb
+import adbdeck.feature.settings.generated.resources.settings_action_bundletool_install_guide
+import adbdeck.feature.settings.generated.resources.settings_action_scrcpy_install_guide
 import adbdeck.feature.settings.generated.resources.settings_action_save
 import adbdeck.feature.settings.generated.resources.settings_action_saving
-import adbdeck.feature.settings.generated.resources.settings_bundletool_download
-import adbdeck.feature.settings.generated.resources.settings_bundletool_examples_linux
-import adbdeck.feature.settings.generated.resources.settings_bundletool_examples_macos
-import adbdeck.feature.settings.generated.resources.settings_bundletool_examples_windows
 import adbdeck.feature.settings.generated.resources.settings_field_adb_help
 import adbdeck.feature.settings.generated.resources.settings_field_adb_placeholder
 import adbdeck.feature.settings.generated.resources.settings_field_bundletool_help
 import adbdeck.feature.settings.generated.resources.settings_field_bundletool_placeholder
 import adbdeck.feature.settings.generated.resources.settings_field_scrcpy_help
 import adbdeck.feature.settings.generated.resources.settings_field_scrcpy_placeholder
+import adbdeck.feature.settings.generated.resources.settings_help_load_failed
+import adbdeck.feature.settings.generated.resources.settings_help_loading
 import adbdeck.feature.settings.generated.resources.settings_language_description
 import adbdeck.feature.settings.generated.resources.settings_language_english
 import adbdeck.feature.settings.generated.resources.settings_language_russian
 import adbdeck.feature.settings.generated.resources.settings_language_system
 import adbdeck.feature.settings.generated.resources.settings_language_title_bilingual
-import adbdeck.feature.settings.generated.resources.settings_scrcpy_download
-import adbdeck.feature.settings.generated.resources.settings_scrcpy_examples_linux
-import adbdeck.feature.settings.generated.resources.settings_scrcpy_examples_macos
-import adbdeck.feature.settings.generated.resources.settings_scrcpy_examples_windows
 import adbdeck.feature.settings.generated.resources.settings_section_appearance
 import adbdeck.feature.settings.generated.resources.settings_section_external_tools
 import adbdeck.feature.settings.generated.resources.settings_section_theme
@@ -45,6 +39,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -67,12 +62,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.awt.SwingPanel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -100,8 +97,15 @@ import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
 import com.adbdeck.core.ui.textfields.AdbTextFieldSize
 import com.adbdeck.feature.settings.SettingsComponent
 import com.adbdeck.feature.settings.ToolCheckState
+import java.awt.Desktop
+import java.util.Locale
+import javax.swing.JEditorPane
+import javax.swing.JScrollPane
+import javax.swing.ScrollPaneConstants
+import javax.swing.event.HyperlinkEvent
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.stringResource
 
 // ── State snapshots ───────────────────────────────────────────────────────────
@@ -113,6 +117,8 @@ private data class AppearanceSectionUiState(
 
 private data class ToolsSectionUiState(
     val adbPath: String,
+    val isAdbAutoDetecting: Boolean,
+    val adbAutoDetectCandidates: List<String>,
     val bundletoolPath: String,
     val scrcpyPath: String,
     val adbCheckState: ToolCheckState,
@@ -125,25 +131,54 @@ private data class SaveActionUiState(
     val hasPendingChanges: Boolean,
 )
 
+private enum class HelpTool {
+    ADB,
+    BUNDLETOOL,
+    SCRCPY,
+}
+
 // ── Root screen ───────────────────────────────────────────────────────────────
 
 @Composable
 fun SettingsScreen(component: SettingsComponent) {
+    var openedHelpTool by remember { mutableStateOf<HelpTool?>(null) }
+    val initialLanguage = remember(component) { component.state.value.currentLanguage }
+    val currentLanguage by remember(component) {
+        component.state.map { it.currentLanguage }.distinctUntilChanged()
+    }.collectAsState(initial = initialLanguage)
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surface,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(Dimensions.paddingLarge),
-                verticalArrangement = Arrangement.spacedBy(Dimensions.paddingDefault),
-            ) {
-                AppearanceSectionHost(component = component)
-                ToolsSectionHost(component = component)
-                SaveActionHost(component = component)
+            Row(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .padding(Dimensions.paddingLarge),
+                    verticalArrangement = Arrangement.spacedBy(Dimensions.paddingDefault),
+                ) {
+                    AppearanceSectionHost(component = component)
+                    ToolsSectionHost(
+                        component = component,
+                        onOpenGuide = { openedHelpTool = it },
+                    )
+                    SaveActionHost(component = component)
+                }
+
+                openedHelpTool?.let { tool ->
+                    HelpSidebarPanel(
+                        tool = tool,
+                        currentLanguage = currentLanguage,
+                        onClose = { openedHelpTool = null },
+                        modifier = Modifier
+                            .width(520.dp)
+                            .fillMaxHeight(),
+                    )
+                }
             }
 
             SaveFeedbackHost(
@@ -288,11 +323,16 @@ private fun AppearanceSection(
 // ── Tools section ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun ToolsSectionHost(component: SettingsComponent) {
+private fun ToolsSectionHost(
+    component: SettingsComponent,
+    onOpenGuide: (HelpTool) -> Unit,
+) {
     val initial = remember(component) {
         val s = component.state.value
         ToolsSectionUiState(
             adbPath = s.adbPath,
+            isAdbAutoDetecting = s.isAdbAutoDetecting,
+            adbAutoDetectCandidates = s.adbAutoDetectCandidates,
             bundletoolPath = s.bundletoolPath,
             scrcpyPath = s.scrcpyPath,
             adbCheckState = s.adbCheckState,
@@ -304,6 +344,8 @@ private fun ToolsSectionHost(component: SettingsComponent) {
         component.state.map {
             ToolsSectionUiState(
                 adbPath = it.adbPath,
+                isAdbAutoDetecting = it.isAdbAutoDetecting,
+                adbAutoDetectCandidates = it.adbAutoDetectCandidates,
                 bundletoolPath = it.bundletoolPath,
                 scrcpyPath = it.scrcpyPath,
                 adbCheckState = it.adbCheckState,
@@ -316,11 +358,15 @@ private fun ToolsSectionHost(component: SettingsComponent) {
     ToolsSection(
         state = uiState,
         onAdbPathChanged = component::onAdbPathChanged,
+        onAutoDetectAdb = component::onAutoDetectAdb,
+        onSelectAutoDetectedAdbPath = component::onSelectAutoDetectedAdbPath,
+        onDismissAutoDetectedAdbCandidates = component::onDismissAutoDetectedAdbCandidates,
         onCheckAdb = component::onCheckAdb,
         onBundletoolPathChanged = component::onBundletoolPathChanged,
         onCheckBundletool = component::onCheckBundletool,
         onScrcpyPathChanged = component::onScrcpyPathChanged,
         onCheckScrcpy = component::onCheckScrcpy,
+        onOpenGuide = onOpenGuide,
     )
 }
 
@@ -328,40 +374,32 @@ private fun ToolsSectionHost(component: SettingsComponent) {
 private fun ToolsSection(
     state: ToolsSectionUiState,
     onAdbPathChanged: (String) -> Unit,
+    onAutoDetectAdb: () -> Unit,
+    onSelectAutoDetectedAdbPath: (String) -> Unit,
+    onDismissAutoDetectedAdbCandidates: () -> Unit,
     onCheckAdb: () -> Unit,
     onBundletoolPathChanged: (String) -> Unit,
     onCheckBundletool: () -> Unit,
     onScrcpyPathChanged: (String) -> Unit,
     onCheckScrcpy: () -> Unit,
+    onOpenGuide: (HelpTool) -> Unit,
 ) {
     val sectionTitle = stringResource(Res.string.settings_section_external_tools)
     val checkLabel = stringResource(Res.string.settings_action_check)
     val checkingLabel = stringResource(Res.string.settings_action_checking)
+    val autoDetectAdbLabel = stringResource(Res.string.settings_action_auto_detect_adb)
     val choosePathLabel = stringResource(Res.string.settings_action_choose_path)
 
     val adbTitle = stringResource(Res.string.settings_tool_adb_title)
     val adbDesc = stringResource(Res.string.settings_field_adb_help)
     val adbPlaceholder = stringResource(Res.string.settings_field_adb_placeholder)
-    val adbDownload = stringResource(Res.string.settings_adb_download)
-    val adbMacos = stringResource(Res.string.settings_adb_examples_macos)
-    val adbLinux = stringResource(Res.string.settings_adb_examples_linux)
-    val adbWindows = stringResource(Res.string.settings_adb_examples_windows)
-
     val bundletoolTitle = stringResource(Res.string.settings_tool_bundletool_title)
     val bundletoolDesc = stringResource(Res.string.settings_field_bundletool_help)
     val bundletoolPlaceholder = stringResource(Res.string.settings_field_bundletool_placeholder)
-    val bundletoolDownload = stringResource(Res.string.settings_bundletool_download)
-    val bundletoolMacos = stringResource(Res.string.settings_bundletool_examples_macos)
-    val bundletoolLinux = stringResource(Res.string.settings_bundletool_examples_linux)
-    val bundletoolWindows = stringResource(Res.string.settings_bundletool_examples_windows)
 
     val scrcpyTitle = stringResource(Res.string.settings_tool_scrcpy_title)
     val scrcpyDesc = stringResource(Res.string.settings_field_scrcpy_help)
     val scrcpyPlaceholder = stringResource(Res.string.settings_field_scrcpy_placeholder)
-    val scrcpyDownload = stringResource(Res.string.settings_scrcpy_download)
-    val scrcpyMacos = stringResource(Res.string.settings_scrcpy_examples_macos)
-    val scrcpyLinux = stringResource(Res.string.settings_scrcpy_examples_linux)
-    val scrcpyWindows = stringResource(Res.string.settings_scrcpy_examples_windows)
     val toolsContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f)
     val toolsBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
 
@@ -384,14 +422,20 @@ private fun ToolsSection(
             placeholder = adbPlaceholder,
             checkLabel = checkLabel,
             checkingLabel = checkingLabel,
+            autoDetectLabel = autoDetectAdbLabel,
+            isAutoDetecting = state.isAdbAutoDetecting,
+            autoDetectCandidates = state.adbAutoDetectCandidates,
             choosePathLabel = choosePathLabel,
             checkState = state.adbCheckState,
-            helpLines = listOf(adbDownload, adbMacos, adbLinux, adbWindows),
             onPathChanged = onAdbPathChanged,
             onBrowse = {
                 chooseToolExecutablePath(title = adbTitle, currentPath = state.adbPath)
                     ?.let(onAdbPathChanged)
             },
+            onAutoDetect = onAutoDetectAdb,
+            onSelectAutoDetectedPath = onSelectAutoDetectedAdbPath,
+            onDismissAutoDetectCandidates = onDismissAutoDetectedAdbCandidates,
+            onOpenGuide = { onOpenGuide(HelpTool.ADB) },
             onCheck = onCheckAdb,
         )
 
@@ -404,14 +448,20 @@ private fun ToolsSection(
             placeholder = bundletoolPlaceholder,
             checkLabel = checkLabel,
             checkingLabel = checkingLabel,
+            autoDetectLabel = null,
+            isAutoDetecting = false,
+            autoDetectCandidates = emptyList(),
             choosePathLabel = choosePathLabel,
             checkState = state.bundletoolCheckState,
-            helpLines = listOf(bundletoolDownload, bundletoolMacos, bundletoolLinux, bundletoolWindows),
             onPathChanged = onBundletoolPathChanged,
             onBrowse = {
                 chooseToolExecutablePath(title = bundletoolTitle, currentPath = state.bundletoolPath)
                     ?.let(onBundletoolPathChanged)
             },
+            onAutoDetect = null,
+            onSelectAutoDetectedPath = null,
+            onDismissAutoDetectCandidates = null,
+            onOpenGuide = { onOpenGuide(HelpTool.BUNDLETOOL) },
             onCheck = onCheckBundletool,
         )
 
@@ -424,14 +474,20 @@ private fun ToolsSection(
             placeholder = scrcpyPlaceholder,
             checkLabel = checkLabel,
             checkingLabel = checkingLabel,
+            autoDetectLabel = null,
+            isAutoDetecting = false,
+            autoDetectCandidates = emptyList(),
             choosePathLabel = choosePathLabel,
             checkState = state.scrcpyCheckState,
-            helpLines = listOf(scrcpyDownload, scrcpyMacos, scrcpyLinux, scrcpyWindows),
             onPathChanged = onScrcpyPathChanged,
             onBrowse = {
                 chooseToolExecutablePath(title = scrcpyTitle, currentPath = state.scrcpyPath)
                     ?.let(onScrcpyPathChanged)
             },
+            onAutoDetect = null,
+            onSelectAutoDetectedPath = null,
+            onDismissAutoDetectCandidates = null,
+            onOpenGuide = { onOpenGuide(HelpTool.SCRCPY) },
             onCheck = onCheckScrcpy,
         )
     }
@@ -445,14 +501,19 @@ private fun ToolSettingBlock(
     placeholder: String,
     checkLabel: String,
     checkingLabel: String,
+    autoDetectLabel: String?,
+    isAutoDetecting: Boolean,
+    autoDetectCandidates: List<String>,
     choosePathLabel: String,
     checkState: ToolCheckState,
-    helpLines: List<String>,
     onPathChanged: (String) -> Unit,
     onBrowse: () -> Unit,
+    onAutoDetect: (() -> Unit)?,
+    onSelectAutoDetectedPath: ((String) -> Unit)?,
+    onDismissAutoDetectCandidates: (() -> Unit)?,
+    onOpenGuide: (() -> Unit)?,
     onCheck: () -> Unit,
 ) {
-    var showHelp by remember { mutableStateOf(false) }
     val isChecking = checkState is ToolCheckState.Checking
 
     Column(
@@ -507,31 +568,46 @@ private fun ToolSettingBlock(
                 size = AdbButtonSize.MEDIUM,
             )
 
-            if (helpLines.isNotEmpty()) {
-                Box {
-                    IconButton(onClick = { showHelp = true }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = null,
-                            modifier = Modifier.size(Dimensions.iconSizeCard),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (onOpenGuide != null) {
+                IconButton(onClick = onOpenGuide) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(Dimensions.iconSizeCard),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        if (!autoDetectLabel.isNullOrBlank() && onAutoDetect != null) {
+            Box {
+                AdbOutlinedButton(
+                    onClick = onAutoDetect,
+                    text = autoDetectLabel,
+                    loading = isAutoDetecting,
+                    enabled = !isAutoDetecting,
+                    size = AdbButtonSize.MEDIUM,
+                )
+
+                DropdownMenu(
+                    expanded = autoDetectCandidates.isNotEmpty(),
+                    onDismissRequest = { onDismissAutoDetectCandidates?.invoke() },
+                ) {
+                    autoDetectCandidates.forEach { candidate ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = candidate,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            },
+                            onClick = {
+                                onSelectAutoDetectedPath?.invoke(candidate)
+                            },
                         )
-                    }
-                    DropdownMenu(
-                        expanded = showHelp,
-                        onDismissRequest = { showHelp = false },
-                    ) {
-                        helpLines.forEach { line ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = line,
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                },
-                                onClick = { showHelp = false },
-                            )
-                        }
                     }
                 }
             }
@@ -598,6 +674,162 @@ private fun ToolCheckStateRow(state: ToolCheckState) {
 
         ToolCheckState.Idle -> Unit
     }
+}
+
+private sealed interface HelpContentState {
+    data object Loading : HelpContentState
+    data class Loaded(val html: String) : HelpContentState
+    data object Error : HelpContentState
+}
+
+@Composable
+@OptIn(ExperimentalResourceApi::class)
+private fun HelpSidebarPanel(
+    tool: HelpTool,
+    currentLanguage: AppLanguage,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var contentState by remember(tool, currentLanguage) {
+        mutableStateOf<HelpContentState>(HelpContentState.Loading)
+    }
+    val title = when (tool) {
+        HelpTool.ADB -> stringResource(Res.string.settings_action_adb_install_guide)
+        HelpTool.BUNDLETOOL -> stringResource(Res.string.settings_action_bundletool_install_guide)
+        HelpTool.SCRCPY -> stringResource(Res.string.settings_action_scrcpy_install_guide)
+    }
+    val loadingText = stringResource(Res.string.settings_help_loading)
+    val errorText = stringResource(Res.string.settings_help_load_failed)
+
+    LaunchedEffect(tool, currentLanguage) {
+        contentState = runCatching {
+            val path = resolveHelpResourcePath(tool, currentLanguage)
+            Res.readBytes(path).decodeToString()
+        }.fold(
+            onSuccess = { HelpContentState.Loaded(it) },
+            onFailure = { HelpContentState.Error },
+        )
+    }
+
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        horizontal = Dimensions.paddingDefault,
+                        vertical = Dimensions.paddingSmall,
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = onClose) {
+                    Icon(
+                        imageVector = Icons.Outlined.Clear,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                when (val state = contentState) {
+                    HelpContentState.Loading -> Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(Dimensions.iconSizeSmall),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = loadingText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    HelpContentState.Error -> Text(
+                        text = errorText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(Dimensions.paddingLarge),
+                    )
+
+                    is HelpContentState.Loaded -> SwingPanel(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = {
+                            createHelpScrollPane(state.html)
+                        },
+                        update = { pane ->
+                            updateHelpScrollPane(pane, state.html)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun resolveHelpResourcePath(tool: HelpTool, language: AppLanguage): String {
+    val isRussian = when (language) {
+        AppLanguage.RUSSIAN -> true
+        AppLanguage.ENGLISH -> false
+        AppLanguage.SYSTEM -> Locale.getDefault().language.startsWith("ru", ignoreCase = true)
+    }
+    return when (tool) {
+        HelpTool.ADB -> if (isRussian) "files/adb_help_ru.html" else "files/adb_help_en.html"
+        HelpTool.BUNDLETOOL -> if (isRussian) "files/bundletool_help_ru.html" else "files/bundletool_help_en.html"
+        HelpTool.SCRCPY -> if (isRussian) "files/scrcpy_help_ru.html" else "files/scrcpy_help_en.html"
+    }
+}
+
+private fun createHelpScrollPane(html: String): JScrollPane {
+    val editor = JEditorPane("text/html", html).apply {
+        isEditable = false
+        addHyperlinkListener { event ->
+            if (event.eventType == HyperlinkEvent.EventType.ACTIVATED) {
+                openHelpHyperlink(event)
+            }
+        }
+        caretPosition = 0
+    }
+    return JScrollPane(editor).apply {
+        verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
+        horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
+    }
+}
+
+private fun updateHelpScrollPane(scrollPane: JScrollPane, html: String) {
+    val editor = scrollPane.viewport.view as? JEditorPane ?: return
+    if (editor.text != html) {
+        editor.text = html
+        editor.caretPosition = 0
+    }
+}
+
+private fun openHelpHyperlink(event: HyperlinkEvent) {
+    val url = event.url ?: return
+    if (!Desktop.isDesktopSupported()) return
+    val desktop = runCatching { Desktop.getDesktop() }.getOrNull() ?: return
+    if (!desktop.isSupported(Desktop.Action.BROWSE)) return
+    runCatching { desktop.browse(url.toURI()) }
 }
 
 // ── Save action ───────────────────────────────────────────────────────────────

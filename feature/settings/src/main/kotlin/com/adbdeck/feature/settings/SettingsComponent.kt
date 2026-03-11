@@ -32,6 +32,15 @@ interface SettingsComponent {
     /** Проверить доступность adb по текущему пути. */
     fun onCheckAdb()
 
+    /** Автоматически найти ADB в PATH и стандартных SDK-путях. */
+    fun onAutoDetectAdb()
+
+    /** Применить путь ADB из списка кандидатов, найденных автодетектом. */
+    fun onSelectAutoDetectedAdbPath(path: String)
+
+    /** Закрыть список кандидатов автодетекта ADB. */
+    fun onDismissAutoDetectedAdbCandidates()
+
     /** Проверить доступность bundletool по текущему пути и вывести версию. */
     fun onCheckBundletool()
 
