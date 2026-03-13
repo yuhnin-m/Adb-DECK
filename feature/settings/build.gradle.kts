@@ -23,4 +23,5 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:adb-api"))
     implementation(project(":core:settings"))
+    implementation(project(":core:utils"))
 }

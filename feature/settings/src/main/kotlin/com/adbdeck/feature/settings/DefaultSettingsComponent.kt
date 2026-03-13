@@ -19,9 +19,10 @@ import com.adbdeck.core.settings.AppSettings
 import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
-import java.io.File
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.jetbrains.compose.resources.getString
 
 /**
@@ -98,7 +100,7 @@ class DefaultSettingsComponent(
                 bundletoolCheckState = ToolCheckState.Idle,
                 hasPendingChanges = hasPendingChanges(
                     adbPath = current.adbPath,
-                    bundletoolPath = current.bundletoolPath,
+                    bundletoolPath = path,
                     scrcpyPath = current.scrcpyPath,
                     theme = current.currentTheme,
                     language = current.currentLanguage,
@@ -164,7 +166,7 @@ class DefaultSettingsComponent(
             _state.update { it.copy(isSaving = true) }
 
             val result = saveMutex.withLock {
-                runCatching {
+                runCatchingPreserveCancellation {
                     val currentRepo = settingsRepository.getSettings()
                     val currentUi = _state.value
                     val updated = currentRepo.copy(
@@ -255,7 +257,11 @@ class DefaultSettingsComponent(
                 )
             }
 
-            val candidates = runCatching { detectAdbCandidates() }.getOrElse {
+            val candidates = runCatchingPreserveCancellation {
+                withContext(Dispatchers.IO) {
+                    AdbAutoDetect.detectCandidates()
+                }
+            }.getOrElse {
                 emptyList()
             }
 
@@ -489,7 +495,7 @@ class DefaultSettingsComponent(
     private suspend fun persistLogcatSettings() {
         val snapshot = _state.value
         val result = saveMutex.withLock {
-            runCatching {
+            runCatchingPreserveCancellation {
                 val current = settingsRepository.getSettings()
                 settingsRepository.saveSettings(
                     current.copy(
@@ -512,95 +518,6 @@ class DefaultSettingsComponent(
                 message = error.message ?: getString(Res.string.settings_feedback_logcat_save_failed),
                 isError = true,
             )
-        }
-    }
-
-    private fun detectAdbCandidates(): List<String> {
-        val ordered = linkedSetOf<String>()
-        detectAdbFromPath().forEach { candidate ->
-            addAdbCandidateIfExists(ordered, candidate)
-        }
-        standardAdbPaths().forEach { candidate ->
-            addAdbCandidateIfExists(ordered, candidate)
-        }
-        return ordered.toList()
-    }
-
-    private fun detectAdbFromPath(): List<String> {
-        val command = when (detectHostOs()) {
-            HostOs.WINDOWS -> listOf("where", "adb")
-            else -> listOf("which", "-a", "adb")
-        }
-        return runCommandForLines(command)
-    }
-
-    private fun standardAdbPaths(): List<String> {
-        val home = System.getProperty("user.home").orEmpty()
-        return when (detectHostOs()) {
-            HostOs.MAC -> listOf(
-                File(home, "Library/Android/sdk/platform-tools/adb").path,
-                File(home, "Android/Sdk/platform-tools/adb").path,
-                "/opt/homebrew/bin/adb",
-                "/usr/local/bin/adb",
-            )
-
-            HostOs.LINUX -> listOf(
-                File(home, "Android/Sdk/platform-tools/adb").path,
-                File(home, "Android/sdk/platform-tools/adb").path,
-                "/usr/bin/adb",
-                "/usr/local/bin/adb",
-            )
-
-            HostOs.WINDOWS -> buildList {
-                val localAppData = System.getenv("LOCALAPPDATA").orEmpty()
-                if (localAppData.isNotBlank()) {
-                    add(File(localAppData, "Android/Sdk/platform-tools/adb.exe").path)
-                }
-                add("C:\\Android\\sdk\\platform-tools\\adb.exe")
-                add("C:\\Program Files\\Android\\Android Studio\\platform-tools\\adb.exe")
-            }
-
-            HostOs.UNKNOWN -> emptyList()
-        }
-    }
-
-    private fun addAdbCandidateIfExists(
-        target: MutableSet<String>,
-        rawPath: String,
-    ) {
-        val normalized = normalizeCandidatePath(rawPath) ?: return
-        val file = File(normalized)
-        if (!file.isFile) return
-        if (detectHostOs() != HostOs.WINDOWS && !file.canExecute()) return
-        target.add(normalized)
-    }
-
-    private fun normalizeCandidatePath(rawPath: String): String? {
-        val cleaned = rawPath.trim().removeSurrounding("\"")
-        if (cleaned.isBlank()) return null
-        return File(cleaned).absoluteFile.normalize().path
-    }
-
-    private fun runCommandForLines(command: List<String>): List<String> = runCatching {
-        val process = ProcessBuilder(command)
-            .redirectErrorStream(true)
-            .start()
-        val output = process.inputStream.bufferedReader().use { reader ->
-            reader.lineSequence().toList()
-        }
-        process.waitFor()
-        output
-    }.getOrElse { emptyList() }
-
-    private fun detectHostOs(): HostOs {
-        val osName = System.getProperty("os.name")
-            ?.lowercase()
-            .orEmpty()
-        return when {
-            osName.contains("win") -> HostOs.WINDOWS
-            osName.contains("mac") -> HostOs.MAC
-            osName.contains("nix") || osName.contains("nux") || osName.contains("linux") -> HostOs.LINUX
-            else -> HostOs.UNKNOWN
         }
     }
 
@@ -667,13 +584,6 @@ class DefaultSettingsComponent(
                 language = settings.language,
             )
         }
-    }
-
-    private enum class HostOs {
-        MAC,
-        LINUX,
-        WINDOWS,
-        UNKNOWN,
     }
 
     private companion object {
