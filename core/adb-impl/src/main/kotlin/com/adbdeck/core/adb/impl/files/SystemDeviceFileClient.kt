@@ -44,11 +44,11 @@ class SystemDeviceFileClient(
             probe_code=${'$'}?
             if [ ${'$'}probe_code -ne 0 ]; then
               case "${'$'}probe" in
-                *"No such file"*|*"not found"*)
+                *No\ such\ file*|*not\ found*)
                   echo "__ERR__NOT_FOUND__:${'$'}dir"
                   exit 3
                   ;;
-                *"Permission denied"*)
+                *Permission\ denied*)
                   echo "__ERR__PERMISSION_DENIED__:${'$'}dir"
                   exit 5
                   ;;
@@ -92,11 +92,13 @@ class SystemDeviceFileClient(
               size=""
               mtime=""
               stat_pair=""
+              # Используем двойные кавычки в форматах stat/printf:
+              # это устойчивее при прокидке `adb shell sh -c` с Windows-host.
               if command -v toybox >/dev/null 2>&1; then
-                stat_pair=${'$'}(toybox stat -c '%s|%Y' "${'$'}entry" 2>/dev/null || true)
+                stat_pair=${'$'}(toybox stat -c "%s|%Y" "${'$'}entry" 2>/dev/null || true)
               fi
               if [ -z "${'$'}stat_pair" ]; then
-                stat_pair=${'$'}(stat -c '%s|%Y' "${'$'}entry" 2>/dev/null || stat -f '%z|%m' "${'$'}entry" 2>/dev/null || true)
+                stat_pair=${'$'}(stat -c "%s|%Y" "${'$'}entry" 2>/dev/null || stat -f "%z|%m" "${'$'}entry" 2>/dev/null || true)
               fi
 
               if [ -n "${'$'}stat_pair" ]; then
@@ -108,7 +110,7 @@ class SystemDeviceFileClient(
                 fi
               fi
 
-              printf '%s\037%s\037%s\037%s\n' "${'$'}name" "${'$'}type" "${'$'}size" "${'$'}mtime"
+              printf "%s\037%s\037%s\037%s\n" "${'$'}name" "${'$'}type" "${'$'}size" "${'$'}mtime"
             done
         """.trimIndent()
 
@@ -127,10 +129,10 @@ class SystemDeviceFileClient(
             probe_code=${'$'}?
             if [ ${'$'}probe_code -ne 0 ]; then
               case "${'$'}probe" in
-                *"No such file"*|*"not found"*)
+                *No\ such\ file*|*not\ found*)
                   exit 3
                   ;;
-                *"Permission denied"*)
+                *Permission\ denied*)
                   exit 5
                   ;;
                 *)
@@ -332,7 +334,7 @@ class SystemDeviceFileClient(
         for (index in args.indices.reversed()) {
             val tokenNumber = index + 1
             val token = "$$tokenNumber"
-            val quoted = shellQuote(args[index])
+            val quoted = shellDoubleQuote(args[index])
 
             // Сначала заменяем шаблоны в кавычках: "$1" -> '/path'
             result = result.replace("\"$token\"", quoted)
@@ -344,6 +346,25 @@ class SystemDeviceFileClient(
         }
         return result
     }
+
+    /**
+     * Экранирует строку для безопасной вставки в double-quoted shell-литерал.
+     *
+     * Такой формат устойчивее для `adb shell sh -c` на Windows-host,
+     * чем вложенные одинарные кавычки.
+     */
+    private fun shellDoubleQuote(value: String): String =
+        "\"" + buildString(value.length + 8) {
+            value.forEach { ch ->
+                when (ch) {
+                    '\\' -> append("\\\\")
+                    '"' -> append("\\\"")
+                    '$' -> append("\\$")
+                    '`' -> append("\\`")
+                    else -> append(ch)
+                }
+            }
+        } + "\""
 
     /** Экранирует строку для безопасной вставки в shell-команду. */
     private fun shellQuote(value: String): String =

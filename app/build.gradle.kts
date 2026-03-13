@@ -64,7 +64,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = appPackageName
             packageVersion = appVersion
-            description = "$appDisplayName — Desktop-инструмент для работы с ADB"
+            description = "$appDisplayName desktop tool for ADB"
             copyright = "© 2025 ADB Deck"
 
             macOS {
