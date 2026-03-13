@@ -1,20 +1,20 @@
-package com.adbdeck.feature.systemmonitor.storage
+package com.adbdeck.feature.filesystem
 
 import com.adbdeck.core.adb.api.monitoring.storage.StoragePartition
 import com.adbdeck.core.adb.api.monitoring.storage.StorageSummary
 
-// ── Состояние экрана хранилища ────────────────────────────────────────────────
+// ── Состояние экрана файловых систем ──────────────────────────────────────────
 
 /**
- * Состояние загрузки информации о хранилище.
+ * Состояние загрузки информации о файловых системах.
  */
-sealed class StorageListState {
+sealed class FileSystemListState {
 
     /** Устройство не выбрано или недоступно. */
-    data object NoDevice : StorageListState()
+    data object NoDevice : FileSystemListState()
 
     /** Идёт загрузка информации. */
-    data object Loading : StorageListState()
+    data object Loading : FileSystemListState()
 
     /**
      * Данные успешно загружены.
@@ -25,23 +25,23 @@ sealed class StorageListState {
     data class Success(
         val partitions: List<StoragePartition>,
         val summary: StorageSummary,
-    ) : StorageListState()
+    ) : FileSystemListState()
 
     /**
      * Ошибка загрузки.
      *
      * @param message Человекочитаемое описание ошибки.
      */
-    data class Error(val message: String) : StorageListState()
+    data class Error(val message: String) : FileSystemListState()
 }
 
 // ── Корневое состояние экрана ─────────────────────────────────────────────────
 
 /**
- * Полное состояние вкладки «Storage» в System Monitor.
+ * Полное состояние экрана «File System».
  *
  * @param listState Состояние загрузки данных о разделах файловой системы.
  */
-data class StorageState(
-    val listState: StorageListState = StorageListState.NoDevice,
+data class FileSystemState(
+    val listState: FileSystemListState = FileSystemListState.NoDevice,
 )

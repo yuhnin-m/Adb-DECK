@@ -350,7 +350,7 @@ class SystemDeviceFileClient(
     /**
      * Экранирует строку для безопасной вставки в double-quoted shell-литерал.
      *
-     * Такой формат устойчивее для `adb shell sh -c` на Windows-host,
+     * ПС: Такой формат устойчивее для `adb shell sh -c` на Windows-host
      * чем вложенные одинарные кавычки.
      */
     private fun shellDoubleQuote(value: String): String =

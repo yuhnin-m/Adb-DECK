@@ -27,6 +27,7 @@ import com.adbdeck.feature.devices.ui.DevicesScreen
 import com.adbdeck.feature.apkinstall.ui.ApkInstallScreen
 import com.adbdeck.feature.deeplinks.ui.DeepLinksScreen
 import com.adbdeck.feature.notifications.ui.NotificationsScreen
+import com.adbdeck.feature.filesystem.ui.FileSystemScreen
 import com.adbdeck.feature.fileexplorer.ui.FileExplorerScreen
 import com.adbdeck.feature.logcat.ui.LogcatScreen
 import com.adbdeck.feature.packages.ui.PackagesScreen
@@ -110,6 +111,7 @@ fun AppContent(
         is RootComponent.Child.Settings -> Screen.Settings
         is RootComponent.Child.Packages -> Screen.Packages
         is RootComponent.Child.SystemMonitor -> Screen.SystemMonitor
+        is RootComponent.Child.FileSystem -> Screen.FileSystem
         is RootComponent.Child.FileExplorer -> Screen.FileExplorer
         is RootComponent.Child.Contacts -> Screen.Contacts
         is RootComponent.Child.ScreenTools -> Screen.ScreenTools
@@ -165,6 +167,7 @@ fun AppContent(
                         is RootComponent.Child.Settings -> SettingsScreen(activeChild.component)
                         is RootComponent.Child.Packages -> PackagesScreen(activeChild.component)
                         is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(activeChild.component)
+                        is RootComponent.Child.FileSystem -> FileSystemScreen(activeChild.component)
                         is RootComponent.Child.FileExplorer -> FileExplorerScreen(activeChild.component)
                         is RootComponent.Child.Contacts -> ContactsScreen(activeChild.component)
                         is RootComponent.Child.ScreenTools -> ScreenToolsScreen(activeChild.component)
@@ -204,6 +207,7 @@ private fun Screen.title(): String = when (this) {
     is Screen.Settings -> "Settings"
     is Screen.Packages -> "Packages"
     is Screen.SystemMonitor -> "System Monitor"
+    is Screen.FileSystem -> "File System"
     is Screen.FileExplorer -> "File Explorer"
     is Screen.Contacts -> "Contacts"
     is Screen.ScreenTools -> "Screen Tools"

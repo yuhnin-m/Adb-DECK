@@ -24,6 +24,7 @@ import com.adbdeck.feature.deviceinfo.DefaultDeviceInfoComponent
 import com.adbdeck.feature.notifications.DefaultNotificationsComponent
 import com.adbdeck.feature.devices.DefaultDevicesComponent
 import com.adbdeck.feature.apkinstall.createApkInstallComponent
+import com.adbdeck.feature.filesystem.DefaultFileSystemComponent
 import com.adbdeck.feature.fileexplorer.createFileExplorerComponent
 import com.adbdeck.feature.logcat.DefaultLogcatComponent
 import com.adbdeck.feature.packages.DefaultPackagesComponent
@@ -89,9 +90,9 @@ class DefaultRootComponent(
 
     override val childStack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
-        serializer = null, // state restoration не требуется для desktop
+        serializer = null, // восстановление стейта не требуется для десктопа ^_^
         initialConfiguration = Screen.Dashboard,
-        handleBackButton = false, // desktop-UX: нет мобильной кнопки "назад"
+        handleBackButton = false, // и кнопки назад нет
         childFactory = ::createChild,
     )
 
@@ -192,6 +193,7 @@ class DefaultRootComponent(
                 onNavigateToScreenTools = { navigate(Screen.ScreenTools) },
                 onNavigateToScrcpy = { navigate(Screen.Scrcpy) },
                 onNavigateToFileExplorer = { navigate(Screen.FileExplorer) },
+                onNavigateToFileSystem = { navigate(Screen.FileSystem) },
                 onNavigateToContacts = { navigate(Screen.Contacts) },
                 onNavigateToSystemMonitor = { navigate(Screen.SystemMonitor) },
                 onNavigateToSettings = { navigate(Screen.Settings) },
@@ -255,6 +257,15 @@ class DefaultRootComponent(
                 packageClient = packageClient,
                 settingsRepository = settingsRepository,
                 openPackageDetails = ::openPackageFromSystemMonitor,
+            )
+        )
+
+        is Screen.FileSystem -> RootComponent.Child.FileSystem(
+            DefaultFileSystemComponent(
+                componentContext = componentContext,
+                deviceManager = deviceManager,
+                systemMonitorClient = systemMonitorClient,
+                settingsRepository = settingsRepository,
             )
         )
 

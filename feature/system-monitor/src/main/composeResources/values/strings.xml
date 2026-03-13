@@ -1,10 +1,6 @@
 <resources>
-    <string name="system_monitor_tab_processes">Processes</string>
-    <string name="system_monitor_tab_storage">Storage</string>
-
     <string name="system_monitor_empty_no_device">No device connected</string>
     <string name="system_monitor_empty_processes_not_found">No processes found</string>
-    <string name="system_monitor_empty_storage_no_data">No storage data</string>
 
     <string name="system_monitor_toolbar_start_monitoring">Monitor</string>
     <string name="system_monitor_toolbar_stop_monitoring">Stop</string>
@@ -59,20 +55,6 @@
     <string name="system_monitor_detail_label_package">Package</string>
     <string name="system_monitor_detail_unavailable_format">Details unavailable: %1$s</string>
 
-    <string name="system_monitor_storage_title_filesystems">File systems</string>
-    <string name="system_monitor_storage_summary_title">Storage summary</string>
-    <string name="system_monitor_storage_stat_used">Used</string>
-    <string name="system_monitor_storage_stat_free">Free</string>
-    <string name="system_monitor_storage_stat_total">Total</string>
-    <string name="system_monitor_storage_stat_percent">%</string>
-    <string name="system_monitor_storage_category_system">System</string>
-    <string name="system_monitor_storage_category_data">Data</string>
-    <string name="system_monitor_storage_category_external">External</string>
-    <string name="system_monitor_storage_category_other">Other</string>
-    <string name="system_monitor_storage_used_format">Used: %1$s</string>
-    <string name="system_monitor_storage_free_format">Free: %1$s</string>
-    <string name="system_monitor_storage_total_format">Total: %1$s</string>
-
     <string name="system_monitor_error_no_active_device">No active device</string>
     <string name="system_monitor_error_device_unavailable">Device unavailable (%1$s)</string>
     <string name="system_monitor_error_process_list_empty">ADB returned an empty process list</string>
@@ -81,10 +63,6 @@
     <string name="system_monitor_error_process_package_missing">No Android package for this process</string>
     <string name="system_monitor_error_action_failed">Failed to execute action</string>
     <string name="system_monitor_error_process_details_failed">Failed to load process details</string>
-    <string name="system_monitor_error_storage_data_empty">ADB returned no storage data</string>
-    <string name="system_monitor_error_storage_no_relevant_partitions">No relevant storage partitions</string>
-    <string name="system_monitor_error_storage_fetch_failed">Failed to load storage data</string>
-
     <string name="system_monitor_feedback_monitoring_stopped">Monitoring stopped: %1$s</string>
     <string name="system_monitor_feedback_kill_success">kill -9 %1$d completed</string>
     <string name="system_monitor_feedback_force_stop_success">Force-stop completed: %1$s</string>

@@ -150,11 +150,17 @@ fun Sidebar(
         )
         SidebarNavItem(
             icon = Icons.Outlined.Monitor,
-            label = "System",
+            label = "Processes",
             isActive = activeScreen is Screen.SystemMonitor,
             badgeText = if (isProcessMonitoring) "MON" else null,
             badgeKind = SidebarBadgeKind.Positive,
             onClick = { onNavigate(Screen.SystemMonitor) },
+        )
+        SidebarNavItem(
+            icon = Icons.Outlined.Storage,
+            label = "File System",
+            isActive = activeScreen is Screen.FileSystem,
+            onClick = { onNavigate(Screen.FileSystem) },
         )
         SidebarNavItem(
             icon = Icons.Outlined.Settings,

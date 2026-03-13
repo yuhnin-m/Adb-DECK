@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
  * @param onNavigateToScreenTools Callback навигации на экран Screen Tools.
  * @param onNavigateToScrcpy Callback навигации на экран Scrcpy (Mirror screen).
  * @param onNavigateToFileExplorer Callback навигации на экран File Explorer.
+ * @param onNavigateToFileSystem Callback навигации на экран File System.
  * @param onNavigateToContacts Callback навигации на экран Contacts.
  * @param onNavigateToSystemMonitor Callback навигации на экран System Monitor.
  * @param onNavigateToSettings Callback навигации на экран настроек.
@@ -62,6 +63,7 @@ class DefaultDashboardComponent(
     private val onNavigateToScreenTools: () -> Unit,
     private val onNavigateToScrcpy: () -> Unit,
     private val onNavigateToFileExplorer: () -> Unit,
+    private val onNavigateToFileSystem: () -> Unit,
     private val onNavigateToContacts: () -> Unit,
     private val onNavigateToSystemMonitor: () -> Unit,
     private val onNavigateToSettings: () -> Unit,
@@ -109,6 +111,8 @@ class DefaultDashboardComponent(
     override fun onOpenScrcpy() = onNavigateToScrcpy()
 
     override fun onOpenFileExplorer() = onNavigateToFileExplorer()
+
+    override fun onOpenFileSystem() = onNavigateToFileSystem()
 
     override fun onOpenContacts() = onNavigateToContacts()
 

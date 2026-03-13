@@ -1,15 +1,15 @@
-package com.adbdeck.feature.systemmonitor.storage
+package com.adbdeck.feature.filesystem
 
-import adbdeck.feature.system_monitor.generated.resources.Res
-import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_device_unavailable
-import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_storage_data_empty
-import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_storage_fetch_failed
-import adbdeck.feature.system_monitor.generated.resources.system_monitor_error_storage_no_relevant_partitions
+import adbdeck.feature.file_system.generated.resources.Res
+import adbdeck.feature.file_system.generated.resources.file_system_error_data_empty
+import adbdeck.feature.file_system.generated.resources.file_system_error_device_unavailable
+import adbdeck.feature.file_system.generated.resources.file_system_error_fetch_failed
+import adbdeck.feature.file_system.generated.resources.file_system_error_no_relevant_partitions
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
-import com.adbdeck.core.adb.api.monitoring.storage.StorageSummary
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
+import com.adbdeck.core.adb.api.monitoring.storage.StorageSummary
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext
@@ -23,19 +23,19 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 
 /**
- * Реализация [StorageComponent] с защитой от stale-ответов при смене устройства.
+ * Реализация [FileSystemComponent] с защитой от stale-ответов при смене устройства.
  */
-class DefaultStorageComponent(
+class DefaultFileSystemComponent(
     componentContext: ComponentContext,
     private val deviceManager: DeviceManager,
     private val systemMonitorClient: SystemMonitorClient,
     private val settingsRepository: SettingsRepository,
-) : StorageComponent, ComponentContext by componentContext {
+) : FileSystemComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
 
-    private val _state = MutableStateFlow(StorageState())
-    override val state: StateFlow<StorageState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(FileSystemState())
+    override val state: StateFlow<FileSystemState> = _state.asStateFlow()
 
     private var fetchJob: Job? = null
     private var activeDeviceId: String? = null
@@ -60,7 +60,7 @@ class DefaultStorageComponent(
         }
 
         activeDeviceId = device.deviceId
-        _state.update { it.copy(listState = StorageListState.Loading) }
+        _state.update { it.copy(listState = FileSystemListState.Loading) }
         launchFetch(device.deviceId)
     }
 
@@ -80,11 +80,11 @@ class DefaultStorageComponent(
 
             else -> {
                 val isChanged = activeDeviceId != device.deviceId
-                val needsReload = _state.value.listState !is StorageListState.Success
+                val needsReload = _state.value.listState !is FileSystemListState.Success
                 activeDeviceId = device.deviceId
 
                 if (isChanged || needsReload) {
-                    _state.update { it.copy(listState = StorageListState.Loading) }
+                    _state.update { it.copy(listState = FileSystemListState.Loading) }
                     launchFetch(device.deviceId)
                 }
             }
@@ -111,18 +111,18 @@ class DefaultStorageComponent(
         result.fold(
             onSuccess = { partitions ->
                 if (partitions.isEmpty()) {
-                    val message = getString(Res.string.system_monitor_error_storage_data_empty)
+                    val message = getString(Res.string.file_system_error_data_empty)
                     _state.update {
-                        StorageState(listState = StorageListState.Error(message))
+                        FileSystemState(listState = FileSystemListState.Error(message))
                     }
                     return@fold
                 }
 
                 val relevant = partitions.filter { it.isRelevant }
                 if (relevant.isEmpty()) {
-                    val message = getString(Res.string.system_monitor_error_storage_no_relevant_partitions)
+                    val message = getString(Res.string.file_system_error_no_relevant_partitions)
                     _state.update {
-                        StorageState(listState = StorageListState.Error(message))
+                        FileSystemState(listState = FileSystemListState.Error(message))
                     }
                     return@fold
                 }
@@ -134,14 +134,14 @@ class DefaultStorageComponent(
                 )
 
                 _state.update {
-                    it.copy(listState = StorageListState.Success(partitions, summary))
+                    it.copy(listState = FileSystemListState.Success(partitions, summary))
                 }
             },
             onFailure = { e ->
-                val fallback = getString(Res.string.system_monitor_error_storage_fetch_failed)
+                val fallback = getString(Res.string.file_system_error_fetch_failed)
                 _state.update {
-                    StorageState(
-                        listState = StorageListState.Error(
+                    FileSystemState(
+                        listState = FileSystemListState.Error(
                             e.message ?: fallback,
                         ),
                     )
@@ -152,13 +152,13 @@ class DefaultStorageComponent(
 
     private fun resetNoDevice() {
         activeDeviceId = null
-        _state.update { StorageState(listState = StorageListState.NoDevice) }
+        _state.update { FileSystemState(listState = FileSystemListState.NoDevice) }
     }
 
     private fun resetDeviceError(device: AdbDevice) {
         scope.launch {
             val message = getString(
-                Res.string.system_monitor_error_device_unavailable,
+                Res.string.file_system_error_device_unavailable,
                 device.state.rawValue,
             )
             val selected = deviceManager.selectedDeviceFlow.value
@@ -167,7 +167,7 @@ class DefaultStorageComponent(
             }
             activeDeviceId = device.deviceId
             _state.update {
-                StorageState(listState = StorageListState.Error(message))
+                FileSystemState(listState = FileSystemListState.Error(message))
             }
         }
     }

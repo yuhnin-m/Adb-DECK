@@ -51,10 +51,6 @@ fun FileExplorerScreen(component: FileExplorerComponent) {
                 onRequestCreateDirectory = { component.onRequestCreateDirectory(ExplorerSide.LOCAL) },
                 onRequestRename = { component.onRequestRename(ExplorerSide.LOCAL) },
                 onRequestDelete = { component.onRequestDelete(ExplorerSide.LOCAL) },
-                onCopyPath = { path ->
-                    clipboard.setText(AnnotatedString(path))
-                    component.onPathCopied(path)
-                },
                 onCopyError = { error ->
                     clipboard.setText(AnnotatedString(error))
                     component.onPathCopied(error)
@@ -81,10 +77,6 @@ fun FileExplorerScreen(component: FileExplorerComponent) {
                 onRequestCreateDirectory = { component.onRequestCreateDirectory(ExplorerSide.DEVICE) },
                 onRequestRename = { component.onRequestRename(ExplorerSide.DEVICE) },
                 onRequestDelete = { component.onRequestDelete(ExplorerSide.DEVICE) },
-                onCopyPath = { path ->
-                    clipboard.setText(AnnotatedString(path))
-                    component.onPathCopied(path)
-                },
                 onCopyError = { error ->
                     clipboard.setText(AnnotatedString(error))
                     component.onPathCopied(error)

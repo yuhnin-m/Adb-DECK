@@ -68,6 +68,8 @@
     <string name="dashboard_tile_mirror_screen_subtitle">Open scrcpy controls</string>
     <string name="dashboard_tile_file_explorer_title">File Explorer</string>
     <string name="dashboard_tile_file_explorer_subtitle">Device and local file operations</string>
+    <string name="dashboard_tile_file_system_title">File System</string>
+    <string name="dashboard_tile_file_system_subtitle">Device storage partitions and usage</string>
     <string name="dashboard_tile_contacts_title">Contacts</string>
     <string name="dashboard_tile_contacts_subtitle">Manage device contacts</string>
     <string name="dashboard_tile_system_monitor_title">System Monitor</string>

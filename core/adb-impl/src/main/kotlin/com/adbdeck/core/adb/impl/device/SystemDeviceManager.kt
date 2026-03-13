@@ -4,7 +4,9 @@ import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceManager
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.process.ProcessRunner
+import com.adbdeck.core.settings.SavedWifiDeviceSettingsEntry
 import com.adbdeck.core.settings.SettingsRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,6 +46,9 @@ class SystemDeviceManager(
     private val _savedEndpointsFlow = MutableStateFlow(loadEndpointsFromSettings())
     override val savedEndpointsFlow: StateFlow<List<DeviceEndpoint>> = _savedEndpointsFlow.asStateFlow()
 
+    private val _wifiHistoryFlow = MutableStateFlow(loadWifiHistoryFromSettings())
+    override val wifiHistoryFlow: StateFlow<List<SavedWifiDevice>> = _wifiHistoryFlow.asStateFlow()
+
     /** Читает актуальный путь к adb из настроек. */
     private fun adbPath(): String =
         settingsRepository.resolvedAdbPath()
@@ -53,12 +58,19 @@ class SystemDeviceManager(
         settingsRepository.getSettings().knownEndpoints
             .mapNotNull { DeviceEndpoint.Companion.fromAddress(it) }
 
+    /** Загружает историю Wi-Fi-устройств из настроек. */
+    private fun loadWifiHistoryFromSettings(): List<SavedWifiDevice> =
+        settingsRepository.getSettings().knownWifiDevices
+            .mapNotNull { it.toDomainOrNull() }
+            .sortedByDescending { it.lastSeenAt }
+
     // ── refresh ────────────────────────────────────────────────────────────
 
     override suspend fun refresh() {
         _isConnecting.value = true
         try {
-            adbClient.getDevices()
+            val result = adbClient.getDevices()
+            result
                 .onSuccess { devices ->
                     _devicesFlow.value = devices
                     reconcileSelectedDevice(devices)
@@ -66,6 +78,9 @@ class SystemDeviceManager(
                 .onFailure { e ->
                     _errorFlow.value = e.message ?: "Не удалось получить список устройств"
                 }
+            result.getOrNull()?.let { devices ->
+                recordConnectedWifiDevices(devices)
+            }
         } finally {
             _isConnecting.value = false
         }
@@ -84,6 +99,60 @@ class SystemDeviceManager(
             devices.size == 1 -> devices.first()
             else -> null
         }
+    }
+
+    /**
+     * Обновляет историю на основе текущего списка подключенных Wi-Fi-устройств.
+     *
+     * Источник данных — `adb devices`, поэтому displayName может быть неполным;
+     * более точное имя позже может быть перезаписано из DeviceInfo.
+     */
+    private suspend fun recordConnectedWifiDevices(devices: List<AdbDevice>) {
+        if (devices.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        val current = loadWifiHistoryFromSettings()
+            .associateBy { it.address }
+            .toMutableMap()
+
+        var changed = false
+        devices
+            .asSequence()
+            .filter { it.deviceId.contains(':') && !it.deviceId.startsWith("emulator-") }
+            .forEach { device ->
+                val address = device.deviceId.trim()
+                if (address.isEmpty()) return@forEach
+
+                val displayName = parseDisplayNameFromAdbInfo(device.info)
+                    ?: device.info.ifBlank { device.deviceId }
+
+                val existing = current[address]
+                val shouldRefreshTimestamp = existing == null ||
+                    existing.deviceId != device.deviceId ||
+                    existing.displayName != displayName
+                val updated = SavedWifiDevice(
+                    address = address,
+                    deviceId = device.deviceId,
+                    displayName = displayName,
+                    lastSeenAt = if (shouldRefreshTimestamp) now else existing.lastSeenAt,
+                )
+
+                if (existing == null || existing != updated) {
+                    current[address] = updated
+                    changed = true
+                }
+            }
+
+        if (!changed) return
+
+        val normalized = current.values
+            .sortedByDescending { it.lastSeenAt }
+            .take(MAX_WIFI_HISTORY_ITEMS)
+            .map { it.toSettings() }
+
+        val settings = settingsRepository.getSettings()
+        settingsRepository.saveSettings(settings.copy(knownWifiDevices = normalized))
+        _wifiHistoryFlow.value = loadWifiHistoryFromSettings()
     }
 
     // ── connect ────────────────────────────────────────────────────────────
@@ -206,9 +275,86 @@ class SystemDeviceManager(
         _savedEndpointsFlow.value = loadEndpointsFromSettings()
     }
 
+    // ── wifi history ────────────────────────────────────────────────────────
+
+    override suspend fun upsertWifiHistory(entry: SavedWifiDevice) {
+        val normalizedAddress = entry.address.trim()
+        if (normalizedAddress.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        val normalizedEntry = entry.copy(
+            address = normalizedAddress,
+            deviceId = entry.deviceId.ifBlank { normalizedAddress },
+            displayName = entry.displayName.ifBlank { entry.deviceId.ifBlank { normalizedAddress } },
+            lastSeenAt = if (entry.lastSeenAt > 0L) entry.lastSeenAt else now,
+        )
+
+        val settings = settingsRepository.getSettings()
+        val merged = settings.knownWifiDevices
+            .toMutableList()
+            .apply {
+                removeAll { it.address == normalizedAddress }
+                add(normalizedEntry.toSettings())
+            }
+            .sortedByDescending { it.lastSeenAt }
+            .take(MAX_WIFI_HISTORY_ITEMS)
+
+        settingsRepository.saveSettings(settings.copy(knownWifiDevices = merged))
+        _wifiHistoryFlow.value = loadWifiHistoryFromSettings()
+    }
+
+    override suspend fun removeWifiHistory(address: String) {
+        val normalizedAddress = address.trim()
+        if (normalizedAddress.isEmpty()) return
+
+        val settings = settingsRepository.getSettings()
+        val updated = settings.knownWifiDevices
+            .filterNot { it.address == normalizedAddress }
+
+        settingsRepository.saveSettings(settings.copy(knownWifiDevices = updated))
+        _wifiHistoryFlow.value = loadWifiHistoryFromSettings()
+    }
+
     // ── error ──────────────────────────────────────────────────────────────
 
     override fun clearError() {
         _errorFlow.value = null
     }
+
+    private companion object {
+        private const val MAX_WIFI_HISTORY_ITEMS = 50
+    }
+}
+
+private fun SavedWifiDeviceSettingsEntry.toDomainOrNull(): SavedWifiDevice? {
+    val normalizedAddress = address.trim()
+    if (normalizedAddress.isEmpty()) return null
+
+    val normalizedDeviceId = deviceId.ifBlank { normalizedAddress }
+    val normalizedDisplayName = displayName.ifBlank { normalizedDeviceId }
+
+    return SavedWifiDevice(
+        address = normalizedAddress,
+        deviceId = normalizedDeviceId,
+        displayName = normalizedDisplayName,
+        lastSeenAt = lastSeenAt,
+    )
+}
+
+private fun SavedWifiDevice.toSettings(): SavedWifiDeviceSettingsEntry =
+    SavedWifiDeviceSettingsEntry(
+        address = address,
+        deviceId = deviceId,
+        displayName = displayName,
+        lastSeenAt = lastSeenAt,
+    )
+
+private fun parseDisplayNameFromAdbInfo(rawInfo: String): String? {
+    if (rawInfo.isBlank()) return null
+    val modelToken = rawInfo
+        .split(' ')
+        .firstOrNull { it.startsWith("model:") }
+        ?.substringAfter("model:")
+        ?.trim()
+    return modelToken?.takeIf { it.isNotEmpty() }
 }

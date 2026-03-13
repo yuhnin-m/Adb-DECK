@@ -4,6 +4,8 @@
 
     <string name="devices_toolbar_title">Devices</string>
     <string name="devices_toolbar_refresh_list_content_desc">Refresh device list</string>
+    <string name="devices_connected_section_title">Connected devices</string>
+    <string name="devices_history_section_title">Previously connected network devices</string>
 
     <string name="devices_dialog_reboot_title">Reboot device?</string>
     <string name="devices_dialog_reboot_message">Device \"%1$s\" will be rebooted. ADB connection will be temporarily interrupted.</string>
@@ -81,4 +83,8 @@
     <string name="devices_card_transport_wifi">Wi-Fi</string>
     <string name="devices_card_transport_emulator">Emulator</string>
     <string name="devices_card_badge_active">ACTIVE</string>
+    <string name="devices_history_card_id_format">ID: %1$s</string>
+    <string name="devices_history_card_badge_previous">PREVIOUSLY CONNECTED</string>
+    <string name="devices_history_card_action_connect_content_desc">Connect to saved Wi-Fi device</string>
+    <string name="devices_history_card_action_remove_content_desc">Remove from Wi-Fi history</string>
 </resources>

@@ -29,7 +29,6 @@ import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.CreateNewFolder
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.FileCopy
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Warning
@@ -76,7 +75,6 @@ import org.jetbrains.compose.resources.stringResource
 private enum class ExplorerToolbarAction {
     REFRESH,
     UP,
-    PATH,
     TRANSFER,
     NEW_FOLDER,
     RENAME,
@@ -97,7 +95,6 @@ internal fun ExplorerPanel(
     onRequestCreateDirectory: () -> Unit,
     onRequestRename: () -> Unit,
     onRequestDelete: () -> Unit,
-    onCopyPath: (String) -> Unit,
     onCopyError: (String) -> Unit,
     transferButtonText: String? = null,
     transferButtonIcon: ImageVector? = null,
@@ -161,14 +158,6 @@ internal fun ExplorerPanel(
                 },
             )
             val actionOptions = buildList {
-                add(
-                    AdbSegmentedOption(
-                        value = ExplorerToolbarAction.PATH,
-                        label = stringResource(Res.string.file_explorer_action_copy_path),
-                        leadingIcon = Icons.Outlined.FileCopy,
-                        enabled = selected != null,
-                    ),
-                )
                 if (onTransferAction != null && !transferButtonText.isNullOrBlank()) {
                     add(
                         AdbSegmentedOption(
@@ -209,9 +198,13 @@ internal fun ExplorerPanel(
             }
             ActionSegmentGroup(
                 options = actionOptions,
+                selectedValues = if (onTransferAction != null && !transferButtonText.isNullOrBlank()) {
+                    setOf(ExplorerToolbarAction.TRANSFER)
+                } else {
+                    emptySet()
+                },
                 onAction = { action ->
                     when (action) {
-                        ExplorerToolbarAction.PATH -> selected?.let { onCopyPath(it.fullPath) }
                         ExplorerToolbarAction.TRANSFER -> onTransferAction?.invoke()
                         ExplorerToolbarAction.NEW_FOLDER -> onRequestCreateDirectory()
                         ExplorerToolbarAction.RENAME -> onRequestRename()
@@ -497,11 +490,12 @@ private fun FileRow(
 @Composable
 private fun ActionSegmentGroup(
     options: List<AdbSegmentedOption<ExplorerToolbarAction>>,
+    selectedValues: Set<ExplorerToolbarAction> = emptySet(),
     onAction: (ExplorerToolbarAction) -> Unit,
 ) {
     AdbMultiSegmentedButtons(
         options = options,
-        selectedValues = emptySet(),
+        selectedValues = selectedValues,
         onValueToggle = { action, _ -> onAction(action) },
         size = AdbSegmentedButtonSize.MEDIUM,
         cornerRadius = AdbCornerRadius.MEDIUM,

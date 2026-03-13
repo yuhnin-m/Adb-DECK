@@ -46,6 +46,9 @@ interface DashboardComponent {
     /** Переход на экран File Explorer. */
     fun onOpenFileExplorer()
 
+    /** Переход на экран File System. */
+    fun onOpenFileSystem()
+
     /** Переход на экран Contacts. */
     fun onOpenContacts()
 

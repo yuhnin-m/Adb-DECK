@@ -41,6 +41,7 @@ private class DashboardPreviewComponent : DashboardComponent {
     override fun onOpenScreenTools() = Unit
     override fun onOpenScrcpy() = Unit
     override fun onOpenFileExplorer() = Unit
+    override fun onOpenFileSystem() = Unit
     override fun onOpenContacts() = Unit
     override fun onOpenSystemMonitor() = Unit
     override fun onOpenSettings() = Unit

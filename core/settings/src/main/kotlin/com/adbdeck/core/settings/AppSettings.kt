@@ -3,6 +3,22 @@ package com.adbdeck.core.settings
 import kotlinx.serialization.Serializable
 
 /**
+ * Персистентная запись о ранее подключенном Wi-Fi-устройстве.
+ *
+ * @param address     Сетевой адрес `host:port`.
+ * @param deviceId    Последний известный deviceId.
+ * @param displayName Человекочитаемое имя устройства.
+ * @param lastSeenAt  Время последнего обнаружения устройства (Unix ms).
+ */
+@Serializable
+data class SavedWifiDeviceSettingsEntry(
+    val address: String,
+    val deviceId: String = "",
+    val displayName: String = "",
+    val lastSeenAt: Long = 0L,
+)
+
+/**
  * Модель настроек приложения ADB Deck.
  *
  * Сериализуется в JSON и хранится в файле `~/.adbdeck/settings.json`.
@@ -13,6 +29,7 @@ import kotlinx.serialization.Serializable
  * @param theme                  Режим темы приложения.
  * @param language               Язык интерфейса приложения.
  * @param knownEndpoints         Сохраненные TCP/IP endpoint-ы ("host:port").
+ * @param knownWifiDevices       История ранее подключенных Wi-Fi-устройств.
  *
  * Logcat:
  * @param logcatCompactMode      true = компактный режим, false = полный (все поля).
@@ -41,6 +58,7 @@ data class AppSettings(
     val theme: AppTheme = AppTheme.SYSTEM,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val knownEndpoints: List<String> = emptyList(),
+    val knownWifiDevices: List<SavedWifiDeviceSettingsEntry> = emptyList(),
 
     // ── Logcat ──────────────────────────────────────────────────
     val logcatCompactMode: Boolean = true,

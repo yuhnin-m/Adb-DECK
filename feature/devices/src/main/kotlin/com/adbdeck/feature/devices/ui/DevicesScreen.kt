@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.i18n.AdbCommonStringRes
 import com.adbdeck.core.ui.AdbBanner
@@ -27,7 +28,6 @@ import com.adbdeck.core.ui.alertdialogs.AdbAlertDialog
 import com.adbdeck.core.ui.alertdialogs.AdbAlertDialogAction
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
-import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.feature.devices.DeviceActionFeedback
 import com.adbdeck.feature.devices.DeviceListState
@@ -87,9 +87,18 @@ fun DevicesScreen(component: DevicesComponent) {
                             LoadingView(message = stringResource(Res.string.devices_screen_loading_devices))
 
                         is DeviceListState.Empty ->
-                            EmptyView(
-                                message = stringResource(Res.string.devices_screen_empty_devices)
-                            )
+                            if (state.wifiHistory.isEmpty()) {
+                                EmptyView(
+                                    message = stringResource(Res.string.devices_screen_empty_devices)
+                                )
+                            } else {
+                                DevicesList(
+                                    devices   = emptyList(),
+                                    wifiHistory = state.wifiHistory,
+                                    state     = state,
+                                    component = component,
+                                )
+                            }
 
                         is DeviceListState.Error ->
                             ErrorView(message = ls.message, onRetry = component::onRefresh)
@@ -97,6 +106,7 @@ fun DevicesScreen(component: DevicesComponent) {
                         is DeviceListState.Success ->
                             DevicesList(
                                 devices   = ls.devices,
+                                wifiHistory = state.wifiHistory,
                                 state     = state,
                                 component = component,
                             )
@@ -228,6 +238,7 @@ private fun DevicesToolbar(
 @Composable
 private fun DevicesList(
     devices: List<AdbDevice>,
+    wifiHistory: List<SavedWifiDevice>,
     state: DevicesState,
     component: DevicesComponent,
 ) {
@@ -237,6 +248,17 @@ private fun DevicesList(
             .padding(Dimensions.paddingDefault),
         verticalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
+        if (devices.isNotEmpty()) {
+            item(key = "connected_header") {
+                Text(
+                    text = stringResource(Res.string.devices_connected_section_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = Dimensions.paddingXSmall),
+                )
+            }
+        }
+
         items(devices, key = { it.deviceId }) { device ->
             DeviceCard(
                 device                    = device,
@@ -245,6 +267,26 @@ private fun DevicesList(
                 isDetailsOpen             = device.deviceId == state.detailsDeviceId,
                 onOpenDetails             = { component.onOpenDetails(device) },
             )
+        }
+
+        if (wifiHistory.isNotEmpty()) {
+            item(key = "history_header") {
+                val topPadding = if (devices.isEmpty()) 0.dp else Dimensions.paddingLarge
+                Text(
+                    text = stringResource(Res.string.devices_history_section_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = topPadding, bottom = Dimensions.paddingXSmall),
+                )
+            }
+
+            items(wifiHistory, key = { it.address }) { historyItem ->
+                WifiHistoryCard(
+                    device = historyItem,
+                    onConnect = { component.onConnectHistoryDevice(historyItem) },
+                    onRemove = { component.onRemoveHistoryDevice(historyItem) },
+                )
+            }
         }
     }
 }

@@ -1,0 +1,31 @@
+<resources>
+    <string name="file_system_title_filesystems">File systems</string>
+    <string name="file_system_toolbar_refresh_content_desc">Refresh</string>
+
+    <string name="file_system_empty_no_device">No device connected</string>
+    <string name="file_system_empty_no_data">No storage data</string>
+
+    <string name="file_system_summary_title">Storage summary</string>
+    <string name="file_system_stat_used">Used</string>
+    <string name="file_system_stat_free">Free</string>
+    <string name="file_system_stat_total">Total</string>
+    <string name="file_system_stat_percent">%</string>
+    <string name="file_system_section_device_title">Device partitions</string>
+    <string name="file_system_section_device_subtitle">%1$d partitions</string>
+    <string name="file_system_section_app_title">App-related partitions</string>
+    <string name="file_system_section_app_subtitle">%1$d app mounts</string>
+
+    <string name="file_system_category_system">System</string>
+    <string name="file_system_category_data">Data</string>
+    <string name="file_system_category_external">External</string>
+    <string name="file_system_category_other">Other</string>
+
+    <string name="file_system_used_format">Used: %1$s</string>
+    <string name="file_system_free_format">Free: %1$s</string>
+    <string name="file_system_total_format">Total: %1$s</string>
+
+    <string name="file_system_error_device_unavailable">Device unavailable (%1$s)</string>
+    <string name="file_system_error_data_empty">ADB returned no storage data</string>
+    <string name="file_system_error_no_relevant_partitions">No relevant storage partitions</string>
+    <string name="file_system_error_fetch_failed">Failed to load storage data</string>
+</resources>

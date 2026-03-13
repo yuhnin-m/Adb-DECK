@@ -23,6 +23,7 @@ import com.adbdeck.core.adb.api.device.DeviceInfo
 import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
 import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.adb.api.device.DeviceTransportType
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.designsystem.AdbDeckAmber
 import com.adbdeck.core.designsystem.AdbDeckGreen
 import com.adbdeck.core.designsystem.AdbDeckRed
@@ -146,6 +147,108 @@ fun DeviceCard(
     }
 }
 
+/**
+ * Карточка ранее подключенного Wi-Fi-устройства.
+ *
+ * Отображает сохраненное имя, адрес `host:port` и deviceId.
+ * Позволяет быстро переподключиться или удалить запись из истории.
+ */
+@Composable
+fun WifiHistoryCard(
+    device: SavedWifiDevice,
+    onConnect: () -> Unit,
+    onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cardShape = MaterialTheme.shapes.medium
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, cardShape),
+        shape = cardShape,
+        tonalElevation = 1.dp,
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(
+                    imageVector = transportIcon(DeviceTransportType.WIFI),
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp).padding(top = 2.dp),
+                    tint = MaterialTheme.colorScheme.tertiary,
+                )
+                Spacer(Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = device.displayName.ifBlank { device.deviceId.ifBlank { device.address } },
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = device.address,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = stringResource(
+                            Res.string.devices_history_card_id_format,
+                            device.deviceId.ifBlank { device.address },
+                        ),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 11.sp,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DeviceTransportBadge(DeviceTransportType.WIFI)
+                        HistoryBadge()
+                    }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    IconButton(
+                        onClick = onConnect,
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Link,
+                            contentDescription = stringResource(
+                                Res.string.devices_history_card_action_connect_content_desc
+                            ),
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    IconButton(
+                        onClick = onRemove,
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = stringResource(
+                                Res.string.devices_history_card_action_remove_content_desc
+                            ),
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ── Краткая информация (в теле карточки) ─────────────────────────────────────
 
 @Composable
@@ -243,6 +346,14 @@ private fun DeviceTransportBadge(transport: DeviceTransportType) {
 @Composable
 private fun ActiveBadge() {
     ColorBadge(stringResource(Res.string.devices_card_badge_active), AdbDeckGreen, bold = true)
+}
+
+@Composable
+private fun HistoryBadge() {
+    ColorBadge(
+        text = stringResource(Res.string.devices_history_card_badge_previous),
+        color = MaterialTheme.colorScheme.tertiary,
+    )
 }
 
 @Composable

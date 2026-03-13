@@ -2,11 +2,12 @@ package com.adbdeck.feature.devices
 
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceControlClient
+import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceInfoClient
 import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
 import com.adbdeck.core.adb.api.device.DeviceManager
-import com.adbdeck.core.adb.api.device.DeviceTransportType
 import com.adbdeck.core.adb.api.device.RebootMode
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext
@@ -25,7 +26,8 @@ import kotlinx.coroutines.launch
  *
  * ## Жизненный цикл данных
  *
- * 1. В `init` подписывается на `DeviceManager.devicesFlow` + `isConnecting` + `errorFlow`.
+ * 1. В `init` подписывается на `DeviceManager.devicesFlow`, `selectedDeviceFlow`,
+ *    `isConnecting`, `errorFlow` и `wifiHistoryFlow`.
  * 2. При появлении новых устройств в списке автоматически запускает загрузку
  *    расширенной информации ([DeviceInfoClient]) для каждого устройства,
  *    у которого она ещё не загружена.
@@ -73,24 +75,36 @@ class DefaultDevicesComponent(
                 deviceManager.selectedDeviceFlow,
                 deviceManager.isConnecting,
                 deviceManager.errorFlow,
-            ) { devices, selected, isConnecting, error ->
+                deviceManager.wifiHistoryFlow,
+            ) { devices, selected, isConnecting, error, wifiHistory ->
                 val listState: DeviceListState = when {
                     isConnecting && devices.isEmpty() -> DeviceListState.Loading
                     error != null && devices.isEmpty() -> DeviceListState.Error(error)
                     devices.isEmpty() -> DeviceListState.Empty
                     else              -> DeviceListState.Success(devices)
                 }
-                Pair(listState, Triple(devices, selected?.deviceId, error))
-            }.collect { (listState, extra) ->
-                val (devices, selectedId, _) = extra
+                DevicesSnapshot(
+                    listState = listState,
+                    devices = devices,
+                    selectedDeviceId = selected?.deviceId,
+                    wifiHistory = wifiHistory,
+                )
+            }.collect { snapshot ->
+                val devices = snapshot.devices
+                val historyWithoutConnected = snapshot.wifiHistory.filterNot { historyItem ->
+                    devices.any { active ->
+                        isWifiDevice(active.deviceId) && active.deviceId == historyItem.address
+                    }
+                }
                 _state.update { current ->
                     current.copy(
-                        listState = listState,
-                        selectedDeviceId = selectedId,
+                        listState = snapshot.listState,
+                        selectedDeviceId = snapshot.selectedDeviceId,
+                        wifiHistory = historyWithoutConnected,
                     )
                 }
                 // Для каждого нового устройства инициируем загрузку DeviceInfo
-                if (listState is DeviceListState.Success) {
+                if (snapshot.listState is DeviceListState.Success) {
                     fetchMissingDeviceInfos(devices)
                 }
             }
@@ -104,6 +118,43 @@ class DefaultDevicesComponent(
 
     override fun onRefresh() {
         refreshDeviceList()
+    }
+
+    override fun onConnectHistoryDevice(device: SavedWifiDevice) {
+        val endpoint = DeviceEndpoint.fromAddress(device.address) ?: return
+
+        scope.launch {
+            deviceManager.clearError()
+            val result = runCatchingPreserveCancellation {
+                deviceManager.connect(endpoint.host, endpoint.port)
+            }.getOrElse { e -> Result.failure(e) }
+
+            result.fold(
+                onSuccess = {
+                    deviceManager.saveEndpoint(endpoint)
+                    deviceManager.upsertWifiHistory(
+                        device.copy(
+                            address = endpoint.address,
+                            deviceId = device.deviceId.ifBlank { endpoint.address },
+                            displayName = device.displayName.ifBlank {
+                                device.deviceId.ifBlank { endpoint.address }
+                            },
+                            lastSeenAt = System.currentTimeMillis(),
+                        )
+                    )
+                    refreshDeviceList()
+                },
+                onFailure = { error ->
+                    showFeedback(DeviceActionFeedback.ActionError(details = error.message))
+                },
+            )
+        }
+    }
+
+    override fun onRemoveHistoryDevice(device: SavedWifiDevice) {
+        scope.launch {
+            deviceManager.removeWifiHistory(device.address)
+        }
     }
 
     private fun refreshDeviceList() {
@@ -286,6 +337,18 @@ class DefaultDevicesComponent(
             _state.update { state ->
                 state.copy(deviceInfos = state.deviceInfos + (deviceId to newState))
             }
+
+            val loadedInfo = (newState as? DeviceInfoLoadState.Loaded)?.info
+            if (loadedInfo != null && isWifiDevice(deviceId)) {
+                deviceManager.upsertWifiHistory(
+                    SavedWifiDevice(
+                        address = deviceId,
+                        deviceId = deviceId,
+                        displayName = loadedInfo.displayName,
+                        lastSeenAt = System.currentTimeMillis(),
+                    )
+                )
+            }
         }
     }
 
@@ -301,14 +364,13 @@ class DefaultDevicesComponent(
         }
     }
 
-    /**
-     * Определяет тип транспорта устройства по его deviceId.
-     *
-     * Используется для показа иконки и фильтрации доступных действий (disconnect только для Wi-Fi).
-     */
-    private fun AdbDevice.transportType(): DeviceTransportType = when {
-        deviceId.startsWith("emulator-") -> DeviceTransportType.EMULATOR
-        deviceId.contains(':')           -> DeviceTransportType.WIFI
-        else                             -> DeviceTransportType.USB
-    }
+    private fun isWifiDevice(deviceId: String): Boolean =
+        deviceId.contains(':') && !deviceId.startsWith("emulator-")
+
+    private data class DevicesSnapshot(
+        val listState: DeviceListState,
+        val devices: List<AdbDevice>,
+        val selectedDeviceId: String?,
+        val wifiHistory: List<SavedWifiDevice>,
+    )
 }

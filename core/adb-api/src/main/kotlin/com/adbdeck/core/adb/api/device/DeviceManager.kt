@@ -36,6 +36,9 @@ interface DeviceManager {
     /** Поток сохраненных endpoint-ов (из настроек приложения). */
     val savedEndpointsFlow: StateFlow<List<DeviceEndpoint>>
 
+    /** История ранее подключенных Wi-Fi-устройств (из настроек приложения). */
+    val wifiHistoryFlow: StateFlow<List<SavedWifiDevice>>
+
     /**
      * Обновить список устройств через `adb devices`.
      * Автоматически обновляет [selectedDeviceFlow]: если выбранное устройство
@@ -86,6 +89,18 @@ interface DeviceManager {
      * Изменения сохраняются в настройках приложения.
      */
     suspend fun removeEndpoint(endpoint: DeviceEndpoint)
+
+    /**
+     * Добавить или обновить запись в истории Wi-Fi-устройств.
+     *
+     * Обновляет `lastSeenAt`, если адрес уже существует.
+     */
+    suspend fun upsertWifiHistory(entry: SavedWifiDevice)
+
+    /**
+     * Удалить запись из истории Wi-Fi-устройств по адресу `host:port`.
+     */
+    suspend fun removeWifiHistory(address: String)
 
     /** Сбросить текущую ошибку ([errorFlow] → `null`). */
     fun clearError()

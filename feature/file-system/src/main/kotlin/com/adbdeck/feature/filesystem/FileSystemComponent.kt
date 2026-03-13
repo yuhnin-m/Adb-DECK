@@ -1,17 +1,17 @@
-package com.adbdeck.feature.systemmonitor.storage
+package com.adbdeck.feature.filesystem
 
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Контракт компонента вкладки «Storage» в System Monitor.
+ * Контракт компонента экрана «File System».
  *
  * Отображает информацию о разделах файловой системы Android-устройства.
  * Данные получаются однократно при смене устройства и обновляются по запросу пользователя.
  */
-interface StorageComponent {
+interface FileSystemComponent {
 
-    /** Реактивное состояние вкладки. */
-    val state: StateFlow<StorageState>
+    /** Реактивное состояние экрана. */
+    val state: StateFlow<FileSystemState>
 
     /**
      * Обновить информацию о хранилище вручную.

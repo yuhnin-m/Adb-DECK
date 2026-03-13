@@ -1,4 +1,4 @@
-/** Модуль feature:system-monitor — мониторинг процессов Android-устройства. */
+/** Модуль feature:file-system — мониторинг файловых систем Android-устройства. */
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.compose.multiplatform)

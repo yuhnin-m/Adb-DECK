@@ -24,8 +24,11 @@ sealed interface Screen {
     /** Экран установленных пакетов / приложений. */
     data object Packages : Screen
 
-    /** Экран мониторинга системы (процессы + хранилище). */
+    /** Экран мониторинга процессов устройства. */
     data object SystemMonitor : Screen
+
+    /** Экран информации о файловых системах устройства. */
+    data object FileSystem : Screen
 
     /** Двухпанельный файловый менеджер (Local + Device). */
     data object FileExplorer : Screen

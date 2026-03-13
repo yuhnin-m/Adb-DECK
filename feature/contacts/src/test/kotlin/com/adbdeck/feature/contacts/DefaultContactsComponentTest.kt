@@ -16,6 +16,7 @@ import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.settings.AppSettings
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.contacts.models.ContactDetailState
@@ -457,6 +458,8 @@ class DefaultContactsComponentTest {
 
         override val savedEndpointsFlow: MutableStateFlow<List<DeviceEndpoint>> = MutableStateFlow(emptyList())
 
+        override val wifiHistoryFlow: MutableStateFlow<List<SavedWifiDevice>> = MutableStateFlow(emptyList())
+
         override suspend fun refresh() = Unit
 
         override suspend fun connect(host: String, port: Int): Result<String> = Result.success("connected")
@@ -473,6 +476,10 @@ class DefaultContactsComponentTest {
         override suspend fun saveEndpoint(endpoint: DeviceEndpoint) = Unit
 
         override suspend fun removeEndpoint(endpoint: DeviceEndpoint) = Unit
+
+        override suspend fun upsertWifiHistory(entry: SavedWifiDevice) = Unit
+
+        override suspend fun removeWifiHistory(address: String) = Unit
 
         override fun clearError() {
             errorFlow.value = null

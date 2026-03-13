@@ -1,6 +1,7 @@
 package com.adbdeck.feature.devices
 
 import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -30,6 +31,18 @@ interface DevicesComponent {
 
     /** Обновить список устройств через `adb devices`. */
     fun onRefresh()
+
+    // ── История Wi-Fi ───────────────────────────────────────────────────────
+
+    /**
+     * Подключиться к устройству из истории Wi-Fi (`adb connect host:port`).
+     */
+    fun onConnectHistoryDevice(device: SavedWifiDevice)
+
+    /**
+     * Удалить устройство из локальной истории Wi-Fi.
+     */
+    fun onRemoveHistoryDevice(device: SavedWifiDevice)
 
     // ── Выбор устройства ──────────────────────────────────────────────────────
 

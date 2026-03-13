@@ -6,7 +6,6 @@
     <string name="file_explorer_action_up">Вверх</string>
     <string name="file_explorer_action_refresh">Обновить</string>
     <string name="file_explorer_action_open">Открыть</string>
-    <string name="file_explorer_action_copy_path">Путь</string>
     <string name="file_explorer_action_new_folder">Новая папка</string>
     <string name="file_explorer_action_rename">Переименовать</string>
     <string name="file_explorer_action_delete">Удалить</string>

@@ -17,6 +17,7 @@ import com.adbdeck.core.adb.api.contacts.Contact
 import com.adbdeck.core.adb.api.contacts.ContactAccount
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.adb.api.contacts.EmailType
 import com.adbdeck.core.adb.api.logcat.LogcatEntry
 import com.adbdeck.core.adb.api.logcat.LogcatLevel
@@ -51,6 +52,8 @@ import com.adbdeck.core.adb.api.intents.LaunchMode
 import com.adbdeck.feature.notifications.ui.PreviewNotificationsComponent
 import com.adbdeck.feature.apkinstall.ApkInstallState
 import com.adbdeck.feature.apkinstall.ApkInstallStatus
+import com.adbdeck.feature.filesystem.FileSystemComponent
+import com.adbdeck.feature.filesystem.FileSystemState
 import com.adbdeck.feature.fileexplorer.ExplorerFileItem
 import com.adbdeck.feature.fileexplorer.ExplorerFileType
 import com.adbdeck.feature.fileexplorer.ExplorerListState
@@ -88,12 +91,9 @@ import com.adbdeck.feature.settings.SettingsFeedback
 import com.adbdeck.feature.settings.SettingsUiState
 import com.adbdeck.feature.settings.ToolCheckState
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
-import com.adbdeck.feature.systemmonitor.SystemMonitorTab
 import com.adbdeck.feature.systemmonitor.processes.ProcessesComponent
 import com.adbdeck.feature.systemmonitor.processes.ProcessesState
 import com.adbdeck.feature.systemmonitor.processes.ProcessSortField
-import com.adbdeck.feature.systemmonitor.storage.StorageComponent
-import com.adbdeck.feature.systemmonitor.storage.StorageState
 import com.adbdeck.feature.quicktoggles.ANIMATION_ANIMATOR_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.ANIMATION_TRANSITION_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.ANIMATION_WINDOW_SCALE_KEY
@@ -182,6 +182,7 @@ private class PreviewDashboardComponent : DashboardComponent {
     override fun onOpenScreenTools() = Unit
     override fun onOpenScrcpy() = Unit
     override fun onOpenFileExplorer() = Unit
+    override fun onOpenFileSystem() = Unit
     override fun onOpenContacts() = Unit
     override fun onOpenSystemMonitor() = Unit
     override fun onOpenSettings() = Unit
@@ -204,10 +205,20 @@ private class PreviewDevicesComponent : DevicesComponent {
         DevicesState(
             listState        = DeviceListState.Success(previewDevices),
             selectedDeviceId = previewDevices.first().deviceId,
+            wifiHistory = listOf(
+                SavedWifiDevice(
+                    address = "192.168.0.15:5555",
+                    deviceId = "192.168.0.15:5555",
+                    displayName = "Office Pixel",
+                    lastSeenAt = 1_710_000_000_000L,
+                )
+            ),
         )
     )
 
     override fun onRefresh() = Unit
+    override fun onConnectHistoryDevice(device: SavedWifiDevice) = Unit
+    override fun onRemoveHistoryDevice(device: SavedWifiDevice) = Unit
     override fun onSelectDevice(device: AdbDevice) = Unit
     override fun onOpenDetails(device: AdbDevice) = Unit
     override fun onCloseDetails() = Unit
@@ -335,7 +346,6 @@ private class PreviewPackagesComponent : PackagesComponent {
 }
 
 private class PreviewSystemMonitorComponent : SystemMonitorComponent {
-    override val activeTab: StateFlow<SystemMonitorTab> = MutableStateFlow(SystemMonitorTab.PROCESSES)
     override val isProcessMonitoring: StateFlow<Boolean> = MutableStateFlow(false)
     override val processesComponent: ProcessesComponent = object : ProcessesComponent {
         override val state: StateFlow<ProcessesState> = MutableStateFlow(ProcessesState())
@@ -351,11 +361,11 @@ private class PreviewSystemMonitorComponent : SystemMonitorComponent {
         override fun onOpenPackageDetails(process: com.adbdeck.core.adb.api.monitoring.process.ProcessInfo) = Unit
         override fun onDismissFeedback() = Unit
     }
-    override val storageComponent: StorageComponent = object : StorageComponent {
-        override val state: StateFlow<StorageState> = MutableStateFlow(StorageState())
-        override fun onRefresh() = Unit
-    }
-    override fun onTabSelected(tab: SystemMonitorTab) = Unit
+}
+
+private class PreviewFileSystemComponent : FileSystemComponent {
+    override val state: StateFlow<FileSystemState> = MutableStateFlow(FileSystemState())
+    override fun onRefresh() = Unit
 }
 
 private class PreviewContactsComponent : ContactsComponent {
@@ -756,6 +766,7 @@ private class PreviewRootComponent(
     private val settings = PreviewSettingsComponent()
     private val packages = PreviewPackagesComponent()
     private val systemMonitor = PreviewSystemMonitorComponent()
+    private val fileSystem = PreviewFileSystemComponent()
     private val fileExplorer = PreviewFileExplorerComponent()
     private val contacts = PreviewContactsComponent()
     private val screenTools = PreviewScreenToolsComponent()
@@ -784,6 +795,7 @@ private class PreviewRootComponent(
         Screen.Settings -> RootComponent.Child.Settings(settings)
         Screen.Packages -> RootComponent.Child.Packages(packages)
         Screen.SystemMonitor -> RootComponent.Child.SystemMonitor(systemMonitor)
+        Screen.FileSystem -> RootComponent.Child.FileSystem(fileSystem)
         Screen.FileExplorer -> RootComponent.Child.FileExplorer(fileExplorer)
         Screen.Contacts -> RootComponent.Child.Contacts(contacts)
         Screen.ScreenTools -> RootComponent.Child.ScreenTools(screenTools)

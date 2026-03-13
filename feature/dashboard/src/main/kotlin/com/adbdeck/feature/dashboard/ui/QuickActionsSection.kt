@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Monitor
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
@@ -60,6 +61,7 @@ internal fun QuickActionsSection(
     onOpenScreenTools: () -> Unit,
     onOpenScrcpy: () -> Unit,
     onOpenFileExplorer: () -> Unit,
+    onOpenFileSystem: () -> Unit,
     onOpenContacts: () -> Unit,
     onOpenSystemMonitor: () -> Unit,
     onOpenLogcat: () -> Unit,
@@ -98,6 +100,8 @@ internal fun QuickActionsSection(
     val mirrorScreenSubtitle = stringResource(Res.string.dashboard_tile_mirror_screen_subtitle)
     val fileExplorerTitle = stringResource(Res.string.dashboard_tile_file_explorer_title)
     val fileExplorerSubtitle = stringResource(Res.string.dashboard_tile_file_explorer_subtitle)
+    val fileSystemTitle = stringResource(Res.string.dashboard_tile_file_system_title)
+    val fileSystemSubtitle = stringResource(Res.string.dashboard_tile_file_system_subtitle)
     val contactsTitle = stringResource(Res.string.dashboard_tile_contacts_title)
     val contactsSubtitle = stringResource(Res.string.dashboard_tile_contacts_subtitle)
     val systemMonitorTitle = stringResource(Res.string.dashboard_tile_system_monitor_title)
@@ -198,6 +202,8 @@ internal fun QuickActionsSection(
         mirrorScreenSubtitle,
         fileExplorerTitle,
         fileExplorerSubtitle,
+        fileSystemTitle,
+        fileSystemSubtitle,
         contactsTitle,
         contactsSubtitle,
         systemMonitorTitle,
@@ -209,6 +215,7 @@ internal fun QuickActionsSection(
         onOpenScreenTools,
         onOpenScrcpy,
         onOpenFileExplorer,
+        onOpenFileSystem,
         onOpenContacts,
         onOpenSystemMonitor,
         onOpenAdbShell,
@@ -232,6 +239,12 @@ internal fun QuickActionsSection(
                 title = fileExplorerTitle,
                 subtitle = fileExplorerSubtitle,
                 onClick = onOpenFileExplorer,
+            ),
+            DashboardNavItemUi(
+                icon = Icons.Outlined.Storage,
+                title = fileSystemTitle,
+                subtitle = fileSystemSubtitle,
+                onClick = onOpenFileSystem,
             ),
             DashboardNavItemUi(
                 icon = Icons.Outlined.Contacts,

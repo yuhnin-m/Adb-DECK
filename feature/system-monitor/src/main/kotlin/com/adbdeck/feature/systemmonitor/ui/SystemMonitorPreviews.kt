@@ -1,19 +1,14 @@
 package com.adbdeck.feature.systemmonitor.ui
 
-import org.jetbrains.compose.ui.tooling.preview.Preview
 import androidx.compose.runtime.Composable
 import com.adbdeck.core.adb.api.monitoring.SystemSnapshot
 import com.adbdeck.core.adb.api.monitoring.process.*
-import com.adbdeck.core.adb.api.monitoring.storage.*
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.feature.systemmonitor.SystemMonitorComponent
-import com.adbdeck.feature.systemmonitor.SystemMonitorTab
 import com.adbdeck.feature.systemmonitor.processes.*
-import com.adbdeck.feature.systemmonitor.storage.StorageComponent
-import com.adbdeck.feature.systemmonitor.storage.StorageListState
-import com.adbdeck.feature.systemmonitor.storage.StorageState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // ── Preview-стабы ─────────────────────────────────────────────────────────────
 
@@ -37,24 +32,6 @@ private val sampleHistory = (1..30).map { i ->
         totalRamKb = 6_000_000L,
     )
 }
-
-private val samplePartitions = listOf(
-    StoragePartition(
-        filesystem = "/dev/block/sda1", totalKb = 52_428_800L,
-        usedKb = 10_485_760L, freeKb = 41_943_040L, usedPercent = 20,
-        mountPoint = "/system"
-    ),
-    StoragePartition(
-        filesystem = "/dev/block/sda2", totalKb = 104_857_600L,
-        usedKb = 73_400_320L, freeKb = 31_457_280L, usedPercent = 70,
-        mountPoint = "/data"
-    ),
-    StoragePartition(
-        filesystem = "/dev/fuse", totalKb = 52_428_800L,
-        usedKb = 20_971_520L, freeKb = 31_457_280L, usedPercent = 40,
-        mountPoint = "/sdcard"
-    ),
-)
 
 // ── ProcessesComponent stub ───────────────────────────────────────────────────
 
@@ -81,33 +58,11 @@ private class PreviewProcessesComponent : ProcessesComponent {
     override fun onDismissFeedback() = Unit
 }
 
-// ── StorageComponent stub ─────────────────────────────────────────────────────
-
-private class PreviewStorageComponent : StorageComponent {
-    override val state: StateFlow<StorageState> = MutableStateFlow(
-        StorageState(
-            listState = StorageListState.Success(
-                partitions = samplePartitions,
-                summary    = StorageSummary(
-                    totalKb = samplePartitions.sumOf { it.totalKb },
-                    usedKb  = samplePartitions.sumOf { it.usedKb },
-                    freeKb  = samplePartitions.sumOf { it.freeKb },
-                ),
-            )
-        )
-    )
-    override fun onRefresh() = Unit
-}
-
 // ── SystemMonitorComponent stub ───────────────────────────────────────────────
 
-private class PreviewSystemMonitorComponent(
-    override val activeTab: StateFlow<SystemMonitorTab> = MutableStateFlow(SystemMonitorTab.PROCESSES),
-) : SystemMonitorComponent {
+private class PreviewSystemMonitorComponent : SystemMonitorComponent {
     override val isProcessMonitoring: StateFlow<Boolean> = MutableStateFlow(true)
     override val processesComponent: ProcessesComponent = PreviewProcessesComponent()
-    override val storageComponent: StorageComponent     = PreviewStorageComponent()
-    override fun onTabSelected(tab: SystemMonitorTab)   = Unit
 }
 
 // ── Previews ─────────────────────────────────────────────────────────────────
@@ -130,28 +85,8 @@ private fun SystemMonitorScreenDarkPreview() {
 
 @Preview
 @Composable
-private fun StorageTabPreview() {
-    AdbDeckTheme(isDarkTheme = false) {
-        SystemMonitorScreen(
-            component = PreviewSystemMonitorComponent(
-                activeTab = MutableStateFlow(SystemMonitorTab.STORAGE)
-            )
-        )
-    }
-}
-
-@Preview
-@Composable
 private fun ProcessesScreenPreview() {
     AdbDeckTheme(isDarkTheme = false) {
         ProcessesScreen(component = PreviewProcessesComponent())
-    }
-}
-
-@Preview
-@Composable
-private fun StorageScreenPreview() {
-    AdbDeckTheme(isDarkTheme = false) {
-        StorageScreen(component = PreviewStorageComponent())
     }
 }

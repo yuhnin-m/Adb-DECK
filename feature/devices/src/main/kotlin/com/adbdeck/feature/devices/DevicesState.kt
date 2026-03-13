@@ -2,6 +2,7 @@ package com.adbdeck.feature.devices
 
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceInfoLoadState
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 
 // ── Состояние списка устройств ────────────────────────────────────────────────
 
@@ -97,6 +98,7 @@ sealed interface DeviceActionFeedback {
  * @param deviceInfos        Расширенная информация об устройствах по deviceId.
  *                           Загружается асинхронно после появления устройства в списке.
  * @param detailsDeviceId    ID устройства, открытого в панели деталей. `null` = панель скрыта.
+ * @param wifiHistory        История ранее подключенных Wi-Fi-устройств.
  * @param actionFeedback     Краткосрочное уведомление о результате последнего действия.
  * @param pendingAction      Действие, ожидающее подтверждения в диалоге.
  * @param isActionRunning    Флаг выполнения текущего действия (блокирует кнопки).
@@ -106,6 +108,7 @@ data class DevicesState(
     val selectedDeviceId: String? = null,
     val deviceInfos: Map<String, DeviceInfoLoadState> = emptyMap(),
     val detailsDeviceId: String? = null,
+    val wifiHistory: List<SavedWifiDevice> = emptyList(),
     val actionFeedback: DeviceActionFeedback? = null,
     val pendingAction: PendingDeviceAction? = null,
     val isActionRunning: Boolean = false,

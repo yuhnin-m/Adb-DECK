@@ -68,6 +68,8 @@
     <string name="dashboard_tile_mirror_screen_subtitle">Открыть управление scrcpy</string>
     <string name="dashboard_tile_file_explorer_title">File Explorer</string>
     <string name="dashboard_tile_file_explorer_subtitle">Файлы устройства и локальные файлы</string>
+    <string name="dashboard_tile_file_system_title">File System</string>
+    <string name="dashboard_tile_file_system_subtitle">Разделы и заполнение хранилища устройства</string>
     <string name="dashboard_tile_contacts_title">Contacts</string>
     <string name="dashboard_tile_contacts_subtitle">Управление контактами устройства</string>
     <string name="dashboard_tile_system_monitor_title">System Monitor</string>

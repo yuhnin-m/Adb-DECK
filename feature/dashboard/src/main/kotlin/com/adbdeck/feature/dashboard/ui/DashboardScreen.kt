@@ -166,6 +166,7 @@ private fun QuickActionsSectionHost(component: DashboardComponent) {
     val onOpenScreenTools = remember(component) { { component.onOpenScreenTools() } }
     val onOpenScrcpy = remember(component) { { component.onOpenScrcpy() } }
     val onOpenFileExplorer = remember(component) { { component.onOpenFileExplorer() } }
+    val onOpenFileSystem = remember(component) { { component.onOpenFileSystem() } }
     val onOpenContacts = remember(component) { { component.onOpenContacts() } }
     val onOpenSystemMonitor = remember(component) { { component.onOpenSystemMonitor() } }
     val onOpenLogcat = remember(component) { { component.onOpenLogcat() } }
@@ -184,6 +185,7 @@ private fun QuickActionsSectionHost(component: DashboardComponent) {
         onOpenScreenTools = onOpenScreenTools,
         onOpenScrcpy = onOpenScrcpy,
         onOpenFileExplorer = onOpenFileExplorer,
+        onOpenFileSystem = onOpenFileSystem,
         onOpenContacts = onOpenContacts,
         onOpenSystemMonitor = onOpenSystemMonitor,
         onOpenLogcat = onOpenLogcat,

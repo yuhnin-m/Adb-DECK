@@ -1,0 +1,31 @@
+<resources>
+    <string name="file_system_title_filesystems">Файловые системы</string>
+    <string name="file_system_toolbar_refresh_content_desc">Обновить</string>
+
+    <string name="file_system_empty_no_device">Устройство не подключено</string>
+    <string name="file_system_empty_no_data">Нет данных о хранилище</string>
+
+    <string name="file_system_summary_title">Итого по хранилищу</string>
+    <string name="file_system_stat_used">Использовано</string>
+    <string name="file_system_stat_free">Свободно</string>
+    <string name="file_system_stat_total">Всего</string>
+    <string name="file_system_stat_percent">%</string>
+    <string name="file_system_section_device_title">Разделы устройства</string>
+    <string name="file_system_section_device_subtitle">Разделов: %1$d</string>
+    <string name="file_system_section_app_title">Разделы приложений</string>
+    <string name="file_system_section_app_subtitle">Точек монтирования: %1$d</string>
+
+    <string name="file_system_category_system">Система</string>
+    <string name="file_system_category_data">Данные</string>
+    <string name="file_system_category_external">Внешнее</string>
+    <string name="file_system_category_other">Прочее</string>
+
+    <string name="file_system_used_format">Использовано: %1$s</string>
+    <string name="file_system_free_format">Свободно: %1$s</string>
+    <string name="file_system_total_format">Всего: %1$s</string>
+
+    <string name="file_system_error_device_unavailable">Устройство недоступно (%1$s)</string>
+    <string name="file_system_error_data_empty">ADB не вернул данные о хранилище</string>
+    <string name="file_system_error_no_relevant_partitions">Нет релевантных разделов хранилища</string>
+    <string name="file_system_error_fetch_failed">Ошибка получения данных хранилища</string>
+</resources>

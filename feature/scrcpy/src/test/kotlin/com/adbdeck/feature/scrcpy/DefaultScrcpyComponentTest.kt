@@ -4,6 +4,7 @@ import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.adb.api.scrcpy.ScrcpyCheckResult
 import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
 import com.adbdeck.core.adb.api.scrcpy.ScrcpyExitResult
@@ -336,6 +337,7 @@ class DefaultScrcpyComponentTest {
         override val isConnecting: MutableStateFlow<Boolean> = MutableStateFlow(false)
         override val errorFlow: MutableStateFlow<String?> = MutableStateFlow(null)
         override val savedEndpointsFlow: MutableStateFlow<List<DeviceEndpoint>> = MutableStateFlow(emptyList())
+        override val wifiHistoryFlow: MutableStateFlow<List<SavedWifiDevice>> = MutableStateFlow(emptyList())
 
         override suspend fun refresh() = Unit
 
@@ -352,6 +354,10 @@ class DefaultScrcpyComponentTest {
         override suspend fun saveEndpoint(endpoint: DeviceEndpoint) = Unit
 
         override suspend fun removeEndpoint(endpoint: DeviceEndpoint) = Unit
+
+        override suspend fun upsertWifiHistory(entry: SavedWifiDevice) = Unit
+
+        override suspend fun removeWifiHistory(address: String) = Unit
 
         override fun clearError() {
             errorFlow.value = null

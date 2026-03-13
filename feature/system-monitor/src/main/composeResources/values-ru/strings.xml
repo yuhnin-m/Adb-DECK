@@ -1,10 +1,6 @@
 <resources>
-    <string name="system_monitor_tab_processes">Процессы</string>
-    <string name="system_monitor_tab_storage">Хранилище</string>
-
     <string name="system_monitor_empty_no_device">Устройство не подключено</string>
     <string name="system_monitor_empty_processes_not_found">Процессы не найдены</string>
-    <string name="system_monitor_empty_storage_no_data">Нет данных о хранилище</string>
 
     <string name="system_monitor_toolbar_start_monitoring">Мониторинг</string>
     <string name="system_monitor_toolbar_stop_monitoring">Стоп</string>
@@ -59,20 +55,6 @@
     <string name="system_monitor_detail_label_package">Пакет</string>
     <string name="system_monitor_detail_unavailable_format">Детали недоступны: %1$s</string>
 
-    <string name="system_monitor_storage_title_filesystems">Файловые системы</string>
-    <string name="system_monitor_storage_summary_title">Итого по хранилищу</string>
-    <string name="system_monitor_storage_stat_used">Использовано</string>
-    <string name="system_monitor_storage_stat_free">Свободно</string>
-    <string name="system_monitor_storage_stat_total">Всего</string>
-    <string name="system_monitor_storage_stat_percent">%</string>
-    <string name="system_monitor_storage_category_system">Система</string>
-    <string name="system_monitor_storage_category_data">Данные</string>
-    <string name="system_monitor_storage_category_external">Внешнее</string>
-    <string name="system_monitor_storage_category_other">Прочее</string>
-    <string name="system_monitor_storage_used_format">Использовано: %1$s</string>
-    <string name="system_monitor_storage_free_format">Свободно: %1$s</string>
-    <string name="system_monitor_storage_total_format">Всего: %1$s</string>
-
     <string name="system_monitor_error_no_active_device">Нет активного устройства</string>
     <string name="system_monitor_error_device_unavailable">Устройство недоступно (%1$s)</string>
     <string name="system_monitor_error_process_list_empty">ADB не вернул список процессов</string>
@@ -81,10 +63,6 @@
     <string name="system_monitor_error_process_package_missing">Для этого процесса нет Android package</string>
     <string name="system_monitor_error_action_failed">Ошибка выполнения действия</string>
     <string name="system_monitor_error_process_details_failed">Ошибка загрузки деталей</string>
-    <string name="system_monitor_error_storage_data_empty">ADB не вернул данные о хранилище</string>
-    <string name="system_monitor_error_storage_no_relevant_partitions">Нет релевантных разделов хранилища</string>
-    <string name="system_monitor_error_storage_fetch_failed">Ошибка получения данных хранилища</string>
-
     <string name="system_monitor_feedback_monitoring_stopped">Мониторинг остановлен: %1$s</string>
     <string name="system_monitor_feedback_kill_success">kill -9 %1$d выполнен</string>
     <string name="system_monitor_feedback_force_stop_success">Force-stop выполнен: %1$s</string>
