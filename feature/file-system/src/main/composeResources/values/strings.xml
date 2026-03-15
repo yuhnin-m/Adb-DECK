@@ -1,6 +1,7 @@
 <resources>
     <string name="file_system_title_filesystems">File systems</string>
     <string name="file_system_toolbar_refresh_content_desc">Refresh</string>
+    <string name="file_system_toolbar_cleanup_content_desc">Open cleanup window</string>
 
     <string name="file_system_empty_no_device">No device connected</string>
     <string name="file_system_empty_no_data">No storage data</string>
@@ -14,6 +15,7 @@
     <string name="file_system_section_device_subtitle">%1$d partitions</string>
     <string name="file_system_section_app_title">App-related partitions</string>
     <string name="file_system_section_app_subtitle">%1$d app mounts</string>
+    <string name="file_system_partition_open">Open</string>
 
     <string name="file_system_category_system">System</string>
     <string name="file_system_category_data">Data</string>
@@ -28,4 +30,49 @@
     <string name="file_system_error_data_empty">ADB returned no storage data</string>
     <string name="file_system_error_no_relevant_partitions">No relevant storage partitions</string>
     <string name="file_system_error_fetch_failed">Failed to load storage data</string>
+    <string name="file_system_error_diskstats_failed">Failed to load dumpsys diskstats</string>
+    <string name="file_system_error_diskstats_empty">dumpsys diskstats did not return recognized fields</string>
+
+    <string name="file_system_analysis_title">Content analysis</string>
+    <string name="file_system_analysis_loading">Reading dumpsys diskstats…</string>
+    <string name="file_system_analysis_error_title">Content analysis unavailable</string>
+    <string name="file_system_analysis_empty">No recognizable values in diskstats output</string>
+    <string name="file_system_analysis_app_size">App Size</string>
+    <string name="file_system_analysis_app_data_size">App Data Size</string>
+    <string name="file_system_analysis_app_cache_size">App Cache Size</string>
+    <string name="file_system_analysis_photos_size">Photos Size</string>
+    <string name="file_system_analysis_videos_size">Videos Size</string>
+    <string name="file_system_analysis_audio_size">Audio Size</string>
+    <string name="file_system_analysis_downloads_size">Downloads Size</string>
+    <string name="file_system_analysis_other_size">Other Size</string>
+    <string name="file_system_analysis_system_size">System Size</string>
+    <string name="file_system_analysis_data_free">Data-Free</string>
+    <string name="file_system_analysis_data_total">Data total</string>
+
+    <string name="file_system_cleanup_title">Cleanup temporary files</string>
+    <string name="file_system_cleanup_subtitle">Cleanup</string>
+    <string name="file_system_cleanup_option_temp">Temporary files (/data/local/tmp)</string>
+    <string name="file_system_cleanup_option_downloads">Downloads (/sdcard/Download)</string>
+    <string name="file_system_cleanup_option_app_cache">App cache dirs (/sdcard/Android/data/*/cache)</string>
+    <string name="file_system_cleanup_clean_selected">Clean selected</string>
+    <string name="file_system_cleanup_confirm_title">Confirm cleanup</string>
+    <string name="file_system_cleanup_confirm_message">Selected folders will be cleaned. Continue?</string>
+    <string name="file_system_cleanup_cancel">Cancel</string>
+    <string name="file_system_cleanup_close">Close</string>
+    <string name="file_system_cleanup_copy">Copy</string>
+    <string name="file_system_cleanup_log_title">Execution log</string>
+    <string name="file_system_cleanup_log_empty">Log is empty</string>
+    <string name="file_system_cleanup_status_idle">Status: idle</string>
+    <string name="file_system_cleanup_status_running">Status: running</string>
+    <string name="file_system_cleanup_status_success">Status: success</string>
+    <string name="file_system_cleanup_status_error">Status: error</string>
+    <string name="file_system_cleanup_log_copied">[info] Log copied to clipboard.</string>
+    <string name="file_system_cleanup_log_copy_failed">[error] Failed to copy log: %1$s</string>
+    <string name="file_system_cleanup_log_unknown_error">unknown error</string>
+    <string name="file_system_cleanup_log_command_failed">command failed</string>
+    <string name="file_system_cleanup_log_started">[start] Cleanup started (%1$d commands).</string>
+    <string name="file_system_cleanup_log_done_with_errors">[done] Cleanup finished with errors.</string>
+    <string name="file_system_cleanup_log_done_success">[done] Cleanup finished successfully.</string>
+    <string name="file_system_cleanup_log_cancelled">[cancelled] Cleanup was cancelled.</string>
+    <string name="file_system_cleanup_log_unexpected_error">unexpected error</string>
 </resources>

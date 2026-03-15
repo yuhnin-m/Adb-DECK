@@ -1,6 +1,7 @@
 <resources>
     <string name="file_system_title_filesystems">Файловые системы</string>
     <string name="file_system_toolbar_refresh_content_desc">Обновить</string>
+    <string name="file_system_toolbar_cleanup_content_desc">Открыть окно очистки</string>
 
     <string name="file_system_empty_no_device">Устройство не подключено</string>
     <string name="file_system_empty_no_data">Нет данных о хранилище</string>
@@ -14,6 +15,7 @@
     <string name="file_system_section_device_subtitle">Разделов: %1$d</string>
     <string name="file_system_section_app_title">Разделы приложений</string>
     <string name="file_system_section_app_subtitle">Точек монтирования: %1$d</string>
+    <string name="file_system_partition_open">Open</string>
 
     <string name="file_system_category_system">Система</string>
     <string name="file_system_category_data">Данные</string>
@@ -28,4 +30,49 @@
     <string name="file_system_error_data_empty">ADB не вернул данные о хранилище</string>
     <string name="file_system_error_no_relevant_partitions">Нет релевантных разделов хранилища</string>
     <string name="file_system_error_fetch_failed">Ошибка получения данных хранилища</string>
+    <string name="file_system_error_diskstats_failed">Не удалось получить dumpsys diskstats</string>
+    <string name="file_system_error_diskstats_empty">В выводе dumpsys diskstats нет распознанных полей</string>
+
+    <string name="file_system_analysis_title">Анализ контента</string>
+    <string name="file_system_analysis_loading">Читаем dumpsys diskstats…</string>
+    <string name="file_system_analysis_error_title">Анализ контента недоступен</string>
+    <string name="file_system_analysis_empty">Распознаваемые значения не найдены</string>
+    <string name="file_system_analysis_app_size">App Size</string>
+    <string name="file_system_analysis_app_data_size">App Data Size</string>
+    <string name="file_system_analysis_app_cache_size">App Cache Size</string>
+    <string name="file_system_analysis_photos_size">Photos Size</string>
+    <string name="file_system_analysis_videos_size">Videos Size</string>
+    <string name="file_system_analysis_audio_size">Audio Size</string>
+    <string name="file_system_analysis_downloads_size">Downloads Size</string>
+    <string name="file_system_analysis_other_size">Other Size</string>
+    <string name="file_system_analysis_system_size">System Size</string>
+    <string name="file_system_analysis_data_free">Data-Free</string>
+    <string name="file_system_analysis_data_total">Общий объём Data</string>
+
+    <string name="file_system_cleanup_title">Очистка временных файлов</string>
+    <string name="file_system_cleanup_subtitle">Очистка</string>
+    <string name="file_system_cleanup_option_temp">Temporary files (/data/local/tmp)</string>
+    <string name="file_system_cleanup_option_downloads">Downloads (/sdcard/Download)</string>
+    <string name="file_system_cleanup_option_app_cache">App cache dirs (/sdcard/Android/data/*/cache)</string>
+    <string name="file_system_cleanup_clean_selected">Clean selected</string>
+    <string name="file_system_cleanup_confirm_title">Подтвердите очистку</string>
+    <string name="file_system_cleanup_confirm_message">Выбранные каталоги будут очищены. Продолжить?</string>
+    <string name="file_system_cleanup_cancel">Cancel</string>
+    <string name="file_system_cleanup_close">Закрыть</string>
+    <string name="file_system_cleanup_copy">Copy</string>
+    <string name="file_system_cleanup_log_title">Лог выполнения</string>
+    <string name="file_system_cleanup_log_empty">Лог пуст</string>
+    <string name="file_system_cleanup_status_idle">Статус: idle</string>
+    <string name="file_system_cleanup_status_running">Статус: running</string>
+    <string name="file_system_cleanup_status_success">Статус: success</string>
+    <string name="file_system_cleanup_status_error">Статус: error</string>
+    <string name="file_system_cleanup_log_copied">[info] Лог скопирован в буфер обмена.</string>
+    <string name="file_system_cleanup_log_copy_failed">[error] Не удалось скопировать лог: %1$s</string>
+    <string name="file_system_cleanup_log_unknown_error">неизвестная ошибка</string>
+    <string name="file_system_cleanup_log_command_failed">команда завершилась с ошибкой</string>
+    <string name="file_system_cleanup_log_started">[start] Очистка запущена (команд: %1$d).</string>
+    <string name="file_system_cleanup_log_done_with_errors">[done] Очистка завершена с ошибками.</string>
+    <string name="file_system_cleanup_log_done_success">[done] Очистка успешно завершена.</string>
+    <string name="file_system_cleanup_log_cancelled">[cancelled] Очистка отменена.</string>
+    <string name="file_system_cleanup_log_unexpected_error">непредвиденная ошибка</string>
 </resources>

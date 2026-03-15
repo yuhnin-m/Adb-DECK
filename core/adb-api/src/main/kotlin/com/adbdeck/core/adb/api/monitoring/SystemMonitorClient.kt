@@ -99,4 +99,38 @@ interface SystemMonitorClient {
         deviceId: String,
         adbPath: String = "adb",
     ): Result<List<StoragePartition>>
+
+    /**
+     * Выполнить произвольную shell-команду на устройстве.
+     *
+     * Команда запускается через:
+     * `adb -s <id> shell sh -c "<shellCommand>"`.
+     *
+     * В отличие от методов, возвращающих типизированные данные, этот метод
+     * не бросает ошибку на `exitCode != 0`, а возвращает [ShellCommandResult].
+     * Ошибка возвращается только при проблеме запуска процесса (например, adb недоступен).
+     *
+     * @param deviceId Серийный номер / адрес устройства.
+     * @param shellCommand Команда для выполнения внутри `sh -c`.
+     * @param adbPath Путь к `adb`.
+     */
+    suspend fun runShellCommand(
+        deviceId: String,
+        shellCommand: String,
+        adbPath: String = "adb",
+    ): Result<ShellCommandResult>
+
+    /**
+     * Получить сырой вывод `dumpsys diskstats`.
+     *
+     * Нужен для feature-уровня, где требуется tolerant parsing полей
+     * (App Size, Downloads Size, Data-Free и т.д.).
+     *
+     * @param deviceId Серийный номер / адрес устройства.
+     * @param adbPath Путь к `adb`.
+     */
+    suspend fun getDiskstats(
+        deviceId: String,
+        adbPath: String = "adb",
+    ): Result<String>
 }

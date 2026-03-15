@@ -24,4 +24,6 @@ dependencies {
     implementation(project(":core:utils"))
     implementation(project(":core:adb-api"))
     implementation(project(":core:settings"))
+
+    testImplementation(kotlin("test"))
 }

@@ -40,6 +40,7 @@ import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.core.settings.AppTheme
 import com.adbdeck.core.settings.SettingsRepository
 import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.essenty.lifecycle.destroy
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
@@ -99,6 +100,7 @@ fun main() = application {
     Window(
         onCloseRequest = {
             lifecycle.stop()
+            lifecycle.destroy()
             exitApplication()
         },
         title = APP_TITLE,

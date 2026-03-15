@@ -53,6 +53,7 @@ import com.adbdeck.feature.notifications.ui.PreviewNotificationsComponent
 import com.adbdeck.feature.apkinstall.ApkInstallState
 import com.adbdeck.feature.apkinstall.ApkInstallStatus
 import com.adbdeck.feature.filesystem.FileSystemComponent
+import com.adbdeck.feature.filesystem.CleanupOption
 import com.adbdeck.feature.filesystem.FileSystemState
 import com.adbdeck.feature.fileexplorer.ExplorerFileItem
 import com.adbdeck.feature.fileexplorer.ExplorerFileType
@@ -366,6 +367,15 @@ private class PreviewSystemMonitorComponent : SystemMonitorComponent {
 private class PreviewFileSystemComponent : FileSystemComponent {
     override val state: StateFlow<FileSystemState> = MutableStateFlow(FileSystemState())
     override fun onRefresh() = Unit
+    override fun onOpenCleanup() = Unit
+    override fun onDismissCleanup() = Unit
+    override fun onToggleCleanupOption(option: CleanupOption) = Unit
+    override fun onStartCleanup() = Unit
+    override fun onConfirmCleanup() = Unit
+    override fun onDismissCleanupConfirm() = Unit
+    override fun onCancelCleanup() = Unit
+    override fun onCopyCleanupLog() = Unit
+    override fun onOpenPartition(path: String) = Unit
 }
 
 private class PreviewContactsComponent : ContactsComponent {

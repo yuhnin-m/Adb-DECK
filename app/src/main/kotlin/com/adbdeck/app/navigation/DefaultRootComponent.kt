@@ -87,6 +87,7 @@ class DefaultRootComponent(
     private var pendingPackageToReveal: String? = null
     private var pendingPackageForLogcat: String? = null
     private var pendingDeepLinkUri: String? = null
+    private var pendingFileExplorerPath: String? = null
 
     override val childStack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
@@ -164,6 +165,32 @@ class DefaultRootComponent(
             pendingDeepLinkUri = uri
         }
         navigate(Screen.DeepLinks)
+    }
+
+    /**
+     * Перейти в File Explorer и открыть путь на устройстве.
+     *
+     * Если компонент уже создан — путь открывается сразу.
+     * Иначе путь сохраняется в pending и применяется при создании экрана.
+     */
+    private fun openPathInFileExplorer(path: String) {
+        val normalized = path.trim()
+        if (normalized.isEmpty()) return
+
+        val existing = childStack.value.items
+            .asSequence()
+            .map { it.instance }
+            .filterIsInstance<RootComponent.Child.FileExplorer>()
+            .map { it.component }
+            .firstOrNull()
+
+        if (existing != null) {
+            existing.onSelectDeviceRoot(normalized)
+        } else {
+            pendingFileExplorerPath = normalized
+        }
+
+        navigate(Screen.FileExplorer)
     }
 
     /**
@@ -266,6 +293,7 @@ class DefaultRootComponent(
                 deviceManager = deviceManager,
                 systemMonitorClient = systemMonitorClient,
                 settingsRepository = settingsRepository,
+                openInFileExplorer = ::openPathInFileExplorer,
             )
         )
 
@@ -276,7 +304,11 @@ class DefaultRootComponent(
                 settingsRepository = settingsRepository,
                 systemMonitorClient = systemMonitorClient,
                 deviceFileClient = deviceFileClient,
-            )
+            ).also { component ->
+                pendingFileExplorerPath
+                    ?.also(component::onSelectDeviceRoot)
+                pendingFileExplorerPath = null
+            }
         )
 
         is Screen.Contacts -> RootComponent.Child.Contacts(

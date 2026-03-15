@@ -1,6 +1,7 @@
 package com.adbdeck.core.adb.impl.monitoring
 
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
+import com.adbdeck.core.adb.api.monitoring.ShellCommandResult
 import com.adbdeck.core.adb.api.monitoring.process.ProcessDetails
 import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import com.adbdeck.core.adb.api.monitoring.process.ProcessSnapshot
@@ -499,6 +500,35 @@ class DefaultSystemMonitorClient(
             error("Не удалось получить информацию о хранилище: ${df.stderr.take(200)}")
         }
         parseDf(df.stdout, alreadyKb = false)
+    }
+
+    override suspend fun runShellCommand(
+        deviceId: String,
+        shellCommand: String,
+        adbPath: String,
+    ): Result<ShellCommandResult> = runCatchingPreserveCancellation {
+        val result = processRunner.run(
+            adbPath, "-s", deviceId, "shell", "sh", "-c", shellCommand,
+        )
+
+        ShellCommandResult(
+            exitCode = result.exitCode,
+            stdout = result.stdout,
+            stderr = result.stderr,
+        )
+    }
+
+    override suspend fun getDiskstats(
+        deviceId: String,
+        adbPath: String,
+    ): Result<String> = runCatchingPreserveCancellation {
+        val result = processRunner.run(
+            adbPath, "-s", deviceId, "shell", "dumpsys", "diskstats",
+        )
+        if (!result.isSuccess || result.stdout.isBlank()) {
+            error(result.stderr.ifBlank { "Не удалось получить dumpsys diskstats" })
+        }
+        result.stdout
     }
 
     /**
