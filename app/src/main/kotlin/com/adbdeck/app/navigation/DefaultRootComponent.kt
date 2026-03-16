@@ -84,10 +84,6 @@ class DefaultRootComponent(
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
-    private var pendingPackageToReveal: String? = null
-    private var pendingPackageForLogcat: String? = null
-    private var pendingDeepLinkUri: String? = null
-    private var pendingFileExplorerPath: String? = null
 
     override val childStack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
@@ -102,55 +98,62 @@ class DefaultRootComponent(
         navigation.bringToFront(screen)
     }
 
+    /**
+     * Перейти в Packages и выделить пакет по имени.
+     *
+     * Если компонент Packages уже есть в стеке — вызывает [onRevealPackage] напрямую
+     * и поднимает экран наверх. Иначе открывает экран с аргументом [packageToReveal]
+     * в конфиге — он будет прочитан в [createChild] при создании компонента.
+     */
     private fun openPackageFromSystemMonitor(packageName: String) {
         val normalized = packageName.trim()
         if (normalized.isEmpty()) return
 
-        val existingPackages = childStack.value.items
+        val existing = childStack.value.items
             .asSequence()
             .map { it.instance }
             .filterIsInstance<RootComponent.Child.Packages>()
             .map { it.component }
             .firstOrNull()
 
-        if (existingPackages != null) {
-            existingPackages.onRevealPackage(normalized)
-            navigate(Screen.Packages)
+        if (existing != null) {
+            existing.onRevealPackage(normalized)
+            navigation.bringToFront(Screen.Packages())
         } else {
-            pendingPackageToReveal = normalized
-            navigate(Screen.Packages)
+            navigation.bringToFront(Screen.Packages(packageToReveal = normalized))
         }
     }
 
     /**
      * Перейти в Logcat и предзаполнить фильтр пакета.
      *
-     * Если компонент Logcat уже создан, фильтр применяется сразу.
-     * Иначе значение сохраняется в pending и будет применено при создании экрана.
+     * Если компонент Logcat уже есть в стеке — фильтр применяется напрямую.
+     * Иначе открывает экран с аргументом [packageFilter] в конфиге.
      */
     private fun openPackageInLogcat(packageName: String) {
         val normalized = packageName.trim()
         if (normalized.isEmpty()) return
 
-        val existingLogcat = childStack.value.items
+        val existing = childStack.value.items
             .asSequence()
             .map { it.instance }
             .filterIsInstance<RootComponent.Child.Logcat>()
             .map { it.component }
             .firstOrNull()
 
-        if (existingLogcat != null) {
-            existingLogcat.onPackageFilterChanged(normalized)
+        if (existing != null) {
+            existing.onPackageFilterChanged(normalized)
+            navigation.bringToFront(Screen.Logcat())
         } else {
-            pendingPackageForLogcat = normalized
+            navigation.bringToFront(Screen.Logcat(packageFilter = normalized))
         }
-
-        navigate(Screen.Logcat)
     }
 
     /**
      * Перейти в Deep Links и предзаполнить URI из уведомления.
-     * Если компонент DeepLinks уже создан — вызывает prefillDeepLinkUri() напрямую.
+     *
+     * Если компонент DeepLinks уже есть в стеке — URI передаётся напрямую.
+     * Иначе открывает экран с аргументом [prefillUri] в конфиге.
      */
     private fun openDeepLinkFromNotifications(uri: String) {
         val existing = childStack.value.items
@@ -159,19 +162,20 @@ class DefaultRootComponent(
             .filterIsInstance<RootComponent.Child.DeepLinks>()
             .map { it.component }
             .firstOrNull()
+
         if (existing != null) {
             existing.prefillDeepLinkUri(uri)
+            navigation.bringToFront(Screen.DeepLinks())
         } else {
-            pendingDeepLinkUri = uri
+            navigation.bringToFront(Screen.DeepLinks(prefillUri = uri))
         }
-        navigate(Screen.DeepLinks)
     }
 
     /**
      * Перейти в File Explorer и открыть путь на устройстве.
      *
-     * Если компонент уже создан — путь открывается сразу.
-     * Иначе путь сохраняется в pending и применяется при создании экрана.
+     * Если компонент FileExplorer уже есть в стеке — путь применяется напрямую.
+     * Иначе открывает экран с аргументом [initialPath] в конфиге.
      */
     private fun openPathInFileExplorer(path: String) {
         val normalized = path.trim()
@@ -186,11 +190,10 @@ class DefaultRootComponent(
 
         if (existing != null) {
             existing.onSelectDeviceRoot(normalized)
+            navigation.bringToFront(Screen.FileExplorer())
         } else {
-            pendingFileExplorerPath = normalized
+            navigation.bringToFront(Screen.FileExplorer(initialPath = normalized))
         }
-
-        navigate(Screen.FileExplorer)
     }
 
     /**
@@ -212,14 +215,14 @@ class DefaultRootComponent(
                 onNavigateToDevices = { navigate(Screen.Devices) },
                 onNavigateToDeviceInfo = { navigate(Screen.DeviceInfo) },
                 onNavigateToQuickToggles = { navigate(Screen.QuickToggles) },
-                onNavigateToLogcat = { navigate(Screen.Logcat) },
-                onNavigateToPackages = { navigate(Screen.Packages) },
+                onNavigateToLogcat = { navigate(Screen.Logcat()) },
+                onNavigateToPackages = { navigate(Screen.Packages()) },
                 onNavigateToApkInstall = { navigate(Screen.ApkInstall) },
-                onNavigateToDeepLinks = { navigate(Screen.DeepLinks) },
+                onNavigateToDeepLinks = { navigate(Screen.DeepLinks()) },
                 onNavigateToNotifications = { navigate(Screen.Notifications) },
                 onNavigateToScreenTools = { navigate(Screen.ScreenTools) },
                 onNavigateToScrcpy = { navigate(Screen.Scrcpy) },
-                onNavigateToFileExplorer = { navigate(Screen.FileExplorer) },
+                onNavigateToFileExplorer = { navigate(Screen.FileExplorer()) },
                 onNavigateToFileSystem = { navigate(Screen.FileSystem) },
                 onNavigateToContacts = { navigate(Screen.Contacts) },
                 onNavigateToSystemMonitor = { navigate(Screen.SystemMonitor) },
@@ -234,8 +237,8 @@ class DefaultRootComponent(
                 deviceInfoClient          = deviceInfoClient,
                 deviceControlClient       = deviceControlClient,
                 settingsRepository        = settingsRepository,
-                onNavigateToLogcat        = { navigate(Screen.Logcat) },
-                onNavigateToPackages      = { navigate(Screen.Packages) },
+                onNavigateToLogcat        = { navigate(Screen.Logcat()) },
+                onNavigateToPackages      = { navigate(Screen.Packages()) },
                 onNavigateToSystemMonitor = { navigate(Screen.SystemMonitor) },
             )
         )
@@ -249,9 +252,8 @@ class DefaultRootComponent(
                 packageClient = packageClient,
                 settingsRepository = settingsRepository,
             ).also { component ->
-                pendingPackageForLogcat
-                    ?.also(component::onPackageFilterChanged)
-                pendingPackageForLogcat = null
+                // Аргумент из конфига применяется только при первом создании компонента
+                screen.packageFilter?.also(component::onPackageFilterChanged)
             }
         )
 
@@ -272,7 +274,8 @@ class DefaultRootComponent(
                 packageClient = packageClient,
                 settingsRepository = settingsRepository,
                 openPackageInLogcat = ::openPackageInLogcat,
-                initialPackageToReveal = pendingPackageToReveal.also { pendingPackageToReveal = null },
+                // Аргумент из конфига применяется только при первом создании компонента
+                initialPackageToReveal = screen.packageToReveal,
             )
         )
 
@@ -292,6 +295,7 @@ class DefaultRootComponent(
                 componentContext = componentContext,
                 deviceManager = deviceManager,
                 systemMonitorClient = systemMonitorClient,
+                deviceFileClient = deviceFileClient,
                 settingsRepository = settingsRepository,
                 openInFileExplorer = ::openPathInFileExplorer,
             )
@@ -305,9 +309,8 @@ class DefaultRootComponent(
                 systemMonitorClient = systemMonitorClient,
                 deviceFileClient = deviceFileClient,
             ).also { component ->
-                pendingFileExplorerPath
-                    ?.also(component::onSelectDeviceRoot)
-                pendingFileExplorerPath = null
+                // Аргумент из конфига применяется только при первом создании компонента
+                screen.initialPath?.also(component::onSelectDeviceRoot)
             }
         )
 
@@ -346,7 +349,8 @@ class DefaultRootComponent(
                 packageClient      = packageClient,
                 intentLaunchClient = intentLaunchClient,
                 settingsRepository = settingsRepository,
-                initialDeepLinkUri = pendingDeepLinkUri.also { pendingDeepLinkUri = null },
+                // Аргумент из конфига применяется только при первом создании компонента
+                initialDeepLinkUri = screen.prefillUri,
             )
         )
 

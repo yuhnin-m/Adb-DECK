@@ -5,6 +5,7 @@ import adbdeck.feature.file_system.generated.resources.*
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.files.DeviceFileClient
 import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.adb.api.monitoring.storage.StoragePartition
 import com.adbdeck.core.adb.api.monitoring.storage.StorageSummary
@@ -31,6 +32,7 @@ class DefaultFileSystemComponent(
     componentContext: ComponentContext,
     private val deviceManager: DeviceManager,
     private val systemMonitorClient: SystemMonitorClient,
+    private val deviceFileClient: DeviceFileClient,
     private val settingsRepository: SettingsRepository,
     private val openInFileExplorer: (String) -> Unit = {},
 ) : FileSystemComponent, ComponentContext by componentContext {
@@ -332,23 +334,15 @@ class DefaultFileSystemComponent(
         if (candidates.isEmpty()) return null
 
         for (candidate in candidates) {
-            val escaped = shellQuote(candidate)
-            val probeCommand = "if [ -d $escaped ] && [ -r $escaped ]; then echo OK; else echo NO; fi"
-            val probeResult = runCatchingPreserveCancellation {
-                systemMonitorClient.runShellCommand(
+            val canOpen = runCatchingPreserveCancellation {
+                deviceFileClient.canAccessDirectory(
                     deviceId = deviceId,
-                    shellCommand = probeCommand,
+                    directoryPath = candidate,
                     adbPath = adbPath,
                 )
-            }.getOrElse { error -> Result.failure(error) }
+                    .getOrDefault(false)
+            }.getOrDefault(false)
 
-            val commandResult = probeResult.getOrNull() ?: continue
-            if (commandResult.exitCode != 0) continue
-
-            val canOpen = commandResult.stdout
-                .lineSequence()
-                .map(String::trim)
-                .any { it == "OK" }
             if (canOpen) return candidate
         }
 
@@ -633,8 +627,6 @@ class DefaultFileSystemComponent(
 
         return trimmed.ifBlank { "/" }
     }
-
-    private fun shellQuote(value: String): String = "'" + value.replace("'", "'\"'\"'") + "'"
 
     private fun resetNoDevice() {
         activeDeviceId = null

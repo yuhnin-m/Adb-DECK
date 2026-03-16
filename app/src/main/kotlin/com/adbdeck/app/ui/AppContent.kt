@@ -107,16 +107,16 @@ fun AppContent(
     val activeScreen: Screen = when (activeChild) {
         is RootComponent.Child.Dashboard -> Screen.Dashboard
         is RootComponent.Child.Devices -> Screen.Devices
-        is RootComponent.Child.Logcat -> Screen.Logcat
+        is RootComponent.Child.Logcat -> Screen.Logcat()
         is RootComponent.Child.Settings -> Screen.Settings
-        is RootComponent.Child.Packages -> Screen.Packages
+        is RootComponent.Child.Packages -> Screen.Packages()
         is RootComponent.Child.SystemMonitor -> Screen.SystemMonitor
         is RootComponent.Child.FileSystem -> Screen.FileSystem
-        is RootComponent.Child.FileExplorer -> Screen.FileExplorer
+        is RootComponent.Child.FileExplorer -> Screen.FileExplorer()
         is RootComponent.Child.Contacts -> Screen.Contacts
         is RootComponent.Child.ScreenTools -> Screen.ScreenTools
         is RootComponent.Child.ApkInstall -> Screen.ApkInstall
-        is RootComponent.Child.DeepLinks -> Screen.DeepLinks
+        is RootComponent.Child.DeepLinks -> Screen.DeepLinks()
         is RootComponent.Child.Notifications -> Screen.Notifications
         is RootComponent.Child.DeviceInfo -> Screen.DeviceInfo
         is RootComponent.Child.QuickToggles -> Screen.QuickToggles

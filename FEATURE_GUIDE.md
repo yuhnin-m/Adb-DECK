@@ -700,15 +700,24 @@ Sidebar.onNavigate(Screen.Foo)
       → when(activeChild) is Child.Foo → FooScreen(it.component)
 ```
 
-#### `Screen.kt` — только конфигурация, без данных
+#### `Screen.kt` — конфигурация экрана
+
+Без навигационных аргументов — `data object`. С аргументами — `data class` с type-based equals (см. [раздел 13](#13-кросс-фичевая-навигация)):
 
 ```kotlin
 // navigation/Screen.kt
 sealed interface Screen {
     data object Dashboard   : Screen
-    data object Packages    : Screen
+    data object Packages    : Screen   // уже существует
+
+    // Экран без аргументов:
     data object Foo         : Screen   // ← добавить
-    // ...
+
+    // Экран с аргументом при открытии:
+    data class Bar(val itemId: String? = null) : Screen {   // ← если нужны args
+        override fun equals(other: Any?) = other is Bar
+        override fun hashCode() = javaClass.hashCode()
+    }
 }
 ```
 
@@ -746,8 +755,11 @@ private fun createChild(screen: Screen, componentContext: ComponentContext): Roo
 
 ```kotlin
 // 1. Определение activeScreen для Sidebar
+// Для data object: Screen.Foo
+// Для data class: Screen.Foo()  — обязательно со скобками!
 val activeScreen: Screen = when (activeChild) {
-    is RootComponent.Child.Foo -> Screen.Foo       // ← добавить
+    is RootComponent.Child.Foo -> Screen.Foo       // ← data object — без скобок
+    is RootComponent.Child.Bar -> Screen.Bar()     // ← data class  — со скобками
     // ...
     else -> Screen.Dashboard
 }
@@ -796,93 +808,109 @@ is Screen.Foo -> RootComponent.Child.Foo(
 )
 ```
 
-### Два сценария при переходе
+### Навигация с аргументами: Screen как data class
 
-#### Сценарий А — целевой компонент уже создан
+Экраны, которые могут получать аргументы при открытии, объявлены в `Screen.kt` как `data class`
+с optional-полями и **type-based `equals`/`hashCode`**:
 
-Компонент живёт в стеке → можно обратиться к нему напрямую:
+```kotlin
+// navigation/Screen.kt
+data class Logcat(val packageFilter: String? = null) : Screen {
+    override fun equals(other: Any?) = other is Logcat
+    override fun hashCode() = javaClass.hashCode()
+}
+```
+
+`equals` по типу (а не по значению полей) — ключевой трюк. Благодаря ему:
+- `bringToFront(Screen.Logcat("foo"))` находит существующий `Screen.Logcat(null)` в стеке → **реюз без пересоздания**
+- Аргументы в конфиге используются **только в `createChild()`** при первом создании компонента
+
+Экраны без аргументов остаются `data object` — ничего менять не нужно.
+
+### Два сценария в navigate-хелпере
+
+Каждый хелпер кросс-фичевой навигации работает по единой логике:
 
 ```kotlin
 // DefaultRootComponent.kt
 private fun openPackageInLogcat(packageName: String) {
-    val normalized = packageName.trim().ifBlank { return }
+    val normalized = packageName.trim()
+    if (normalized.isEmpty()) return
 
     // Ищем существующий компонент в стеке
-    val existingLogcat = childStack.value.items
+    val existing = childStack.value.items
         .asSequence()
         .map { it.instance }
         .filterIsInstance<RootComponent.Child.Logcat>()
         .map { it.component }
         .firstOrNull()
 
-    if (existingLogcat != null) {
-        // Компонент уже есть — вызываем метод напрямую
-        existingLogcat.onPackageFilterChanged(normalized)
+    if (existing != null) {
+        // ── Сценарий А: компонент уже в стеке ────────────────────
+        // Вызываем метод напрямую, затем поднимаем экран наверх.
+        // bringToFront(Logcat()) найдёт существующий по type-equals → реюз.
+        existing.onPackageFilterChanged(normalized)
+        navigation.bringToFront(Screen.Logcat())
     } else {
-        // Компонента нет — сохраняем в pending
-        pendingPackageForLogcat = normalized
+        // ── Сценарий Б: компонента нет ───────────────────────────
+        // Аргумент передаётся в конфиге. Decompose создаст компонент
+        // через createChild(Screen.Logcat(packageFilter = normalized), ...)
+        navigation.bringToFront(Screen.Logcat(packageFilter = normalized))
     }
-
-    navigate(Screen.Logcat)
 }
 ```
 
-#### Сценарий Б — целевой компонент ещё не создан (pending)
+### createChild: чтение аргументов из конфига
 
-Значение сохраняется в поле `DefaultRootComponent` и применяется при создании компонента:
+В `createChild()` аргументы читаются прямо из конфига через smart cast (`screen` уже приведён к нужному типу в `is`-ветке):
 
 ```kotlin
-// DefaultRootComponent.kt — поле-хранилище
-private var pendingPackageForLogcat: String? = null
+// Вариант 1 — через initialXxx-параметр конструктора
+is Screen.Packages -> RootComponent.Child.Packages(
+    DefaultPackagesComponent(
+        componentContext       = componentContext,
+        // ...
+        initialPackageToReveal = screen.packageToReveal,  // null если не передан
+    )
+)
 
-// В createChild() — прочитать и сбросить через .also { }
+// Вариант 2 — через метод после создания (если нет конструкторного параметра)
 is Screen.Logcat -> RootComponent.Child.Logcat(
     DefaultLogcatComponent(
         componentContext = componentContext,
         // ...
     ).also { component ->
-        // Применить pending и сразу сбросить
-        pendingPackageForLogcat?.also(component::onPackageFilterChanged)
-        pendingPackageForLogcat = null
+        // Аргумент из конфига применяется только при первом создании компонента
+        screen.packageFilter?.also(component::onPackageFilterChanged)
     }
 )
 ```
 
-Альтернатива через `initialXxx`-параметр (когда компонент принимает значение при создании):
+Никаких `pending*`-переменных в `DefaultRootComponent` — аргументы живут в конфиге стека.
 
-```kotlin
-// Компонент принимает начальное значение
-class DefaultDeepLinksComponent(
-    // ...
-    initialDeepLinkUri: String? = null,
-) {
-    init {
-        initialDeepLinkUri?.let { onDlUriChanged(it) }
-    }
-}
+### Добавление нового экрана с аргументом: чеклист
 
-// В createChild() — передать и сразу обнулить
-is Screen.DeepLinks -> RootComponent.Child.DeepLinks(
-    DefaultDeepLinksComponent(
-        // ...
-        initialDeepLinkUri = pendingDeepLinkUri.also { pendingDeepLinkUri = null },
-    )
-)
-```
+1. В `Screen.kt` — добавить `data class` с optional-полями и type-based equals/hashCode
+2. В `DefaultRootComponent` — добавить navigate-хелпер с двумя ветками (existing / bringToFront с arg)
+3. В `createChild()` — прочитать аргумент из `screen.fieldName`
+4. В `AppContent.kt` — используй `Screen.Bar()` (с `()`) там, где создаётся экземпляр Screen как значение
+5. В `Sidebar.kt`, `Dashboard` — аналогично `Screen.Bar()` вместо `Screen.Bar`
+6. В `AppUiPreviews.kt` — `when`-ветки через `is Screen.Bar ->` (не по значению)
 
-### Какой вариант выбрать
+### Какой вариант передачи аргумента в компонент выбрать
 
 | Ситуация | Подход |
 |---|---|
-| Компонент stateless или не хранит введённые данные | `initialXxx`-параметр |
-| Компонент имеет сложное состояние, которое нельзя терять | pending + `component.onXxx()` |
-| Нужно передать данные в уже живущий компонент | всегда через `filterIsInstance` + метод |
+| Компонент уже поддерживает `initialXxx`-параметр | передать `screen.fieldName` напрямую в конструктор |
+| Компонент получает значение через метод (нет конструкторного параметра) | вызвать метод в `.also { }` блоке внутри `createChild()` |
+| Нужно передать данные в уже живущий компонент | всегда через `filterIsInstance` + метод напрямую |
 
 ### Что запрещено
 
 - Импортировать классы одной фичи в другую фичу — зависимость только через `:core:adb-api` интерфейсы
 - Хранить ссылку на компонент другой фичи внутри feature-компонента
 - Навигировать напрямую из фичи — только через callback
+- Хранить навигационные аргументы в mutable-полях `DefaultRootComponent` (`pending*`) — только через конфиг `Screen`
 
 ---
 
@@ -1305,7 +1333,11 @@ private fun FooNoDevicePreview() {
 
 ### Навигация
 - [ ] Кросс-фичевая навигация только через callback в DefaultRootComponent
-- [ ] Pending-поле объявлено в DefaultRootComponent, сбрасывается в `createChild()` через `.also { }`
+- [ ] Если экран принимает аргументы — `data class` с type-based `equals`/`hashCode` в `Screen.kt`
+- [ ] Navigate-хелпер в DefaultRootComponent содержит две ветки: existing (direct call + `bringToFront(Screen.X())`) и новый (`bringToFront(Screen.X(arg))`)
+- [ ] `createChild()` читает аргументы из `screen.fieldName` (не из `pending*`-переменных)
+- [ ] В `AppContent.kt` — `Screen.X()` со скобками там, где создаётся экземпляр (not type check)
+- [ ] В `AppUiPreviews.kt` — `when`-ветки для data class экранов через `is Screen.X ->`
 - [ ] `Screen`, `RootComponent.Child`, `createChild()`, `AppContent` (два места + `title()`), `Sidebar` — все обновлены
 
 ### DI и интеграция

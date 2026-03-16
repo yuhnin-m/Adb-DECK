@@ -11,11 +11,12 @@
     <string name="file_system_stat_free">Свободно</string>
     <string name="file_system_stat_total">Всего</string>
     <string name="file_system_stat_percent">%</string>
+    <string name="file_system_section_summary_title">Общие сведения</string>
     <string name="file_system_section_device_title">Разделы устройства</string>
     <string name="file_system_section_device_subtitle">Разделов: %1$d</string>
     <string name="file_system_section_app_title">Разделы приложений</string>
     <string name="file_system_section_app_subtitle">Точек монтирования: %1$d</string>
-    <string name="file_system_partition_open">Open</string>
+    <string name="file_system_partition_open">Открыть</string>
 
     <string name="file_system_category_system">Система</string>
     <string name="file_system_category_data">Данные</string>

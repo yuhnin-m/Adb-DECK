@@ -11,6 +11,7 @@
     <string name="file_system_stat_free">Free</string>
     <string name="file_system_stat_total">Total</string>
     <string name="file_system_stat_percent">%</string>
+    <string name="file_system_section_summary_title">Summary</string>
     <string name="file_system_section_device_title">Device partitions</string>
     <string name="file_system_section_device_subtitle">%1$d partitions</string>
     <string name="file_system_section_app_title">App-related partitions</string>

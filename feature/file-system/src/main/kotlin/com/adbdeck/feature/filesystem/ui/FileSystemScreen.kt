@@ -29,6 +29,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CleaningServices
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -58,9 +61,12 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.adbdeck.core.adb.api.monitoring.storage.StorageCategory
 import com.adbdeck.core.adb.api.monitoring.storage.StorageSummary
+import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.EmptyView
 import com.adbdeck.core.ui.ErrorView
 import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.buttons.AdbButtonType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
 import com.adbdeck.core.utils.formatKb
 import com.adbdeck.feature.filesystem.CleanupOption
 import com.adbdeck.feature.filesystem.CleanupState
@@ -92,22 +98,21 @@ fun FileSystemScreen(component: FileSystemComponent) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(onClick = component::onRefresh) {
-                Icon(Icons.Outlined.Refresh, contentDescription = refreshContentDescription)
-            }
+            // Кнопка Обновить
+            AdbFilledButton(
+                text = refreshContentDescription,
+                onClick = component::onRefresh,
+                type = AdbButtonType.NEUTRAL,
+                leadingIcon = Icons.Filled.Refresh,
+            )
 
-            FilledIconButton(
+            // Кнопка открыть окно очистки
+            AdbFilledButton(
+                text = cleanupContentDescription,
                 onClick = component::onOpenCleanup,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                ),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CleaningServices,
-                    contentDescription = cleanupContentDescription,
-                    tint = MaterialTheme.colorScheme.error,
-                )
-            }
+                type = AdbButtonType.DANGER,
+                leadingIcon = Icons.Filled.CleaningServices,
+            )
         }
 
         HorizontalDivider()
@@ -167,13 +172,14 @@ private fun FileSystemContent(
     val (appSpecificPartitions, devicePartitionsRaw) = partitions.partition { isAppSpecificPartition(it.partition) }
     val devicePartitions = remember(devicePartitionsRaw) {
         devicePartitionsRaw.sortedWith(
-            compareBy<FileSystemPartitionItem>({ it.partition.usedPercent }, { it.partition.mountPoint }),
+            compareBy({ it.partition.usedPercent }, { it.partition.mountPoint }),
         )
     }
     val appPartitions = remember(appSpecificPartitions) {
         appSpecificPartitions.sortedBy { it.partition.mountPoint }
     }
 
+    val summaryTitle = stringResource(Res.string.file_system_section_summary_title)
     val deviceSectionTitle = stringResource(Res.string.file_system_section_device_title)
     val appSectionTitle = stringResource(Res.string.file_system_section_app_title)
     val deviceSectionSubtitle = stringResource(
@@ -197,6 +203,13 @@ private fun FileSystemContent(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item(key = "summary") {
+                Text(
+                    text = summaryTitle,
+                    modifier = Modifier.padding(bottom = Dimensions.paddingDefault),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
                 FileSystemSummaryCard(summary = summary)
             }
 
@@ -507,14 +520,14 @@ private fun FileSystemPartitionRow(
 
                 Spacer(Modifier.width(8.dp))
 
-                TextButton(
+                AdbFilledButton(
                     onClick = {
                         item.openPath?.let(onOpenPartition)
                     },
+                    text = stringResource(Res.string.file_system_partition_open),
                     enabled = item.openPath != null,
-                ) {
-                    Text(text = openLabel)
-                }
+                    leadingIcon = Icons.Outlined.PlayArrow,
+                )
             }
 
             Text(

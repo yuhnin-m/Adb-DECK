@@ -2,10 +2,14 @@ package com.adbdeck.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -54,6 +58,8 @@ fun Sidebar(
     hasUnsavedSettings: Boolean,
     isProcessMonitoring: Boolean = false,
 ) {
+    val navScrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .width(Dimensions.sidebarWidth)
@@ -64,114 +70,132 @@ fun Sidebar(
         SidebarHeader()
 
         HorizontalDivider()
-        Spacer(Modifier.height(Dimensions.paddingSmall))
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = Dimensions.paddingSmall, end = Dimensions.paddingSmall)
+                    .verticalScroll(navScrollState),
+            ) {
+                // ── Пункты навигации ─────────────────────────────────────
+                SidebarNavItem(
+                    icon = Icons.Outlined.Dashboard,
+                    label = "Dashboard",
+                    isActive = activeScreen is Screen.Dashboard,
+                    onClick = { onNavigate(Screen.Dashboard) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.DevicesOther,
+                    label = "Devices",
+                    isActive = activeScreen is Screen.Devices,
+                    badgeText = devicesCount.takeIf { it > 0 }?.toString(),
+                    onClick = { onNavigate(Screen.Devices) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Terminal,
+                    label = "Logcat",
+                    isActive = activeScreen is Screen.Logcat,
+                    badgeText = if (isLogcatRunning) "LIVE" else null,
+                    badgeKind = SidebarBadgeKind.Positive,
+                    onClick = { onNavigate(Screen.Logcat()) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Apps,
+                    label = "Packages",
+                    isActive = activeScreen is Screen.Packages,
+                    onClick = { onNavigate(Screen.Packages()) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.FolderOpen,
+                    label = "Files",
+                    isActive = activeScreen is Screen.FileExplorer,
+                    onClick = { onNavigate(Screen.FileExplorer()) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.CameraAlt,
+                    label = "Screen Tools",
+                    isActive = activeScreen is Screen.ScreenTools,
+                    onClick = { onNavigate(Screen.ScreenTools) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Cast,
+                    label = "Scrcpy",
+                    isActive = activeScreen is Screen.Scrcpy,
+                    onClick = { onNavigate(Screen.Scrcpy) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.SystemUpdateAlt,
+                    label = "APK Install",
+                    isActive = activeScreen is Screen.ApkInstall,
+                    onClick = { onNavigate(Screen.ApkInstall) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Link,
+                    label = "Deep Links",
+                    isActive = activeScreen is Screen.DeepLinks,
+                    onClick = { onNavigate(Screen.DeepLinks()) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Notifications,
+                    label = "Notifications",
+                    isActive = activeScreen is Screen.Notifications,
+                    onClick = { onNavigate(Screen.Notifications) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Info,
+                    label = "Device Info",
+                    isActive = activeScreen is Screen.DeviceInfo,
+                    onClick = { onNavigate(Screen.DeviceInfo) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Tune,
+                    label = "Quick Toggles",
+                    isActive = activeScreen is Screen.QuickToggles,
+                    onClick = { onNavigate(Screen.QuickToggles) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Contacts,
+                    label = "Contacts",
+                    isActive = activeScreen is Screen.Contacts,
+                    onClick = { onNavigate(Screen.Contacts) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Monitor,
+                    label = "Processes",
+                    isActive = activeScreen is Screen.SystemMonitor,
+                    badgeText = if (isProcessMonitoring) "MON" else null,
+                    badgeKind = SidebarBadgeKind.Positive,
+                    onClick = { onNavigate(Screen.SystemMonitor) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Storage,
+                    label = "File System",
+                    isActive = activeScreen is Screen.FileSystem,
+                    onClick = { onNavigate(Screen.FileSystem) },
+                )
+                SidebarNavItem(
+                    icon = Icons.Outlined.Settings,
+                    label = "Settings",
+                    isActive = activeScreen is Screen.Settings,
+                    badgeText = if (hasUnsavedSettings) "!" else null,
+                    badgeKind = SidebarBadgeKind.Warning,
+                    onClick = { onNavigate(Screen.Settings) },
+                )
+                Spacer(Modifier.height(Dimensions.paddingSmall))
+            }
 
-        // ── Пункты навигации ─────────────────────────────────────
-        SidebarNavItem(
-            icon = Icons.Outlined.Dashboard,
-            label = "Dashboard",
-            isActive = activeScreen is Screen.Dashboard,
-            onClick = { onNavigate(Screen.Dashboard) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.DevicesOther,
-            label = "Devices",
-            isActive = activeScreen is Screen.Devices,
-            badgeText = devicesCount.takeIf { it > 0 }?.toString(),
-            onClick = { onNavigate(Screen.Devices) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Terminal,
-            label = "Logcat",
-            isActive = activeScreen is Screen.Logcat,
-            badgeText = if (isLogcatRunning) "LIVE" else null,
-            badgeKind = SidebarBadgeKind.Positive,
-            onClick = { onNavigate(Screen.Logcat) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Apps,
-            label = "Packages",
-            isActive = activeScreen is Screen.Packages,
-            onClick = { onNavigate(Screen.Packages) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.FolderOpen,
-            label = "Files",
-            isActive = activeScreen is Screen.FileExplorer,
-            onClick = { onNavigate(Screen.FileExplorer) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.CameraAlt,
-            label = "Screen Tools",
-            isActive = activeScreen is Screen.ScreenTools,
-            onClick = { onNavigate(Screen.ScreenTools) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Cast,
-            label = "Scrcpy",
-            isActive = activeScreen is Screen.Scrcpy,
-            onClick = { onNavigate(Screen.Scrcpy) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.SystemUpdateAlt,
-            label = "APK Install",
-            isActive = activeScreen is Screen.ApkInstall,
-            onClick = { onNavigate(Screen.ApkInstall) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Link,
-            label = "Deep Links",
-            isActive = activeScreen is Screen.DeepLinks,
-            onClick = { onNavigate(Screen.DeepLinks) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Notifications,
-            label = "Notifications",
-            isActive = activeScreen is Screen.Notifications,
-            onClick = { onNavigate(Screen.Notifications) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Info,
-            label = "Device Info",
-            isActive = activeScreen is Screen.DeviceInfo,
-            onClick = { onNavigate(Screen.DeviceInfo) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Tune,
-            label = "Quick Toggles",
-            isActive = activeScreen is Screen.QuickToggles,
-            onClick = { onNavigate(Screen.QuickToggles) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Contacts,
-            label = "Contacts",
-            isActive = activeScreen is Screen.Contacts,
-            onClick = { onNavigate(Screen.Contacts) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Monitor,
-            label = "Processes",
-            isActive = activeScreen is Screen.SystemMonitor,
-            badgeText = if (isProcessMonitoring) "MON" else null,
-            badgeKind = SidebarBadgeKind.Positive,
-            onClick = { onNavigate(Screen.SystemMonitor) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Storage,
-            label = "File System",
-            isActive = activeScreen is Screen.FileSystem,
-            onClick = { onNavigate(Screen.FileSystem) },
-        )
-        SidebarNavItem(
-            icon = Icons.Outlined.Settings,
-            label = "Settings",
-            isActive = activeScreen is Screen.Settings,
-            badgeText = if (hasUnsavedSettings) "!" else null,
-            badgeKind = SidebarBadgeKind.Warning,
-            onClick = { onNavigate(Screen.Settings) },
-        )
-
-        Spacer(Modifier.weight(1f))
+            VerticalScrollbar(
+                adapter = rememberScrollbarAdapter(navScrollState),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .padding(vertical = Dimensions.paddingXSmall),
+            )
+        }
         HorizontalDivider()
 
         // ── Быстрые переключатели ────────────────────────────────
