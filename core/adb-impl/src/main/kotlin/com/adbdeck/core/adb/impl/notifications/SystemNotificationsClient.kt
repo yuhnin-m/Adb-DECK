@@ -730,6 +730,7 @@ class SystemNotificationsClient(
      * Очистить "сырое" значение поля:
      * - Вернуть null, если это аннотация типа без значения ("String [length=21]")
      * - Обрезать тип-префикс, если значение вида "String [length=21]: actual value"
+     * - Обрезать тип-префикс, если значение вида "String (actual value)" — формат Android 12+/MIUI/OneUI
      * - Вернуть null для "null" и пустых строк
      */
     private fun cleanFieldValue(raw: String): String? {
@@ -740,6 +741,13 @@ class SystemNotificationsClient(
         val prefixed = TYPE_PREFIX_RE.find(raw)
         if (prefixed != null) {
             val actual = prefixed.groupValues[1].trim()
+            return if (actual.isBlank() || actual == "null") null else actual
+        }
+        // Аннотация в скобках: "String (My Title)", "SpannableString (Some text)"
+        // Встречается в Android 12+ / MIUI / OneUI вместо формата с [length=N]
+        val paren = TYPE_PAREN_RE.find(raw)
+        if (paren != null) {
+            val actual = paren.groupValues[1].trim()
             return if (actual.isBlank() || actual == "null") null else actual
         }
         return raw.trim()
@@ -982,6 +990,13 @@ class SystemNotificationsClient(
          * Группа 1 — фактическое значение после двоеточия.
          */
         val TYPE_PREFIX_RE = Regex("""^[\w.]+\s*\[length=\d+\]\s*:\s*(.+)$""")
+
+        /**
+         * Аннотация в скобках: "String (My Title)", "SpannableString (Some text)".
+         * Встречается в Android 12+ / MIUI / OneUI — вместо формата с [length=N].
+         * Группа 1 — фактическое значение внутри скобок.
+         */
+        val TYPE_PAREN_RE = Regex("""^[\w.]+\s*\((.+)\)$""")
 
         /**
          * Однострочный Bundle: extras = Bundle[{key=value, key2=value2, ...}]
