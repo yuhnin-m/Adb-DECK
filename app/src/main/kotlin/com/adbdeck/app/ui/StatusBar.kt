@@ -13,6 +13,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.adbdeck.app.APP_DISPLAY_NAME
+import com.adbdeck.app.APP_VERSION
 import com.adbdeck.core.designsystem.Dimensions
 
 /**
@@ -46,7 +48,7 @@ fun StatusBar(
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = "ADB Deck v1.0",
+                    text = "$APP_DISPLAY_NAME v$APP_VERSION",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline,
                 )

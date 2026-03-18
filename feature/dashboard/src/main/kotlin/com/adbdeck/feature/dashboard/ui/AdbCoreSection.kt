@@ -595,15 +595,19 @@ private fun AdbCoreActionsRow(
             horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(),
         ) {
             actions.forEach { action ->
-                AdbCoreActionCard(
-                    action = action,
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .widthIn(max = AdbCoreWideActionCardMaxWidth),
-                )
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.TopStart,
+                ) {
+                    AdbCoreActionCard(
+                        action = action,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = AdbCoreWideActionCardMaxWidth),
+                    )
+                }
             }
         }
     }

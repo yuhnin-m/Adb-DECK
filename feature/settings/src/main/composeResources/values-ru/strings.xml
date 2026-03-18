@@ -22,6 +22,7 @@
     <string name="settings_action_checking">Проверяется…</string>
     <string name="settings_action_save">Сохранить</string>
     <string name="settings_action_saving">Сохранение…</string>
+    <string name="settings_save_hint_pending">Есть несохраненные изменения. Нажмите "Сохранить".</string>
 
     <string name="settings_theme_light">Светлая</string>
     <string name="settings_theme_dark">Темная</string>
@@ -75,11 +76,24 @@
 
     <string name="settings_section_appearance">Внешний вид</string>
     <string name="settings_section_external_tools">Внешние инструменты</string>
+    <string name="settings_section_about">О программе</string>
     <string name="settings_language_description">Язык отображения интерфейса</string>
     <string name="settings_theme_description">Цветовая тема приложения</string>
     <string name="settings_tool_adb_title">ADB</string>
     <string name="settings_tool_bundletool_title">Bundletool</string>
     <string name="settings_tool_scrcpy_title">scrcpy</string>
+    <string name="settings_about_project_label">Проект</string>
+    <string name="settings_about_project_value">ADB Deck</string>
+    <string name="settings_about_repository_label">GitHub</string>
+    <string name="settings_about_repository_value">https://github.com/yuhnin-m/Adb-DECK/</string>
+    <string name="settings_about_issues_label">Трекер задач</string>
+    <string name="settings_about_issues_value">https://github.com/yuhnin-m/Adb-DECK/issues</string>
+    <string name="settings_about_developer_label">Разработчик</string>
+    <string name="settings_about_developer_value">Mikhail Yukhnin</string>
+    <string name="settings_about_license_label">Лицензия</string>
+    <string name="settings_about_license_value">MIT</string>
+    <string name="settings_about_platforms_label">Платформы</string>
+    <string name="settings_about_platforms_value">macOS, Windows, Linux</string>
 
     <string name="settings_status_available">Доступен: %1$s</string>
     <string name="settings_status_not_found">Не найден: %1$s</string>

@@ -3,6 +3,7 @@ package com.adbdeck.feature.settings.ui
 import adbdeck.feature.settings.generated.resources.Res
 import adbdeck.feature.settings.generated.resources.settings_action_save
 import adbdeck.feature.settings.generated.resources.settings_action_saving
+import adbdeck.feature.settings.generated.resources.settings_save_hint_pending
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,9 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.settings.AppLanguage
 import com.adbdeck.core.ui.AdbBanner
@@ -66,6 +72,7 @@ fun SettingsScreen(component: SettingsComponent) {
                         component = component,
                         onOpenGuide = { openedHelpTool = it },
                     )
+                    AboutSection()
                     SaveActionHost(component = component)
                 }
 
@@ -127,10 +134,20 @@ private fun SaveActionHost(component: SettingsComponent) {
             .distinctUntilChanged()
     }.collectAsState(initial = initial)
 
-    Row(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
     ) {
+        if (uiState.hasPendingChanges) {
+            Text(
+                text = stringResource(Res.string.settings_save_hint_pending),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+
         AdbFilledButton(
             onClick = component::onSave,
             text = if (uiState.isSaving) {
@@ -138,9 +155,11 @@ private fun SaveActionHost(component: SettingsComponent) {
             } else {
                 stringResource(Res.string.settings_action_save)
             },
+            modifier = Modifier.widthIn(min = 220.dp, max = 320.dp),
             loading = uiState.isSaving,
             enabled = uiState.hasPendingChanges && !uiState.isSaving,
-            size = AdbButtonSize.MEDIUM,
+            size = AdbButtonSize.LARGE,
+            fullWidth = true,
         )
     }
 }

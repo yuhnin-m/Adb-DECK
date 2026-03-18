@@ -13,6 +13,7 @@ dependencies {
     implementation(compose.material3)
     implementation(compose.materialIconsExtended)
     implementation(compose.components.uiToolingPreview)
+    implementation(compose.components.resources)
 
     // Навигация и lifecycle
     implementation(libs.decompose)
@@ -56,13 +57,43 @@ dependencies {
 val appDisplayName = "ADB Deck"
 val appPackageName = "ADBDeck"
 val appVersion = "1.1.0"
+val generatedAppBuildInfoDir = layout.buildDirectory.dir("generated/source/appBuildInfo/kotlin")
+
+val generateAppBuildInfo by tasks.registering {
+    outputs.dir(generatedAppBuildInfoDir)
+    doLast {
+        val outputFile = generatedAppBuildInfoDir.get()
+            .file("com/adbdeck/app/AppBuildInfo.kt")
+            .asFile
+
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(
+            """
+            package com.adbdeck.app
+
+            internal const val APP_DISPLAY_NAME: String = "$appDisplayName"
+            internal const val APP_VERSION: String = "$appVersion"
+            """.trimIndent(),
+        )
+    }
+}
+
+kotlin {
+    sourceSets.main {
+        kotlin.srcDir(generatedAppBuildInfoDir)
+    }
+}
+
+tasks.named("compileKotlin").configure {
+    dependsOn(generateAppBuildInfo)
+}
 
 compose.desktop {
     application {
         mainClass = "com.adbdeck.app.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
             packageName = appPackageName
             packageVersion = appVersion
             description = "$appDisplayName desktop tool for ADB"

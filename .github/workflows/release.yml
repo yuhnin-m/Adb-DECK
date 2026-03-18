@@ -1,0 +1,164 @@
+name: Release Packages
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-msi:
+    name: Windows MSI (x64)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify Java and jpackage
+        shell: pwsh
+        run: |
+          java -version
+          jpackage --version
+
+      - name: Build MSI
+        shell: pwsh
+        run: .\gradlew.bat --no-daemon :app:packageReleaseMsi
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adbdeck-windows-msi-x64
+          path: app/build/compose/binaries/**/*.msi
+          if-no-files-found: error
+
+  macos-dmg-arm64:
+    name: macOS DMG (arm64)
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify runner arch and jpackage
+        run: |
+          uname -m
+          java -version
+          jpackage --version
+
+      - name: Build DMG
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:packageReleaseDmg
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adbdeck-macos-dmg-arm64
+          path: app/build/compose/binaries/**/*.dmg
+          if-no-files-found: error
+
+  macos-dmg-x64:
+    name: macOS DMG (x64)
+    runs-on: macos-15-intel
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify runner arch and jpackage
+        run: |
+          uname -m
+          java -version
+          jpackage --version
+
+      - name: Build DMG
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:packageReleaseDmg
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adbdeck-macos-dmg-x64
+          path: app/build/compose/binaries/**/*.dmg
+          if-no-files-found: error
+
+  linux-packages:
+    name: Linux DEB + RPM (x64)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot rpm
+
+      - name: Setup JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify Java and jpackage
+        run: |
+          java -version
+          jpackage --version
+
+      - name: Build DEB and RPM
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon :app:packageReleaseDeb :app:packageReleaseRpm
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: adbdeck-linux-deb-rpm-x64
+          path: |
+            app/build/compose/binaries/**/*.deb
+            app/build/compose/binaries/**/*.rpm
+          if-no-files-found: error

@@ -1,5 +1,6 @@
 package com.adbdeck.app
 
+import adbdeck.app.generated.resources.*
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -10,7 +11,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -45,6 +45,7 @@ import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.painterResource
 import org.koin.core.context.startKoin
 import org.koin.java.KoinJavaComponent.get
 import java.awt.Dimension
@@ -104,11 +105,11 @@ fun main() = application {
             exitApplication()
         },
         title = APP_TITLE,
-        icon = painterResource("icons/adbdeck_window.png"),
+        icon = painterResource(Res.drawable.adbdeck_window),
         state = rememberWindowState(width = 1200.dp, height = 800.dp),
     ) {
         DisposableEffect(window) {
-            window.minimumSize = Dimension(800, 600)
+            window.minimumSize = Dimension(1000, 800)
             onDispose {}
         }
 

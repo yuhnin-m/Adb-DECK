@@ -1,6 +1,5 @@
 package com.adbdeck.feature.devices.ui
 
-import adbdeck.feature.devices.generated.resources.Res
 import adbdeck.feature.devices.generated.resources.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
@@ -9,54 +8,33 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.SavedWifiDevice
+import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.i18n.AdbCommonStringRes
-import com.adbdeck.core.ui.AdbBanner
-import com.adbdeck.core.ui.AdbBannerType
-import com.adbdeck.core.ui.EmptyView
-import com.adbdeck.core.ui.ErrorView
-import com.adbdeck.core.ui.LoadingView
+import com.adbdeck.core.ui.*
 import com.adbdeck.core.ui.alertdialogs.AdbAlertDialog
 import com.adbdeck.core.ui.alertdialogs.AdbAlertDialogAction
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
-import com.adbdeck.core.ui.buttons.AdbOutlinedButton
-import com.adbdeck.feature.devices.DeviceActionFeedback
-import com.adbdeck.feature.devices.DeviceListState
-import com.adbdeck.feature.devices.DevicesComponent
-import com.adbdeck.feature.devices.DevicesState
-import com.adbdeck.feature.devices.PendingDeviceAction
-import com.adbdeck.feature.devices.PendingDeviceActionType
+import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.feature.devices.*
 import org.jetbrains.compose.resources.stringResource
 
 /**
  * Основной экран управления ADB-устройствами.
- *
- * ## Компоновка
- *
- * ```
- * Row {
- *   Column(weight 1f) {         // Левая панель — список
- *     DevicesToolbar
- *     HorizontalDivider
- *     DevicesList | Loading | Empty | Error
- *   }
- *   AnimatedVisibility {        // Правая панель — детали (slideIn/Out)
- *     VerticalDivider
- *     DeviceDetailsPanel(300.dp)
- *   }
- * }
- * AdbAlertDialog (pendingAction) // Подтверждение опасного действия
- * AdbBanner                     // Краткосрочное уведомление
- * ```
  *
  * @param component Компонент, управляющий состоянием экрана.
  */
@@ -218,17 +196,15 @@ private fun DevicesToolbar(
         verticalAlignment   = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(
-            text  = stringResource(Res.string.devices_toolbar_title),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        AdbOutlinedButton(
+        AdbFilledButton(
             onClick = onRefresh,
             enabled = !isRefreshing,
+            text = stringResource(AdbCommonStringRes.actionRefresh),
             loading = isRefreshing,
-            leadingIcon = if (isRefreshing) null else Icons.Outlined.Refresh,
+            leadingIcon = if (isRefreshing) null else Icons.Filled.Refresh,
             contentDescription = stringResource(Res.string.devices_toolbar_refresh_list_content_desc),
-            size = AdbButtonSize.SMALL,
+            size = AdbButtonSize.MEDIUM,
+            cornerRadius = AdbCornerRadius.LARGE
         )
     }
 }
