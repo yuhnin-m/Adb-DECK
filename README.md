@@ -3,14 +3,12 @@
 🇬🇧 English | 🇷🇺 [Русская версия](./docs/README_RU.md)
 
 ---
-
 ADB Deck is a desktop GUI for working with Android devices over ADB.
 A clean interface on top of raw `adb` commands — no need to memorize shell incantations or juggle terminal tabs.
 
 Built for **Android developers**, **QA engineers**, and anyone who finds themselves typing `adb shell` more often than they'd like.
 
----
-
+![ADB Deck](./screenshots/device_list.png)
 ## 🚀 Features
 
 ### 📱 Device Manager

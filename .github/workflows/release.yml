@@ -2,6 +2,11 @@ name: Release Packages
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.1.0)"
+        required: true
+        type: string
   push:
     tags:
       - "v*"
@@ -14,13 +19,54 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-tag:
+    name: Validate Tag
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.resolve-tag.outputs.tag }}
+
+    steps:
+      - name: Resolve tag
+        id: resolve-tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$INPUT_TAG"
+          else
+            TAG="$REF_NAME"
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Validate tag format
+        env:
+          TAG: ${{ steps.resolve-tag.outputs.tag }}
+        run: |
+          echo "Using tag: $TAG"
+          if [[ ! "$TAG" =~ ^v ]]; then
+            echo "ERROR: tag must start with 'v'"
+            exit 1
+          fi
+
+      - name: Ensure tag exists in repository
+        env:
+          TAG: ${{ steps.resolve-tag.outputs.tag }}
+        run: |
+          git ls-remote --exit-code --refs "https://github.com/${{ github.repository }}.git" "refs/tags/$TAG" > /dev/null
+
   windows-msi:
     name: Windows MSI (x64)
     runs-on: windows-latest
+    needs: validate-tag
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.validate-tag.outputs.tag }}
 
       - name: Setup JDK 21 (Temurin)
         uses: actions/setup-java@v4
@@ -40,7 +86,7 @@ jobs:
 
       - name: Build MSI
         shell: pwsh
-        run: .\gradlew.bat --no-daemon :app:packageReleaseMsi
+        run: .\gradlew.bat --no-daemon --stacktrace --max-workers=1 :app:packageMsi
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
@@ -52,10 +98,13 @@ jobs:
   macos-dmg-arm64:
     name: macOS DMG (arm64)
     runs-on: macos-15
+    needs: validate-tag
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.validate-tag.outputs.tag }}
 
       - name: Setup JDK 21 (Temurin)
         uses: actions/setup-java@v4
@@ -76,7 +125,7 @@ jobs:
       - name: Build DMG
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :app:packageReleaseDmg
+          ./gradlew --no-daemon --stacktrace --max-workers=1 :app:packageDmg
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
@@ -88,10 +137,13 @@ jobs:
   macos-dmg-x64:
     name: macOS DMG (x64)
     runs-on: macos-15-intel
+    needs: validate-tag
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.validate-tag.outputs.tag }}
 
       - name: Setup JDK 21 (Temurin)
         uses: actions/setup-java@v4
@@ -112,7 +164,7 @@ jobs:
       - name: Build DMG
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :app:packageReleaseDmg
+          ./gradlew --no-daemon --stacktrace --max-workers=1 :app:packageDmg
 
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
@@ -124,10 +176,13 @@ jobs:
   linux-packages:
     name: Linux DEB + RPM (x64)
     runs-on: ubuntu-24.04
+    needs: validate-tag
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ needs.validate-tag.outputs.tag }}
 
       - name: Install Linux packaging tools
         run: |
@@ -152,7 +207,7 @@ jobs:
       - name: Build DEB and RPM
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon :app:packageReleaseDeb :app:packageReleaseRpm
+          ./gradlew --no-daemon --stacktrace --max-workers=1 :app:packageDeb :app:packageRpm
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -162,3 +217,63 @@ jobs:
             app/build/compose/binaries/**/*.deb
             app/build/compose/binaries/**/*.rpm
           if-no-files-found: error
+
+  attach-release-assets:
+    name: Attach Assets To Release
+    runs-on: ubuntu-24.04
+    needs:
+      - validate-tag
+      - windows-msi
+      - macos-dmg-arm64
+      - macos-dmg-x64
+      - linux-packages
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: List assets
+        run: find release-assets -type f | sort
+
+      - name: Prepare release asset names
+        env:
+          TAG: ${{ needs.validate-tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-upload
+
+          MSI_FILE="$(find release-assets/adbdeck-windows-msi-x64 -type f -name '*.msi' | head -n 1)"
+          ARM_DMG_FILE="$(find release-assets/adbdeck-macos-dmg-arm64 -type f -name '*.dmg' | head -n 1)"
+          X64_DMG_FILE="$(find release-assets/adbdeck-macos-dmg-x64 -type f -name '*.dmg' | head -n 1)"
+
+          test -n "$MSI_FILE"
+          test -n "$ARM_DMG_FILE"
+          test -n "$X64_DMG_FILE"
+
+          cp "$MSI_FILE" "release-upload/ADBDeck-${TAG}-windows-x64.msi"
+          cp "$ARM_DMG_FILE" "release-upload/ADBDeck-${TAG}-macos-arm64.dmg"
+          cp "$X64_DMG_FILE" "release-upload/ADBDeck-${TAG}-macos-x64.dmg"
+
+          while IFS= read -r DEB_FILE; do
+            cp "$DEB_FILE" "release-upload/$(basename "$DEB_FILE")"
+          done < <(find release-assets/adbdeck-linux-deb-rpm-x64 -type f -name '*.deb' | sort)
+
+          while IFS= read -r RPM_FILE; do
+            cp "$RPM_FILE" "release-upload/$(basename "$RPM_FILE")"
+          done < <(find release-assets/adbdeck-linux-deb-rpm-x64 -type f -name '*.rpm' | sort)
+
+      - name: List prepared assets
+        run: find release-upload -type f | sort
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate-tag.outputs.tag }}
+          files: |
+            release-upload/*
+          fail_on_unmatched_files: true
+          overwrite_files: true

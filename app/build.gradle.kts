@@ -92,6 +92,12 @@ compose.desktop {
     application {
         mainClass = "com.adbdeck.app.MainKt"
 
+        buildTypes.release.proguard {
+            // Compose 1.7.0 defaults to ProGuard 7.2.2 (up to Java 18).
+            // Java 21 bytecode (class version 65) requires newer ProGuard.
+            version.set("7.4.2")
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
             packageName = appPackageName
