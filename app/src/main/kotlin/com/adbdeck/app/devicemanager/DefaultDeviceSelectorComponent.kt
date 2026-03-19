@@ -3,7 +3,8 @@ package com.adbdeck.app.devicemanager
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceManager
-import kotlinx.coroutines.CoroutineScope
+import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -11,18 +12,19 @@ import kotlinx.coroutines.launch
  * Реализация [DeviceSelectorComponent].
  *
  * Делегирует все операции [DeviceManager]-у, запуская suspend-функции
- * в переданном [scope] (привязан к lifecycle окна приложения).
+ * в coroutine scope, привязанном к Decompose lifecycle [ComponentContext].
  *
  * При инициализации автоматически выполняет первый refresh устройств.
  *
+ * @param componentContext Decompose-контекст жизненного цикла.
  * @param deviceManager Singleton-менеджер устройств.
- * @param scope         CoroutineScope для запуска аsync-операций.
- *                      Обычно передается из `rememberCoroutineScope()`.
  */
 class DefaultDeviceSelectorComponent(
+    componentContext: ComponentContext,
     private val deviceManager: DeviceManager,
-    private val scope: CoroutineScope,
-) : DeviceSelectorComponent {
+) : DeviceSelectorComponent, ComponentContext by componentContext {
+
+    private val scope = coroutineScope()
 
     // Делегируем StateFlow напрямую из DeviceManager
     override val devices: StateFlow<List<AdbDevice>> = deviceManager.devicesFlow

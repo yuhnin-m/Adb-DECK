@@ -1,5 +1,14 @@
 package com.adbdeck.app.di
 
+import com.adbdeck.app.AppComponent
+import com.adbdeck.app.DefaultAppComponent
+import com.adbdeck.app.devicemanager.DefaultDeviceSelectorComponent
+import com.adbdeck.app.devicemanager.DeviceSelectorComponent
+import com.adbdeck.app.navigation.DefaultRootChildFactory
+import com.adbdeck.app.navigation.DefaultRootComponent
+import com.adbdeck.app.navigation.RootChildFactory
+import com.adbdeck.app.navigation.RootComponent
+import com.arkivanov.decompose.ComponentContext
 import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.adb.BundletoolClient
 import com.adbdeck.core.adb.api.contacts.ContactsClient
@@ -38,6 +47,7 @@ import com.adbdeck.core.process.SystemProcessRunner
 import com.adbdeck.core.settings.FileSettingsRepository
 import com.adbdeck.core.settings.SettingsRepository
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.parameter.parametersOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import java.io.File
@@ -142,4 +152,28 @@ val appModule = module {
 
     // ── NotificationsClient ───────────────────────────────────────
     singleOf(::SystemNotificationsClient) bind NotificationsClient::class
+
+    // ── App-level component graph ─────────────────────────────────
+    singleOf(::DefaultRootChildFactory) bind RootChildFactory::class
+
+    factory<RootComponent> { (componentContext: ComponentContext) ->
+        DefaultRootComponent(
+            componentContext = componentContext,
+            rootChildFactory = get(),
+        )
+    }
+
+    factory<DeviceSelectorComponent> { (componentContext: ComponentContext) ->
+        DefaultDeviceSelectorComponent(
+            componentContext = componentContext,
+            deviceManager = get(),
+        )
+    }
+
+    factory<AppComponent> { (componentContext: ComponentContext) ->
+        DefaultAppComponent(
+            rootComponent = get<RootComponent> { parametersOf(componentContext) },
+            deviceSelectorComponent = get<DeviceSelectorComponent> { parametersOf(componentContext) },
+        )
+    }
 }

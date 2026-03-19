@@ -19,6 +19,7 @@ dependencies {
     implementation(libs.decompose)
     implementation(libs.decompose.extensions.compose)
     implementation(libs.essenty.lifecycle)
+    implementation(libs.essenty.lifecycle.coroutines)
     implementation(libs.coroutines.core)
     // Provides Dispatchers.Main backed by Swing EDT — required for desktop coroutines
     implementation(libs.coroutines.swing)

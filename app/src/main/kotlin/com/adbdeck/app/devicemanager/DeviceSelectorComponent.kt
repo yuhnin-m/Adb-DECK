@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
  * - Предоставляет синхронные callback-и для пользовательских действий
  *   (suspend-вызовы выполняются во внутреннем CoroutineScope)
  *
- * Живет на весь lifecycle приложения (создается в Main.kt).
+ * Живет на весь lifecycle приложения (создается в AppComponent).
  */
 interface DeviceSelectorComponent {
 

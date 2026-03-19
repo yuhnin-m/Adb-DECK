@@ -15,25 +15,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.adbdeck.app.devicemanager.DefaultDeviceSelectorComponent
 import com.adbdeck.app.di.appModule
-import com.adbdeck.app.navigation.DefaultRootComponent
 import com.adbdeck.app.ui.AppContent
-import com.adbdeck.core.adb.api.adb.AdbClient
-import com.adbdeck.core.adb.api.adb.BundletoolClient
-import com.adbdeck.core.adb.api.contacts.ContactsClient
-import com.adbdeck.core.adb.api.intents.IntentLaunchClient
-import com.adbdeck.core.adb.api.notifications.NotificationsClient
-import com.adbdeck.core.adb.api.apkinstall.ApkInstallClient
-import com.adbdeck.core.adb.api.device.DeviceControlClient
-import com.adbdeck.core.adb.api.files.DeviceFileClient
-import com.adbdeck.core.adb.api.device.DeviceInfoClient
-import com.adbdeck.core.adb.api.device.DeviceManager
-import com.adbdeck.core.adb.api.logcat.LogcatStreamer
-import com.adbdeck.core.adb.api.packages.PackageClient
-import com.adbdeck.core.adb.api.screen.ScreenToolsClient
-import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
-import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.designsystem.AdbDeckTheme
 import com.adbdeck.core.process.ProcessHistoryStore
 import com.adbdeck.core.settings.AppLanguage
@@ -46,8 +29,9 @@ import com.arkivanov.essenty.lifecycle.resume
 import com.arkivanov.essenty.lifecycle.stop
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
-import org.koin.java.KoinJavaComponent.get
+import org.koin.core.parameter.parametersOf
 import java.awt.Dimension
 import java.util.Locale
 
@@ -58,9 +42,8 @@ private const val APP_TITLE = "ADB Deck"
  *
  * Порядок инициализации:
  * 1. Запуск Koin DI
- * 2. Создание Decompose LifecycleRegistry + RootComponent
- * 3. Создание DeviceSelectorComponent (вне Decompose, привязан к Window-scope)
- * 4. Открытие главного окна Compose Desktop
+ * 2. Создание Decompose LifecycleRegistry + AppComponent
+ * 3. Открытие главного окна Compose Desktop
  */
 fun main() = application {
     // ── 1. Инициализация DI ──────────────────────────────────────
@@ -68,32 +51,14 @@ fun main() = application {
         modules(appModule)
     }
 
-    // ── 2. Lifecycle и RootComponent ─────────────────────────────
+    // ── 2. Lifecycle и AppComponent ──────────────────────────────
     val lifecycle = LifecycleRegistry()
-    val settingsRepository: SettingsRepository = get(SettingsRepository::class.java)
-    val deviceManager: DeviceManager = get(DeviceManager::class.java)
-    val logcatStreamer: LogcatStreamer = get(LogcatStreamer::class.java)
-    val processHistoryStore: ProcessHistoryStore = get(ProcessHistoryStore::class.java)
+    val koin = GlobalContext.get()
+    val settingsRepository: SettingsRepository = koin.get()
+    val processHistoryStore: ProcessHistoryStore = koin.get()
 
-    val rootComponent = DefaultRootComponent(
-        componentContext    = DefaultComponentContext(lifecycle = lifecycle),
-        adbClient           = get(AdbClient::class.java),
-        settingsRepository  = settingsRepository,
-        deviceManager       = deviceManager,
-        logcatStreamer      = logcatStreamer,
-        packageClient       = get(PackageClient::class.java),
-        systemMonitorClient = get(SystemMonitorClient::class.java),
-        deviceInfoClient    = get(DeviceInfoClient::class.java),
-        deviceControlClient = get(DeviceControlClient::class.java),
-        deviceFileClient    = get(DeviceFileClient::class.java),
-        contactsClient      = get(ContactsClient::class.java),
-        screenToolsClient   = get(ScreenToolsClient::class.java),
-        apkInstallClient    = get(ApkInstallClient::class.java),
-        scrcpyClient       = get(ScrcpyClient::class.java),
-        bundletoolClient    = get(BundletoolClient::class.java),
-        intentLaunchClient  = get(IntentLaunchClient::class.java),
-        notificationsClient = get(NotificationsClient::class.java),
-    )
+    val componentContext = DefaultComponentContext(lifecycle = lifecycle)
+    val appComponent: AppComponent = koin.get { parametersOf(componentContext) }
 
     lifecycle.resume()
 
@@ -119,15 +84,6 @@ fun main() = application {
         val startupLocale = remember { Locale.getDefault() }
         var languageReloadKey by remember { mutableIntStateOf(0) }
 
-        // DeviceSelectorComponent создается один раз и живет пока открыто окно.
-        // scope из rememberCoroutineScope привязан к Window-composition.
-        val deviceSelectorComponent = remember(scope) {
-            DefaultDeviceSelectorComponent(
-                deviceManager = deviceManager,
-                scope = scope,
-            )
-        }
-
         val isDark = when (settings.theme) {
             AppTheme.DARK -> true
             AppTheme.LIGHT -> false
@@ -144,7 +100,7 @@ fun main() = application {
         key(languageReloadKey) {
             AdbDeckTheme(isDarkTheme = isDark) {
                 AppContent(
-                    rootComponent = rootComponent,
+                    rootComponent = appComponent.rootComponent,
                     isDarkTheme = isDark,
                     onToggleTheme = {
                         val newTheme = if (isDark) AppTheme.LIGHT else AppTheme.DARK
@@ -152,7 +108,7 @@ fun main() = application {
                             settingsRepository.saveSettings(settings.copy(theme = newTheme))
                         }
                     },
-                    deviceSelectorComponent = deviceSelectorComponent,
+                    deviceSelectorComponent = appComponent.deviceSelectorComponent,
                     processHistoryStore = processHistoryStore,
                 )
             }
