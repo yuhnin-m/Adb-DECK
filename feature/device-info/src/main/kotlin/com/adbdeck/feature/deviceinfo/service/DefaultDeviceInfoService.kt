@@ -4,6 +4,7 @@ import adbdeck.feature.device_info.generated.resources.Res
 import adbdeck.feature.device_info.generated.resources.*
 import com.adbdeck.core.adb.api.device.DeviceInfo
 import com.adbdeck.core.adb.api.device.DeviceInfoClient
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.deviceinfo.DeviceInfoRow
 import com.adbdeck.feature.deviceinfo.DeviceInfoSectionKind
 import com.adbdeck.feature.deviceinfo.parser.findMostUsedStorageEntry
@@ -26,7 +27,6 @@ import com.adbdeck.feature.deviceinfo.parser.parseStorageEntries
 import com.adbdeck.feature.deviceinfo.parser.parseWmDensity
 import com.adbdeck.feature.deviceinfo.parser.parseWmSize
 import java.util.Locale
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -59,7 +59,7 @@ class DefaultDeviceInfoService(
         section: DeviceInfoSectionKind,
         deviceId: String,
         adbPath: String,
-    ): Result<List<DeviceInfoRow>> = runSection {
+    ): Result<List<DeviceInfoRow>> = runCatchingPreserveCancellation {
         val formatter = loadFormatter()
         val cachedData = if (section.requiresCachedDeviceData()) {
             loadCachedResources(deviceId = deviceId, adbPath = adbPath)
@@ -922,16 +922,6 @@ class DefaultDeviceInfoService(
     }
 
     private fun String?.orUnavailable(unavailable: String): String = this ?: unavailable
-
-    private suspend fun <T> runSection(block: suspend () -> T): Result<T> {
-        return try {
-            Result.success(block())
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (t: Throwable) {
-            Result.failure(t)
-        }
-    }
 
     private data class CachedDeviceData(
         val props: Map<String, String>,

@@ -5,12 +5,12 @@ import adbdeck.feature.device_info.generated.resources.*
 import com.adbdeck.core.adb.api.device.DeviceManager
 import com.adbdeck.core.adb.api.device.DeviceState
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.deviceinfo.service.DeviceInfoService
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import java.io.File
 import java.time.Instant
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -20,8 +20,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -60,7 +58,6 @@ class DefaultDeviceInfoComponent(
 
     private var refreshJob: Job? = null
     private var feedbackJob: Job? = null
-    private val feedbackMutex = Mutex()
 
     private var refreshRevision: Long = 0L
     private var lastObservedDeviceId: String? = null
@@ -193,7 +190,7 @@ class DefaultDeviceInfoComponent(
         if (alreadyExporting) return
 
         scope.launch {
-            val result = runCatchingNonCancellation {
+            val result = runCatchingPreserveCancellation {
                 val finalPath = ensureJsonPath(normalizedPath)
                 val payload = buildExportJson(
                     deviceId = deviceId,
@@ -356,21 +353,7 @@ class DefaultDeviceInfoComponent(
         isError: Boolean,
         vararg args: Any,
     ) {
-        feedbackMutex.withLock {
-            val message = getString(messageRes, *args)
-            showFeedback(message = message, isError = isError)
-        }
-    }
-
-    private suspend fun <T> runCatchingNonCancellation(
-        block: suspend () -> T,
-    ): Result<T> {
-        return try {
-            Result.success(block())
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (t: Throwable) {
-            Result.failure(t)
-        }
+        val message = getString(messageRes, *args)
+        showFeedback(message = message, isError = isError)
     }
 }
