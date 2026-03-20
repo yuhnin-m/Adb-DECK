@@ -22,7 +22,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
     implementation(project(":core:i18n"))
+    implementation(project(":core:utils"))
     implementation(project(":core:adb-api"))
     implementation(project(":core:settings"))
 }
-

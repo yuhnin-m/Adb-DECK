@@ -1,6 +1,7 @@
 package com.adbdeck.feature.quicktoggles.service
 
 import com.adbdeck.core.adb.api.device.DeviceInfoClient
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.quicktoggles.ANIMATION_ANIMATOR_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.ANIMATION_TRANSITION_SCALE_KEY
 import com.adbdeck.feature.quicktoggles.ANIMATION_WINDOW_SCALE_KEY
@@ -417,7 +418,7 @@ class DefaultQuickTogglesService(
         )
         if (primary.isSuccess) return primary
 
-        val fallback = runCatching {
+        val fallback = runCatchingPreserveCancellation {
             runShellRequireSuccess(
                 deviceId = deviceId,
                 adbPath = adbPath,
@@ -455,7 +456,7 @@ class DefaultQuickTogglesService(
         targetState: QuickToggleState,
     ): Result<Unit> {
         val value = if (targetState == QuickToggleState.ON) 1f else 0f
-        return runCatching {
+        return runCatchingPreserveCancellation {
             setAnimationScale(deviceId, adbPath, ANIMATION_WINDOW_SCALE_KEY, value).getOrThrow()
             setAnimationScale(deviceId, adbPath, ANIMATION_TRANSITION_SCALE_KEY, value).getOrThrow()
             setAnimationScale(deviceId, adbPath, ANIMATION_ANIMATOR_SCALE_KEY, value).getOrThrow()

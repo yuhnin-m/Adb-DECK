@@ -10,6 +10,7 @@ import com.adbdeck.core.adb.api.monitoring.SystemMonitorClient
 import com.adbdeck.core.adb.api.monitoring.process.ProcessInfo
 import com.adbdeck.core.adb.api.packages.PackageClient
 import com.adbdeck.core.settings.SettingsRepository
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import java.io.File
@@ -229,7 +230,7 @@ class DefaultLogcatComponent(
     override fun onImportFromFile(path: String) {
         fileTransferJob?.cancel()
         fileTransferJob = scope.launch {
-            runCatching {
+            runCatchingPreserveCancellation {
                 withContext(Dispatchers.IO) {
                     val content = File(path).readText()
                     LogcatFileCodec.importText(content)
@@ -305,7 +306,7 @@ class DefaultLogcatComponent(
             stopStream(reason = null)
 
             val snapshot = _state.value.entries
-            runCatching {
+            runCatchingPreserveCancellation {
                 val payload = LogcatFileCodec.exportAsText(snapshot)
                 withContext(Dispatchers.IO) {
                     File(path).writeText(payload)
