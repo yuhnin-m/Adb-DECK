@@ -1,5 +1,7 @@
 package com.adbdeck.core.adb.api.adb
 
+import com.adbdeck.core.adb.api.ToolCheckFailureKind
+
 /**
  * Результат проверки доступности bundletool.
  */
@@ -16,6 +18,10 @@ sealed class BundletoolCheckResult {
      * bundletool не найден или недоступен.
      *
      * @param reason Описание причины недоступности.
+     * @param kind Категория ошибки для UI-локализации.
      */
-    data class NotAvailable(val reason: String) : BundletoolCheckResult()
+    data class NotAvailable(
+        val reason: String,
+        val kind: ToolCheckFailureKind = ToolCheckFailureKind.UNKNOWN,
+    ) : BundletoolCheckResult()
 }

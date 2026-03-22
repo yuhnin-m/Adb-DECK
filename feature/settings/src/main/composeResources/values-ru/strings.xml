@@ -97,6 +97,8 @@
 
     <string name="settings_status_available">Доступен: %1$s</string>
     <string name="settings_status_not_found">Не найден: %1$s</string>
+    <string name="settings_status_wrong_tool">Ожидался %1$s, но указан другой инструмент: %2$s</string>
+    <string name="settings_status_launch_failed">Не удалось запустить %1$s: %2$s</string>
     <string name="settings_feedback_saved">Настройки сохранены</string>
     <string name="settings_feedback_save_failed">Не удалось сохранить настройки</string>
     <string name="settings_feedback_logcat_save_failed">Не удалось сохранить настройки Logcat</string>

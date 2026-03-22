@@ -1,5 +1,6 @@
 package com.adbdeck.core.adb.impl.scrcpy
 
+import com.adbdeck.core.adb.api.ToolCheckFailureKind
 import com.adbdeck.core.adb.api.scrcpy.ScrcpyCheckResult
 import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
 import com.adbdeck.core.adb.api.scrcpy.ScrcpyExitResult
@@ -36,24 +37,44 @@ class SystemScrcpyClient(
     override suspend fun checkAvailability(scrcpyPathOverride: String?): ScrcpyCheckResult {
         val path = resolveScrcpyPath(scrcpyPathOverride)
         return runCatchingPreserveCancellation {
-            processRunner.run(path, "--version")
+            val versionResult = processRunner.run(path, ARG_VERSION)
+            if (!versionResult.isSuccess) {
+                val details = versionResult.combinedOutput().firstMeaningfulLine().ifBlank { path }
+                return@runCatchingPreserveCancellation ScrcpyCheckResult.NotAvailable(
+                    reason = details,
+                    kind = ToolCheckFailureKind.COMMAND_FAILED,
+                )
+            }
+
+            val versionOutput = versionResult.combinedOutput()
+            val looksLikeScrcpyVersion = versionOutput.looksLikeScrcpyVersionOutput()
+
+            // Некоторым бинарникам `--version` не ошибка, поэтому делаем fallback:
+            // если версия не похожа на scrcpy, проверяем help-вывод на флаги scrcpy.
+            val looksLikeScrcpy = if (looksLikeScrcpyVersion) {
+                true
+            } else {
+                val helpResult = processRunner.run(path, ARG_HELP)
+                helpResult.isSuccess && helpResult.combinedOutput().looksLikeScrcpyHelpOutput()
+            }
+
+            if (!looksLikeScrcpy) {
+                val hint = versionOutput.firstMeaningfulLine().ifBlank { path }
+                return@runCatchingPreserveCancellation ScrcpyCheckResult.NotAvailable(
+                    reason = hint,
+                    kind = ToolCheckFailureKind.WRONG_EXECUTABLE,
+                )
+            }
+
+            ScrcpyCheckResult.Available(
+                version = versionOutput.firstMeaningfulLine().ifBlank { path },
+            )
         }.fold(
-            onSuccess = { result ->
-                if (result.isSuccess) {
-                    ScrcpyCheckResult.Available(
-                        version = result.firstOutputLine.ifBlank { path },
-                    )
-                } else {
-                    ScrcpyCheckResult.NotAvailable(
-                        reason = result.combinedOutput().ifBlank {
-                            "scrcpy завершился с кодом ${result.exitCode}"
-                        },
-                    )
-                }
-            },
+            onSuccess = { it },
             onFailure = { error ->
                 ScrcpyCheckResult.NotAvailable(
-                    reason = "Не удалось запустить scrcpy: ${error.message}",
+                    reason = error.message.orEmpty().ifBlank { path },
+                    kind = ToolCheckFailureKind.START_FAILED,
                 )
             },
         )
@@ -259,6 +280,22 @@ class SystemScrcpyClient(
             .filter { it.isNotBlank() }
             .joinToString(separator = "\n")
 
+    private fun String.looksLikeScrcpyVersionOutput(): Boolean {
+        val normalized = lowercase()
+        return normalized.contains(SCRCPY_VERSION_MARKER)
+    }
+
+    private fun String.looksLikeScrcpyHelpOutput(): Boolean {
+        val normalized = lowercase()
+        return SCRCPY_HELP_MARKERS.any { normalized.contains(it) }
+    }
+
+    private fun String.firstMeaningfulLine(): String =
+        lineSequence()
+            .map(String::trim)
+            .firstOrNull { it.isNotEmpty() }
+            .orEmpty()
+
     private fun List<String>.toShellLikeString(): String {
         val text = joinToString(separator = " ") { token ->
             if (token.any { char -> char.isWhitespace() || char == '"' }) {
@@ -275,5 +312,14 @@ class SystemScrcpyClient(
     private companion object {
         const val MAX_HISTORY_COMMAND_TEXT_LENGTH = 4 * 1_024
         const val MAX_SHORT_ERROR_LENGTH = 8 * 1_024
+        const val ARG_VERSION = "--version"
+        const val ARG_HELP = "--help"
+        const val SCRCPY_VERSION_MARKER = "scrcpy"
+        val SCRCPY_HELP_MARKERS = listOf(
+            "--max-size",
+            "--video-bit-rate",
+            "--no-control",
+            "--always-on-top",
+        )
     }
 }

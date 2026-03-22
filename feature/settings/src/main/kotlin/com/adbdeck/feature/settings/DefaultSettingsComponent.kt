@@ -8,7 +8,13 @@ import adbdeck.feature.settings.generated.resources.settings_feedback_logcat_sav
 import adbdeck.feature.settings.generated.resources.settings_feedback_save_failed
 import adbdeck.feature.settings.generated.resources.settings_feedback_saved
 import adbdeck.feature.settings.generated.resources.settings_status_available
+import adbdeck.feature.settings.generated.resources.settings_status_launch_failed
 import adbdeck.feature.settings.generated.resources.settings_status_not_found
+import adbdeck.feature.settings.generated.resources.settings_status_wrong_tool
+import adbdeck.feature.settings.generated.resources.settings_tool_adb_title
+import adbdeck.feature.settings.generated.resources.settings_tool_bundletool_title
+import adbdeck.feature.settings.generated.resources.settings_tool_scrcpy_title
+import com.adbdeck.core.adb.api.ToolCheckFailureKind
 import com.adbdeck.core.adb.api.adb.AdbCheckResult
 import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.adb.BundletoolCheckResult
@@ -34,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 
 /**
@@ -142,9 +149,11 @@ class DefaultSettingsComponent(
 
                 is ScrcpyCheckResult.NotAvailable ->
                     ToolCheckState.Error(
-                        getString(
-                            Res.string.settings_status_not_found,
-                            result.reason.take(120).ifBlank { requestedPath },
+                        buildToolCheckErrorMessage(
+                            toolTitleRes = Res.string.settings_tool_scrcpy_title,
+                            kind = result.kind,
+                            rawDetails = result.reason,
+                            fallbackDetails = requestedPath,
                         )
                     )
             }
@@ -228,9 +237,11 @@ class DefaultSettingsComponent(
 
                 is AdbCheckResult.NotAvailable ->
                     ToolCheckState.Error(
-                        getString(
-                            Res.string.settings_status_not_found,
-                            result.reason,
+                        buildToolCheckErrorMessage(
+                            toolTitleRes = Res.string.settings_tool_adb_title,
+                            kind = result.kind,
+                            rawDetails = result.reason,
+                            fallbackDetails = requestedPath,
                         )
                     )
             }
@@ -351,9 +362,11 @@ class DefaultSettingsComponent(
 
                 is BundletoolCheckResult.NotAvailable ->
                     ToolCheckState.Error(
-                        getString(
-                            Res.string.settings_status_not_found,
-                            result.reason,
+                        buildToolCheckErrorMessage(
+                            toolTitleRes = Res.string.settings_tool_bundletool_title,
+                            kind = result.kind,
+                            rawDetails = result.reason,
+                            fallbackDetails = requestedPath.ifBlank { "bundletool" },
                         )
                     )
             }
@@ -550,6 +563,42 @@ class DefaultSettingsComponent(
         }
     }
 
+    /**
+     * Формирует локализованное сообщение для статуса проверки инструмента.
+     *
+     * Детали из backend-слоя считаем диагностикой и ограничиваем длину,
+     * чтобы не раздувать UI длинными stderr-выводами.
+     */
+    private suspend fun buildToolCheckErrorMessage(
+        toolTitleRes: StringResource,
+        kind: ToolCheckFailureKind,
+        rawDetails: String,
+        fallbackDetails: String,
+    ): String {
+        val toolName = getString(toolTitleRes)
+        val details = rawDetails.take(MAX_TOOL_ERROR_DETAILS_LENGTH).ifBlank { fallbackDetails }
+        return when (kind) {
+            ToolCheckFailureKind.WRONG_EXECUTABLE -> getString(
+                Res.string.settings_status_wrong_tool,
+                toolName,
+                details,
+            )
+
+            ToolCheckFailureKind.START_FAILED -> getString(
+                Res.string.settings_status_launch_failed,
+                toolName,
+                details,
+            )
+
+            ToolCheckFailureKind.COMMAND_FAILED,
+            ToolCheckFailureKind.UNKNOWN,
+            -> getString(
+                Res.string.settings_status_not_found,
+                details,
+            )
+        }
+    }
+
     private fun AppSettings.toUiState(): SettingsUiState = SettingsUiState(
         adbPath = adbPath,
         bundletoolPath = bundletoolPath,
@@ -589,5 +638,6 @@ class DefaultSettingsComponent(
     private companion object {
         const val LOGCAT_SAVE_DEBOUNCE_MS = 350L
         const val FEEDBACK_AUTO_HIDE_MS = 3_000L
+        const val MAX_TOOL_ERROR_DETAILS_LENGTH = 120
     }
 }

@@ -97,6 +97,8 @@
 
     <string name="settings_status_available">Available: %1$s</string>
     <string name="settings_status_not_found">Not found: %1$s</string>
+    <string name="settings_status_wrong_tool">Expected %1$s, but another tool was provided: %2$s</string>
+    <string name="settings_status_launch_failed">Failed to start %1$s: %2$s</string>
     <string name="settings_feedback_saved">Settings saved</string>
     <string name="settings_feedback_save_failed">Failed to save settings</string>
     <string name="settings_feedback_logcat_save_failed">Failed to save Logcat settings</string>

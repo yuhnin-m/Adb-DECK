@@ -6,6 +6,7 @@ import com.adbdeck.core.adb.api.adb.AdbServerState
 import com.adbdeck.core.adb.api.adb.AdbServerStatusResult
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceState
+import com.adbdeck.core.adb.api.ToolCheckFailureKind
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
@@ -31,20 +32,38 @@ class SystemAdbClient(
     }
 
     override suspend fun checkAvailability(adbPathOverride: String?): AdbCheckResult {
+        val path = adbPath(adbPathOverride)
         return runCatchingPreserveCancellation {
-            processRunner.run(adbPath(adbPathOverride), "version")
+            processRunner.run(path, COMMAND_VERSION)
         }.fold(
             onSuccess = { result ->
                 if (result.isSuccess) {
-                    AdbCheckResult.Available(result.firstOutputLine)
+                    val output = result.combinedOutput()
+                    // Защита от ложных "OK": бинарник должен быть именно adb,
+                    // а не любой другой инструмент, который случайно завершился успешно.
+                    if (!output.looksLikeAdbVersionOutput()) {
+                        val hint = output.firstMeaningfulLine().ifBlank { path }
+                        AdbCheckResult.NotAvailable(
+                            reason = hint,
+                            kind = ToolCheckFailureKind.WRONG_EXECUTABLE,
+                        )
+                    } else {
+                        AdbCheckResult.Available(
+                            output.firstMeaningfulLine().ifBlank { path },
+                        )
+                    }
                 } else {
                     AdbCheckResult.NotAvailable(
-                        result.stderr.ifBlank { "adb завершился с кодом ${result.exitCode}" }
+                        reason = result.combinedOutput().ifBlank { path },
+                        kind = ToolCheckFailureKind.COMMAND_FAILED,
                     )
                 }
             },
             onFailure = { e ->
-                AdbCheckResult.NotAvailable("Не удалось запустить adb: ${e.message}")
+                AdbCheckResult.NotAvailable(
+                    reason = e.message.orEmpty().ifBlank { path },
+                    kind = ToolCheckFailureKind.START_FAILED,
+                )
             },
         )
     }
@@ -268,9 +287,31 @@ class SystemAdbClient(
         return markers.count { contains(it) } >= 2
     }
 
+    /**
+     * Сигнатура корректного вывода `adb version`.
+     *
+     * У adb стабильно присутствует "Android Debug Bridge". Проверка нужна, чтобы
+     * путь к другому бинарнику (например, bundletool/scrcpy) не давал ложный "Available".
+     */
+    private fun String.looksLikeAdbVersionOutput(): Boolean {
+        val normalized = lowercase()
+        return normalized.contains(ADB_VERSION_MARKER)
+    }
+
+    private fun String.firstMeaningfulLine(): String =
+        lineSequence()
+            .map(String::trim)
+            .firstOrNull { it.isNotEmpty() }
+            .orEmpty()
+
     private fun com.adbdeck.core.process.ProcessResult.combinedOutput(): String =
         sequenceOf(stdout, stderr)
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .joinToString(separator = "\n")
+
+    private companion object {
+        const val COMMAND_VERSION = "version"
+        const val ADB_VERSION_MARKER = "android debug bridge"
+    }
 }
