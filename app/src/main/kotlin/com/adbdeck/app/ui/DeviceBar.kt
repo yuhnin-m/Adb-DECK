@@ -1,5 +1,6 @@
 package com.adbdeck.app.ui
 
+import adbdeck.app.generated.resources.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +56,7 @@ import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceState
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Виджет выбора устройства для TopBar.
@@ -101,7 +103,7 @@ fun DeviceBar(
         if (error != null) {
             Icon(
                 imageVector = Icons.Outlined.Warning,
-                contentDescription = "Ошибка: $error",
+                contentDescription = stringResource(Res.string.app_devicebar_error_content_desc, error ?: ""),
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier
                     .size(16.dp)
@@ -167,7 +169,7 @@ fun DeviceBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Refresh,
-                    contentDescription = "Обновить список устройств",
+                    contentDescription = stringResource(Res.string.app_devicebar_refresh_content_desc),
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -182,7 +184,7 @@ fun DeviceBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Close,
-                    contentDescription = "Отключить устройство",
+                    contentDescription = stringResource(Res.string.app_devicebar_disconnect_content_desc),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.error.copy(alpha = 0.75f),
                 )
@@ -197,7 +199,7 @@ fun DeviceBar(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Add,
-                    contentDescription = "Подключить устройство по Wi-Fi",
+                    contentDescription = stringResource(Res.string.app_devicebar_connect_wifi_content_desc),
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -276,7 +278,7 @@ private fun DeviceChip(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             )
             Text(
-                text = "Нет устройства",
+                text = stringResource(Res.string.app_devicebar_no_device),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -306,7 +308,7 @@ private fun DeviceDropdownContent(
 ) {
     // ── Подключенные устройства ──────────────────────────────────
     if (devices.isNotEmpty()) {
-        DropdownSectionLabel("Подключенные устройства")
+        DropdownSectionLabel(stringResource(Res.string.app_devicebar_section_connected_devices))
         devices.forEach { device ->
             val isSelected = device.deviceId == selectedDevice?.deviceId
             val isUsbDevice = !device.deviceId.contains(":")
@@ -340,7 +342,7 @@ private fun DeviceDropdownContent(
                 leadingIcon = if (isSelected) ({
                     Icon(
                         imageVector = Icons.Outlined.Check,
-                        contentDescription = "Активное устройство",
+                        contentDescription = stringResource(Res.string.app_devicebar_active_device_content_desc),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary,
                     )
@@ -353,7 +355,7 @@ private fun DeviceDropdownContent(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Wifi,
-                            contentDescription = "Переключить в TCP/IP (порт 5555)",
+                            contentDescription = stringResource(Res.string.app_devicebar_switch_tcpip_content_desc),
                             modifier = Modifier.size(14.dp),
                             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                         )
@@ -367,7 +369,7 @@ private fun DeviceDropdownContent(
     // ── Сохраненные endpoint-ы ───────────────────────────────────
     if (savedEndpoints.isNotEmpty()) {
         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        DropdownSectionLabel("Сохраненные устройства")
+        DropdownSectionLabel(stringResource(Res.string.app_devicebar_section_saved_devices))
         savedEndpoints.forEach { endpoint ->
             val isAlreadyConnected = devices.any { it.deviceId == endpoint.address }
             DropdownMenuItem(
@@ -396,7 +398,7 @@ private fun DeviceDropdownContent(
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Link,
-                                    contentDescription = "Подключить",
+                                    contentDescription = stringResource(Res.string.app_devicebar_connect_saved_content_desc),
                                     modifier = Modifier.size(14.dp),
                                     tint = MaterialTheme.colorScheme.primary,
                                 )
@@ -409,7 +411,7 @@ private fun DeviceDropdownContent(
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Close,
-                                contentDescription = "Удалить из сохраненных",
+                                contentDescription = stringResource(Res.string.app_devicebar_remove_saved_content_desc),
                                 modifier = Modifier.size(12.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -426,7 +428,7 @@ private fun DeviceDropdownContent(
     DropdownMenuItem(
         text = {
             Text(
-                text = "Подключить по IP-адресу...",
+                text = stringResource(Res.string.app_devicebar_connect_by_ip_menu),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -472,26 +474,26 @@ private fun ConnectDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Подключить по Wi-Fi") },
+        title = { Text(stringResource(Res.string.app_connect_dialog_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = host,
                     onValueChange = { host = it.trim() },
-                    label = { Text("IP-адрес устройства") },
-                    placeholder = { Text("192.168.1.100") },
+                    label = { Text(stringResource(Res.string.app_connect_dialog_host_label)) },
+                    placeholder = { Text(stringResource(Res.string.app_connect_dialog_host_placeholder)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                 )
                 OutlinedTextField(
                     value = portText,
                     onValueChange = { portText = it.filter(Char::isDigit).take(5) },
-                    label = { Text("Порт adb") },
+                    label = { Text(stringResource(Res.string.app_connect_dialog_port_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     isError = portText.isNotBlank() && !portValid,
                     supportingText = if (portText.isNotBlank() && !portValid) ({
-                        Text("Порт должен быть от 1 до 65535")
+                        Text(stringResource(Res.string.app_connect_dialog_port_range_error))
                     }) else null,
                 )
             }
@@ -501,12 +503,12 @@ private fun ConnectDialog(
                 onClick = { onConnect(host, portText.toIntOrNull() ?: 5555) },
                 enabled = canConnect,
             ) {
-                Text("Подключить")
+                Text(stringResource(Res.string.app_connect_dialog_connect_action))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Отмена")
+                Text(stringResource(Res.string.app_connect_dialog_cancel_action))
             }
         },
     )
@@ -526,9 +528,10 @@ private fun deviceStateColor(state: DeviceState): Color = when (state) {
 }
 
 /** Читаемое название состояния устройства на русском. */
+@Composable
 private fun deviceStateName(state: DeviceState): String = when (state) {
-    DeviceState.DEVICE -> "Подключено"
-    DeviceState.OFFLINE -> "Недоступно"
-    DeviceState.UNAUTHORIZED -> "Требуется авторизация"
-    DeviceState.UNKNOWN -> "Неизвестное состояние"
+    DeviceState.DEVICE -> stringResource(Res.string.app_device_state_connected)
+    DeviceState.OFFLINE -> stringResource(Res.string.app_device_state_unavailable)
+    DeviceState.UNAUTHORIZED -> stringResource(Res.string.app_device_state_auth_required)
+    DeviceState.UNKNOWN -> stringResource(Res.string.app_device_state_unknown)
 }

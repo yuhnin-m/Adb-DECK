@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_topbar_title_dashboard">Дашборд</string>
+    <string name="app_topbar_title_devices">Устройства</string>
+    <string name="app_topbar_title_logcat">Logcat</string>
+    <string name="app_topbar_title_settings">Настройки</string>
+    <string name="app_topbar_title_packages">Пакеты</string>
+    <string name="app_topbar_title_system_monitor">Системный монитор</string>
+    <string name="app_topbar_title_file_system">Файловая система</string>
+    <string name="app_topbar_title_file_explorer">Проводник файлов</string>
+    <string name="app_topbar_title_contacts">Контакты</string>
+    <string name="app_topbar_title_screen_tools">Инструменты экрана</string>
+    <string name="app_topbar_title_apk_install">Установка APK</string>
+    <string name="app_topbar_title_deep_links">Deep Links</string>
+    <string name="app_topbar_title_notifications">Уведомления</string>
+    <string name="app_topbar_title_device_info">Инфо устройства</string>
+    <string name="app_topbar_title_quick_toggles">Быстрые тумблеры</string>
+    <string name="app_topbar_title_scrcpy">Scrcpy</string>
+
+    <string name="app_devicebar_error_content_desc">Ошибка устройства: %1$s</string>
+    <string name="app_devicebar_refresh_content_desc">Обновить список устройств</string>
+    <string name="app_devicebar_disconnect_content_desc">Отключить устройство</string>
+    <string name="app_devicebar_connect_wifi_content_desc">Подключить устройство по Wi-Fi</string>
+    <string name="app_devicebar_no_device">Нет устройства</string>
+    <string name="app_devicebar_section_connected_devices">Подключенные устройства</string>
+    <string name="app_devicebar_active_device_content_desc">Активное устройство</string>
+    <string name="app_devicebar_switch_tcpip_content_desc">Переключить в TCP/IP (порт 5555)</string>
+    <string name="app_devicebar_section_saved_devices">Сохраненные устройства</string>
+    <string name="app_devicebar_connect_saved_content_desc">Подключить</string>
+    <string name="app_devicebar_remove_saved_content_desc">Удалить из сохраненных</string>
+    <string name="app_devicebar_connect_by_ip_menu">Подключить по IP-адресу...</string>
+
+    <string name="app_connect_dialog_title">Подключить по Wi-Fi</string>
+    <string name="app_connect_dialog_host_label">IP-адрес устройства</string>
+    <string name="app_connect_dialog_host_placeholder">192.168.1.100</string>
+    <string name="app_connect_dialog_port_label">Порт adb</string>
+    <string name="app_connect_dialog_port_range_error">Порт должен быть от 1 до 65535</string>
+    <string name="app_connect_dialog_connect_action">Подключить</string>
+    <string name="app_connect_dialog_cancel_action">Отмена</string>
+
+    <string name="app_device_state_connected">Подключено</string>
+    <string name="app_device_state_unavailable">Недоступно</string>
+    <string name="app_device_state_auth_required">Требуется авторизация</string>
+    <string name="app_device_state_unknown">Неизвестное состояние</string>
+</resources>

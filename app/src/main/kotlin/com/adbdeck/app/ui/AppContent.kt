@@ -1,5 +1,6 @@
 package com.adbdeck.app.ui
 
+import adbdeck.app.generated.resources.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,7 @@ import com.adbdeck.feature.scrcpy.ui.ScrcpyScreen
 import com.adbdeck.feature.settings.ui.SettingsScreen
 import com.adbdeck.feature.systemmonitor.ui.SystemMonitorScreen
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Корневой composable главного окна ADB Deck.
@@ -200,21 +202,22 @@ fun AppContent(
 /**
  * Возвращает заголовок TopBar для текущего экрана.
  */
+@Composable
 private fun Screen.title(): String = when (this) {
-    is Screen.Dashboard -> "Dashboard"
-    is Screen.Devices -> "Devices"
-    is Screen.Logcat -> "Logcat"
-    is Screen.Settings -> "Settings"
-    is Screen.Packages -> "Packages"
-    is Screen.SystemMonitor -> "System Monitor"
-    is Screen.FileSystem -> "File System"
-    is Screen.FileExplorer -> "File Explorer"
-    is Screen.Contacts -> "Contacts"
-    is Screen.ScreenTools -> "Screen Tools"
-    is Screen.ApkInstall -> "APK Install"
-    is Screen.DeepLinks -> "Deep Links"
-    is Screen.Notifications -> "Notifications"
-    is Screen.DeviceInfo -> "Device Info"
-    is Screen.QuickToggles -> "Quick Toggles"
-    is Screen.Scrcpy -> "Scrcpy"
+    is Screen.Dashboard -> stringResource(Res.string.app_topbar_title_dashboard)
+    is Screen.Devices -> stringResource(Res.string.app_topbar_title_devices)
+    is Screen.Logcat -> stringResource(Res.string.app_topbar_title_logcat)
+    is Screen.Settings -> stringResource(Res.string.app_topbar_title_settings)
+    is Screen.Packages -> stringResource(Res.string.app_topbar_title_packages)
+    is Screen.SystemMonitor -> stringResource(Res.string.app_topbar_title_system_monitor)
+    is Screen.FileSystem -> stringResource(Res.string.app_topbar_title_file_system)
+    is Screen.FileExplorer -> stringResource(Res.string.app_topbar_title_file_explorer)
+    is Screen.Contacts -> stringResource(Res.string.app_topbar_title_contacts)
+    is Screen.ScreenTools -> stringResource(Res.string.app_topbar_title_screen_tools)
+    is Screen.ApkInstall -> stringResource(Res.string.app_topbar_title_apk_install)
+    is Screen.DeepLinks -> stringResource(Res.string.app_topbar_title_deep_links)
+    is Screen.Notifications -> stringResource(Res.string.app_topbar_title_notifications)
+    is Screen.DeviceInfo -> stringResource(Res.string.app_topbar_title_device_info)
+    is Screen.QuickToggles -> stringResource(Res.string.app_topbar_title_quick_toggles)
+    is Screen.Scrcpy -> stringResource(Res.string.app_topbar_title_scrcpy)
 }
