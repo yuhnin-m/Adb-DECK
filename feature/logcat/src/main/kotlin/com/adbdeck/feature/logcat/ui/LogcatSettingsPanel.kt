@@ -1,12 +1,15 @@
 package com.adbdeck.feature.logcat.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollbarStyle
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -57,124 +61,154 @@ internal fun LogcatSettingsPanel(
     modifier: Modifier = Modifier,
 ) {
     val blockSpacing = Dimensions.paddingMedium
+    val settingsScrollState = rememberScrollState()
+    val settingsScrollbarStyle = ScrollbarStyle(
+        minimalHeight = 32.dp,
+        thickness = 10.dp,
+        shape = MaterialTheme.shapes.small,
+        hoverDurationMillis = 120,
+        unhoverColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.42f),
+        hoverColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+    )
 
     Surface(
         modifier = modifier,
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(Dimensions.paddingDefault),
-            verticalArrangement = Arrangement.spacedBy(blockSpacing),
-        ) {
-            Text(
-                text = stringResource(Res.string.logcat_settings_title),
-                style = MaterialTheme.typography.titleMedium,
-            )
-
-            LogcatSettingsSection(
-                title = stringResource(Res.string.logcat_settings_output_section_title),
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(settingsScrollState)
+                    .padding(Dimensions.paddingDefault)
+                    .padding(end = Dimensions.paddingLarge),
+                verticalArrangement = Arrangement.spacedBy(blockSpacing),
             ) {
                 Text(
-                    text = stringResource(Res.string.logcat_settings_output_format_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = stringResource(Res.string.logcat_settings_title),
+                    style = MaterialTheme.typography.titleMedium,
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                LogcatSettingsSection(
+                    title = stringResource(Res.string.logcat_settings_output_section_title),
                 ) {
-                    AdbSingleSegmentedButtons(
-                        options = listOf(
-                            AdbSegmentedOption(
-                                value = LogcatDisplayMode.COMPACT,
-                                label = stringResource(Res.string.logcat_settings_mode_compact),
+                    Text(
+                        text = stringResource(Res.string.logcat_settings_output_format_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        AdbSingleSegmentedButtons(
+                            options = listOf(
+                                AdbSegmentedOption(
+                                    value = LogcatDisplayMode.COMPACT,
+                                    label = stringResource(Res.string.logcat_settings_mode_compact),
+                                ),
+                                AdbSegmentedOption(
+                                    value = LogcatDisplayMode.FULL,
+                                    label = stringResource(Res.string.logcat_settings_mode_full),
+                                ),
                             ),
-                            AdbSegmentedOption(
-                                value = LogcatDisplayMode.FULL,
-                                label = stringResource(Res.string.logcat_settings_mode_full),
-                            ),
-                        ),
-                        selectedValue = state.displayMode,
-                        onValueSelected = component::onDisplayModeChanged,
-                        size = AdbSegmentedButtonSize.MEDIUM,
+                            selectedValue = state.displayMode,
+                            onValueSelected = component::onDisplayModeChanged,
+                            size = AdbSegmentedButtonSize.MEDIUM,
+                        )
+                    }
+
+                    LabeledSwitchRow(
+                        label = stringResource(Res.string.logcat_settings_use_colors_label),
+                        checked = state.coloredLevels,
+                        onCheckedChange = { component.onToggleColoredLevels() },
+                    )
+                    LabeledSwitchRow(
+                        label = stringResource(Res.string.logcat_settings_smooth_stream_label),
+                        checked = state.smoothStreamAnimation,
+                        onCheckedChange = component::onSmoothStreamAnimationChanged,
+                    )
+                    LabeledSwitchRow(
+                        label = stringResource(Res.string.logcat_settings_wrap_text_label),
+                        checked = state.wrapText,
+                        onCheckedChange = component::onWrapTextChanged,
                     )
                 }
 
-                LabeledSwitchRow(
-                    label = stringResource(Res.string.logcat_settings_use_colors_label),
-                    checked = state.coloredLevels,
-                    onCheckedChange = { component.onToggleColoredLevels() },
-                )
-                LabeledSwitchRow(
-                    label = stringResource(Res.string.logcat_settings_smooth_stream_label),
-                    checked = state.smoothStreamAnimation,
-                    onCheckedChange = component::onSmoothStreamAnimationChanged,
-                )
-            }
-
-            LogcatSettingsSection(
-                title = stringResource(Res.string.logcat_settings_font_section_title),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
+                LogcatSettingsSection(
+                    title = stringResource(Res.string.logcat_settings_font_section_title),
                 ) {
-                    AdbSingleSegmentedButtons(
-                        options = listOf(
-                            AdbSegmentedOption(
-                                value = LogcatFontFamily.MONOSPACE,
-                                label = stringResource(Res.string.logcat_settings_font_mono),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        AdbSingleSegmentedButtons(
+                            options = listOf(
+                                AdbSegmentedOption(
+                                    value = LogcatFontFamily.MONOSPACE,
+                                    label = stringResource(Res.string.logcat_settings_font_mono),
+                                ),
+                                AdbSegmentedOption(
+                                    value = LogcatFontFamily.SANS_SERIF,
+                                    label = stringResource(Res.string.logcat_settings_font_sans),
+                                ),
+                                AdbSegmentedOption(
+                                    value = LogcatFontFamily.SERIF,
+                                    label = stringResource(Res.string.logcat_settings_font_serif),
+                                ),
+                                AdbSegmentedOption(
+                                    value = LogcatFontFamily.DEFAULT,
+                                    label = stringResource(Res.string.logcat_settings_font_system),
+                                ),
                             ),
-                            AdbSegmentedOption(
-                                value = LogcatFontFamily.SANS_SERIF,
-                                label = stringResource(Res.string.logcat_settings_font_sans),
-                            ),
-                            AdbSegmentedOption(
-                                value = LogcatFontFamily.SERIF,
-                                label = stringResource(Res.string.logcat_settings_font_serif),
-                            ),
-                            AdbSegmentedOption(
-                                value = LogcatFontFamily.DEFAULT,
-                                label = stringResource(Res.string.logcat_settings_font_system),
-                            ),
-                        ),
-                        selectedValue = state.fontFamily,
-                        onValueSelected = component::onFontFamilyChanged,
-                        size = AdbSegmentedButtonSize.MEDIUM,
+                            selectedValue = state.fontFamily,
+                            onValueSelected = component::onFontFamilyChanged,
+                            size = AdbSegmentedButtonSize.MEDIUM,
+                        )
+                    }
+
+                    FontSizeSelector(
+                        fontSizeSp = state.fontSizeSp,
+                        onDecrease = { component.onFontSizeChanged(state.fontSizeSp - 1) },
+                        onIncrease = { component.onFontSizeChanged(state.fontSizeSp + 1) },
                     )
                 }
 
-                FontSizeSelector(
-                    fontSizeSp = state.fontSizeSp,
-                    onDecrease = { component.onFontSizeChanged(state.fontSizeSp - 1) },
-                    onIncrease = { component.onFontSizeChanged(state.fontSizeSp + 1) },
-                )
+                LogcatSettingsSection(
+                    title = stringResource(Res.string.logcat_settings_timestamps_section_title),
+                ) {
+                    LabeledSwitchRow(
+                        label = stringResource(Res.string.logcat_settings_show_date_label),
+                        checked = state.showDate,
+                        onCheckedChange = { component.onToggleShowDate() },
+                    )
+                    LabeledSwitchRow(
+                        label = stringResource(Res.string.logcat_settings_show_time_label),
+                        checked = state.showTime,
+                        onCheckedChange = { component.onToggleShowTime() },
+                    )
+                    LabeledSwitchRow(
+                        label = stringResource(Res.string.logcat_settings_show_millis_label),
+                        checked = state.showMillis,
+                        onCheckedChange = { component.onToggleShowMillis() },
+                    )
+                }
             }
 
-            LogcatSettingsSection(
-                title = stringResource(Res.string.logcat_settings_timestamps_section_title),
-            ) {
-                LabeledSwitchRow(
-                    label = stringResource(Res.string.logcat_settings_show_date_label),
-                    checked = state.showDate,
-                    onCheckedChange = { component.onToggleShowDate() },
-                )
-                LabeledSwitchRow(
-                    label = stringResource(Res.string.logcat_settings_show_time_label),
-                    checked = state.showTime,
-                    onCheckedChange = { component.onToggleShowTime() },
-                )
-                LabeledSwitchRow(
-                    label = stringResource(Res.string.logcat_settings_show_millis_label),
-                    checked = state.showMillis,
-                    onCheckedChange = { component.onToggleShowMillis() },
-                )
-            }
+            VerticalScrollbar(
+                adapter = rememberScrollbarAdapter(settingsScrollState),
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight()
+                    .padding(
+                        top = Dimensions.paddingDefault,
+                        bottom = Dimensions.paddingDefault,
+                        end = Dimensions.paddingXSmall,
+                    ),
+                style = settingsScrollbarStyle,
+            )
         }
     }
 }

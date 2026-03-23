@@ -2,6 +2,7 @@ package com.adbdeck.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,6 +60,14 @@ fun Sidebar(
     isProcessMonitoring: Boolean = false,
 ) {
     val navScrollState = rememberScrollState()
+    val navScrollbarStyle = ScrollbarStyle(
+        minimalHeight = 28.dp,
+        thickness = 10.dp,
+        shape = MaterialTheme.shapes.small,
+        hoverDurationMillis = 120,
+        unhoverColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.44f),
+        hoverColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.78f),
+    )
 
     Column(
         modifier = Modifier
@@ -194,6 +203,7 @@ fun Sidebar(
                     .align(Alignment.CenterEnd)
                     .fillMaxHeight()
                     .padding(vertical = Dimensions.paddingXSmall),
+                style = navScrollbarStyle,
             )
         }
         HorizontalDivider()

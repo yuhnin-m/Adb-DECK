@@ -88,6 +88,9 @@ interface LogcatComponent {
      */
     fun onSmoothStreamAnimationChanged(value: Boolean)
 
+    /** Включить/выключить перенос длинных строк лога. */
+    fun onWrapTextChanged(value: Boolean)
+
     // ── Font settings ──────────────────────────────────────────
 
     /** Изменить шрифтовое семейство строк лога. */

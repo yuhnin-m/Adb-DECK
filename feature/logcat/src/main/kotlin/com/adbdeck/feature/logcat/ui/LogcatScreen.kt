@@ -3,6 +3,7 @@ package com.adbdeck.feature.logcat.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -721,6 +722,14 @@ private fun LogList(
     val scope = rememberCoroutineScope()
     val listFocusRequester = remember { FocusRequester() }
     var selectionModifiers by remember { mutableStateOf(LogSelectionModifiers()) }
+    val listScrollbarStyle = ScrollbarStyle(
+        minimalHeight = 32.dp,
+        thickness = 10.dp,
+        shape = MaterialTheme.shapes.small,
+        hoverDurationMillis = 120,
+        unhoverColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.42f),
+        hoverColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+    )
 
     val currentAutoScroll by rememberUpdatedState(state.autoScroll)
     val currentEntries by rememberUpdatedState(state.filteredEntries)
@@ -839,6 +848,7 @@ private fun LogList(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .fillMaxHeight(),
+                    style = listScrollbarStyle,
                 )
             }
         }
