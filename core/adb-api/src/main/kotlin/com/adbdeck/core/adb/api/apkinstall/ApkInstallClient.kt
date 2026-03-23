@@ -17,7 +17,7 @@ interface ApkInstallClient {
      * @param localApkPath Абсолютный путь к install target на хосте.
      * @param adbPath Путь к исполняемому файлу `adb`.
      * @param options Параметры установки (`-r`, `-d`, `-g`).
-     * @param onProgress Колбек для статуса/прогресса установки.
+     * @param onProgress Колбек для типизированного прогресса установки.
      */
     suspend fun installApk(
         deviceId: String,

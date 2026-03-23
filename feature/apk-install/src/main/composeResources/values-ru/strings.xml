@@ -8,6 +8,11 @@
     <string name="apk_install_status_installing">Запускаем установку пакета...</string>
     <string name="apk_install_status_installed">Пакет установлен: %1$s</string>
     <string name="apk_install_status_interrupted">Установка пакета прервана: активное устройство изменилось или стало недоступно</string>
+    <string name="apk_install_status_using_bundletool_install_apks">Устанавливаем APKS через bundletool...</string>
+    <string name="apk_install_status_bundletool_failed_fallback_to_adb">bundletool завершился ошибкой, продолжаем через adb install-multiple...</string>
+    <string name="apk_install_status_apks_without_toc_fallback_to_adb">В APKS нет метаданных bundletool, продолжаем через adb install-multiple...</string>
+    <string name="apk_install_status_building_apks_from_aab">Собираем APKS из AAB через bundletool...</string>
+    <string name="apk_install_status_installing_generated_apks">Устанавливаем сгенерированные APKS на устройство...</string>
 
     <string name="apk_install_feedback_install_running">Установка уже выполняется</string>
     <string name="apk_install_feedback_choose_device">Сначала выберите активное устройство</string>

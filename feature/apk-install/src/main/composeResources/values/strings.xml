@@ -8,6 +8,11 @@
     <string name="apk_install_status_installing">Starting package installation...</string>
     <string name="apk_install_status_installed">Package installed: %1$s</string>
     <string name="apk_install_status_interrupted">Package installation interrupted: active device changed or became unavailable</string>
+    <string name="apk_install_status_using_bundletool_install_apks">Installing APKS via bundletool...</string>
+    <string name="apk_install_status_bundletool_failed_fallback_to_adb">bundletool failed, continuing with adb install-multiple...</string>
+    <string name="apk_install_status_apks_without_toc_fallback_to_adb">APKS archive has no bundletool metadata, continuing with adb install-multiple...</string>
+    <string name="apk_install_status_building_apks_from_aab">Building APKS from AAB via bundletool...</string>
+    <string name="apk_install_status_installing_generated_apks">Installing generated APKS on device...</string>
 
     <string name="apk_install_feedback_install_running">Package installation is already running</string>
     <string name="apk_install_feedback_choose_device">Select an active device first</string>
