@@ -205,7 +205,8 @@ class SystemApkInstallClient(
             error("Expected .aab file: ${aabFile.absolutePath}")
         }
 
-        val outputApks = File.createTempFile("adbdeck-bundletool-", ".apks")
+        val outputApksDir = Files.createTempDirectory("adbdeck-bundletool-").toFile()
+        val outputApks = File(outputApksDir, "generated.apks")
         try {
             onProgress(ApkInstallProgress(null, "Building APKS from AAB via bundletool..."))
             val buildCommand = bundletoolCommand(
@@ -233,7 +234,7 @@ class SystemApkInstallClient(
                 onProgress = onProgress,
             )
         } finally {
-            outputApks.delete()
+            outputApksDir.deleteRecursively()
         }
     }
 
