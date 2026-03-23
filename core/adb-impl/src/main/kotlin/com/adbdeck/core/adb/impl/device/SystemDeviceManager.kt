@@ -8,6 +8,7 @@ import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.settings.SavedWifiDeviceSettingsEntry
 import com.adbdeck.core.settings.SettingsRepository
+import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,6 +58,7 @@ class SystemDeviceManager(
     private fun loadEndpointsFromSettings(): List<DeviceEndpoint> =
         settingsRepository.getSettings().knownEndpoints
             .mapNotNull { DeviceEndpoint.Companion.fromAddress(it) }
+            .deduplicateByHostKeepLatest()
 
     /** Загружает историю Wi-Fi-устройств из настроек. */
     private fun loadWifiHistoryFromSettings(): List<SavedWifiDevice> =
@@ -261,16 +263,26 @@ class SystemDeviceManager(
     override suspend fun saveEndpoint(endpoint: DeviceEndpoint) {
         val settings = settingsRepository.getSettings()
         val existing = settings.knownEndpoints.toMutableList()
-        if (!existing.contains(endpoint.address)) {
-            existing.add(endpoint.address)
-            settingsRepository.saveSettings(settings.copy(knownEndpoints = existing))
-            _savedEndpointsFlow.value = loadEndpointsFromSettings()
+        existing.removeAll { savedAddress ->
+            DeviceEndpoint.fromAddress(savedAddress)
+                ?.host
+                ?.equals(endpoint.host, ignoreCase = true)
+                ?: false
         }
+        existing.add(endpoint.address)
+
+        settingsRepository.saveSettings(settings.copy(knownEndpoints = existing))
+        _savedEndpointsFlow.value = loadEndpointsFromSettings()
     }
 
     override suspend fun removeEndpoint(endpoint: DeviceEndpoint) {
         val settings = settingsRepository.getSettings()
-        val updated = settings.knownEndpoints.filter { it != endpoint.address }
+        val updated = settings.knownEndpoints.filterNot { savedAddress ->
+            DeviceEndpoint.fromAddress(savedAddress)
+                ?.host
+                ?.equals(endpoint.host, ignoreCase = true)
+                ?: false
+        }
         settingsRepository.saveSettings(settings.copy(knownEndpoints = updated))
         _savedEndpointsFlow.value = loadEndpointsFromSettings()
     }
@@ -357,4 +369,18 @@ private fun parseDisplayNameFromAdbInfo(rawInfo: String): String? {
         ?.substringAfter("model:")
         ?.trim()
     return modelToken?.takeIf { it.isNotEmpty() }
+}
+
+private fun List<DeviceEndpoint>.deduplicateByHostKeepLatest(): List<DeviceEndpoint> {
+    if (size <= 1) return this
+
+    val seenHosts = hashSetOf<String>()
+    val reversedUnique = mutableListOf<DeviceEndpoint>()
+    asReversed().forEach { endpoint ->
+        val hostKey = endpoint.host.trim().lowercase(Locale.ROOT)
+        if (hostKey.isNotEmpty() && seenHosts.add(hostKey)) {
+            reversedUnique += endpoint
+        }
+    }
+    return reversedUnique.asReversed()
 }

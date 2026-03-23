@@ -40,6 +40,7 @@ data class SavedWifiDeviceSettingsEntry(
  * @param logcatMaxBufferedLines Максимум строк в in-memory буфере (FIFO, удаляются старые).
  * @param logcatAutoScroll       Автоматический скролл вниз при поступлении новых строк.
  * @param logcatSmoothStreamAnimation Плавная по-кадровая публикация новых строк (эффект "живого" потока).
+ * @param logcatWrapText         Переносить длинные строки лога по ширине панели.
  * @param logcatFontFamily       Семейство шрифта (имя enum LogcatFontFamily, напр. "MONOSPACE").
  * @param logcatFontSizeSp       Размер шрифта в sp (диапазон 8–24).
  *
@@ -69,6 +70,7 @@ data class AppSettings(
     val logcatMaxBufferedLines: Int = 5_000,
     val logcatAutoScroll: Boolean = true,
     val logcatSmoothStreamAnimation: Boolean = true,
+    val logcatWrapText: Boolean = !logcatCompactMode,
     val logcatFontFamily: String = "MONOSPACE",
     val logcatFontSizeSp: Int = 12,
 
