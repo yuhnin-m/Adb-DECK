@@ -44,15 +44,25 @@ class GithubReleasesUpdateProvider(
                 return@runCatching AppUpdateCheckResult.UpToDate
             }
 
-            val downloadUrl = selectBestAssetUrl(
+            val currentPlatform = detectPlatform()
+            val selectedAsset = selectBestAsset(
                 assets = latestRelease.assets,
-                releasePageUrl = latestRelease.releasePageUrl,
+                platform = currentPlatform,
             )
+            val downloadUrl = selectedAsset?.downloadUrl ?: latestRelease.releasePageUrl
+            val expectedSha512 = selectedAsset?.let { asset ->
+                findExpectedSha512ForAsset(
+                    selectedAsset = asset,
+                    assets = latestRelease.assets,
+                    platform = currentPlatform,
+                )
+            }
 
             AppUpdateCheckResult.UpdateAvailable(
                 version = latestRelease.version,
                 changelog = latestRelease.changelog,
                 downloadUrl = downloadUrl,
+                expectedSha512 = expectedSha512,
             )
         }.getOrElse { error ->
             AppUpdateCheckResult.Failed(
@@ -113,36 +123,107 @@ class GithubReleasesUpdateProvider(
         }
     }
 
-    private fun selectBestAssetUrl(
+    private fun selectBestAsset(
         assets: List<GithubAssetDto>,
-        releasePageUrl: String,
-    ): String {
-        if (assets.isEmpty()) return releasePageUrl
+        platform: DetectedPlatform,
+    ): GithubAssetDto? {
+        if (assets.isEmpty()) return null
 
-        val currentPlatform = detectPlatform()
         val osFiltered = assets.filter { asset ->
             val lower = asset.name.lowercase()
-            currentPlatform.osTokens.any(lower::contains)
+            platform.osTokens.any(lower::contains)
         }.ifEmpty {
             assets
         }
 
-        val archFiltered = if (currentPlatform.archTokens.isEmpty()) {
+        val archFiltered = if (platform.archTokens.isEmpty()) {
             osFiltered
         } else {
             osFiltered.filter { asset ->
                 val lower = asset.name.lowercase()
-                currentPlatform.archTokens.any(lower::contains)
+                platform.archTokens.any(lower::contains)
             }.ifEmpty {
                 osFiltered
             }
         }
 
-        val bestAsset = archFiltered.maxByOrNull { asset ->
-            scoreAsset(asset.name.lowercase(), currentPlatform)
+        return archFiltered.maxByOrNull { asset ->
+            scoreAsset(asset.name.lowercase(), platform)
+        }
+    }
+
+    private fun findExpectedSha512ForAsset(
+        selectedAsset: GithubAssetDto,
+        assets: List<GithubAssetDto>,
+        platform: DetectedPlatform,
+    ): String? {
+        val metadataAsset = findUpdateMetadataAsset(assets = assets, platform = platform) ?: return null
+
+        val metadataContent = fetchTextAsset(metadataAsset.downloadUrl)
+        val checksumsByFilename = parseSha512ByFileName(metadataContent)
+        return checksumsByFilename[selectedAsset.name]
+    }
+
+    private fun findUpdateMetadataAsset(
+        assets: List<GithubAssetDto>,
+        platform: DetectedPlatform,
+    ): GithubAssetDto? {
+        val candidates = when (platform.kind) {
+            PlatformKind.MAC_OS -> listOf("latest-mac.yml")
+            PlatformKind.WINDOWS -> listOf("latest.yml")
+            PlatformKind.LINUX -> listOf("latest-linux.yml")
+            PlatformKind.UNKNOWN -> emptyList()
+        }
+        if (candidates.isEmpty()) return null
+
+        return candidates
+            .asSequence()
+            .mapNotNull { candidate ->
+                assets.firstOrNull { asset ->
+                    asset.name.equals(candidate, ignoreCase = true)
+                }
+            }
+            .firstOrNull()
+    }
+
+    private fun fetchTextAsset(url: String): String {
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .timeout(Duration.ofSeconds(10))
+            .header("Accept", "application/octet-stream")
+            .header("User-Agent", "ADBDeck-Updater")
+            .GET()
+            .build()
+
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        if (response.statusCode() !in 200..299) {
+            error("Update metadata download failed: HTTP ${response.statusCode()}")
+        }
+        return response.body()
+    }
+
+    private fun parseSha512ByFileName(content: String): Map<String, String> {
+        val map = LinkedHashMap<String, String>()
+        var pendingFileName: String? = null
+
+        content.lineSequence().forEach { line ->
+            val trimmed = line.trim()
+
+            if (trimmed.startsWith("- url:")) {
+                pendingFileName = trimmed.substringAfter(":").trim().trim('"', '\'')
+                return@forEach
+            }
+
+            if (pendingFileName != null && trimmed.startsWith("sha512:")) {
+                val hash = trimmed.substringAfter(":").trim().trim('"', '\'')
+                if (hash.isNotBlank()) {
+                    map[pendingFileName!!] = hash
+                }
+                pendingFileName = null
+            }
         }
 
-        return bestAsset?.downloadUrl ?: releasePageUrl
+        return map
     }
 
     private fun scoreAsset(assetName: String, platform: DetectedPlatform): Int {

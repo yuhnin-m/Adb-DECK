@@ -24,11 +24,13 @@ sealed interface AppUpdateCheckResult {
      * @param version Целевая версия.
      * @param changelog Changelog (body релиза).
      * @param downloadUrl Ссылка на подходящий бинарный ассет (или страницу релиза).
+     * @param expectedSha512 Ожидаемый SHA-512 (base64) для проверки целостности скачанного файла.
      */
     data class UpdateAvailable(
         val version: String,
         val changelog: String,
         val downloadUrl: String,
+        val expectedSha512: String? = null,
     ) : AppUpdateCheckResult
 
     /**

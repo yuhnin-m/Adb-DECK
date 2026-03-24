@@ -5,9 +5,14 @@ import adbdeck.feature.update.generated.resources.app_update_details_cancelled
 import adbdeck.feature.update.generated.resources.app_update_details_download_start
 import adbdeck.feature.update.generated.resources.app_update_details_installing
 import adbdeck.feature.update.generated.resources.app_update_details_restarting
+import adbdeck.feature.update.generated.resources.app_update_details_verifying
+import adbdeck.feature.update.generated.resources.app_update_error_checksum_mismatch
 import adbdeck.feature.update.generated.resources.app_update_error_install_failed
+import adbdeck.feature.update.generated.resources.app_update_error_preflight_failed
+import adbdeck.feature.update.generated.resources.app_update_error_preflight_unknown_reason
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.update.download.AppUpdateDownloader
+import com.adbdeck.feature.update.download.Sha512ChecksumVerifier
 import com.adbdeck.feature.update.install.AppUpdateInstaller
 import com.adbdeck.feature.update.logging.AppUpdateLogger
 import com.adbdeck.feature.update.logging.NoOpAppUpdateLogger
@@ -147,6 +152,24 @@ class DefaultAppUpdateComponent(
         update: AvailableUpdate,
         downloadUrl: String,
     ) {
+        val preflightResult = runCatchingPreserveCancellation {
+            appUpdateInstaller.preflightInstall(downloadUrl)
+        }
+        if (preflightResult.isFailure) {
+            val error = preflightResult.exceptionOrNull()
+            appUpdateLogger.error("In-app update preflight failed.", error)
+            val reason = error
+                ?.message
+                ?.trim()
+                .orEmpty()
+                .ifBlank { getString(Res.string.app_update_error_preflight_unknown_reason) }
+            _state.value = buildErrorState(
+                update = update,
+                details = getString(Res.string.app_update_error_preflight_failed, reason),
+            )
+            return
+        }
+
         _state.value = AppUpdateUiState(
             visible = true,
             blocking = true,
@@ -173,6 +196,35 @@ class DefaultAppUpdateComponent(
                         current.copy(progress = progress ?: current.progress)
                     }
                 }
+            }
+
+            val expectedSha512 = update.expectedSha512
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+            if (expectedSha512 != null) {
+                _state.update { current ->
+                    current.copy(
+                        progress = null,
+                        details = getString(Res.string.app_update_details_verifying),
+                        canCancel = false,
+                    )
+                }
+
+                val checksumVerified = Sha512ChecksumVerifier.verify(
+                    file = downloadedPackage.file,
+                    expectedSha512Base64 = expectedSha512,
+                )
+                if (!checksumVerified) {
+                    appUpdateLogger.error(
+                        "Checksum mismatch for downloaded update package: ${downloadedPackage.file}",
+                    )
+                    _state.value = buildErrorState(
+                        update = update,
+                        details = getString(Res.string.app_update_error_checksum_mismatch),
+                    )
+                    return
+                }
+                appUpdateLogger.info("Downloaded update package checksum verified successfully.")
             }
 
             _state.update { current ->
@@ -231,6 +283,7 @@ class DefaultAppUpdateComponent(
             version = mockedVersion,
             changelog = readMockChangelog(),
             downloadUrl = readMockUrl(),
+            expectedSha512 = null,
         )
         showAvailableUpdateDialog(mockedUpdate)
         return true
@@ -245,6 +298,7 @@ class DefaultAppUpdateComponent(
                         version = update.version,
                         changelog = update.changelog,
                         downloadUrl = update.downloadUrl,
+                        expectedSha512 = update.expectedSha512,
                     )
                 )
                 UpdateCheckOutcome.AVAILABLE
@@ -389,6 +443,7 @@ class DefaultAppUpdateComponent(
         val version: String,
         val changelog: String,
         val downloadUrl: String?,
+        val expectedSha512: String?,
     )
 
     private companion object {

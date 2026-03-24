@@ -29,6 +29,21 @@ class MacOsZipAppUpdateInstaller(
         return isMacOs() && downloadUrl.lowercase().endsWith(".zip")
     }
 
+    override suspend fun preflightInstall(downloadUrl: String): Unit = withContext(Dispatchers.IO) {
+        check(canInstallInApp(downloadUrl)) {
+            "In-app update is not supported for current platform or asset URL."
+        }
+
+        val currentAppBundle = resolveCurrentAppBundlePath()
+            ?: error("Cannot locate current .app bundle path for self-update")
+        check(Files.isDirectory(currentAppBundle)) {
+            "Current app bundle path is not a directory: $currentAppBundle"
+        }
+
+        verifyTargetDirectoryWritable(currentAppBundle)
+        appUpdateLogger.info("Update preflight passed for app bundle: $currentAppBundle")
+    }
+
     override suspend fun installFromDownloadedPackage(packageFile: Path): Unit = withContext(Dispatchers.IO) {
         check(isMacOs()) { "In-app installer is only supported on macOS." }
         check(packageFile.exists()) { "Update package file does not exist: $packageFile" }
@@ -36,6 +51,9 @@ class MacOsZipAppUpdateInstaller(
 
         val currentAppBundle = resolveCurrentAppBundlePath()
             ?: error("Cannot locate current .app bundle path for self-update")
+        check(Files.isDirectory(currentAppBundle)) {
+            "Current app bundle path is not a directory: $currentAppBundle"
+        }
 
         val stagingDir = Files.createTempDirectory("adbdeck-update-staging-")
         val installScript = try {
@@ -63,6 +81,25 @@ class MacOsZipAppUpdateInstaller(
         }
 
         appUpdateLogger.info("macOS update install script started: $installScript")
+    }
+
+    private fun verifyTargetDirectoryWritable(currentAppBundle: Path) {
+        val targetDirectory = currentAppBundle.parent
+            ?: error("Cannot resolve target directory for app bundle: $currentAppBundle")
+
+        check(Files.isDirectory(targetDirectory)) {
+            "App bundle target directory is missing: $targetDirectory"
+        }
+        check(Files.isWritable(targetDirectory)) {
+            "No write access to app bundle directory: $targetDirectory"
+        }
+
+        val probeFile = Files.createTempFile(
+            targetDirectory,
+            ".adbdeck-update-permission-check-",
+            ".tmp",
+        )
+        Files.deleteIfExists(probeFile)
     }
 
     private fun unpackWithDitto(zipFile: Path, targetDir: Path) {
