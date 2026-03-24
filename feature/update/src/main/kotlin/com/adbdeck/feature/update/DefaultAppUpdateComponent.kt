@@ -1,37 +1,54 @@
 package com.adbdeck.feature.update
 
-import com.adbdeck.feature.update.provider.AppUpdateCheckResult
-import com.adbdeck.feature.update.provider.AppUpdateProvider
+import adbdeck.feature.update.generated.resources.Res
+import adbdeck.feature.update.generated.resources.app_update_details_cancelled
+import adbdeck.feature.update.generated.resources.app_update_details_download_start
+import adbdeck.feature.update.generated.resources.app_update_details_installing
+import adbdeck.feature.update.generated.resources.app_update_details_restarting
+import adbdeck.feature.update.generated.resources.app_update_error_install_failed
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
+import com.adbdeck.feature.update.download.AppUpdateDownloader
+import com.adbdeck.feature.update.install.AppUpdateInstaller
 import com.adbdeck.feature.update.logging.AppUpdateLogger
 import com.adbdeck.feature.update.logging.NoOpAppUpdateLogger
-import com.adbdeck.core.utils.runCatchingPreserveCancellation
+import com.adbdeck.feature.update.provider.AppUpdateCheckResult
+import com.adbdeck.feature.update.provider.AppUpdateProvider
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
 import java.awt.Desktop
 import java.net.URI
+import kotlin.system.exitProcess
 
 /**
  * Базовая реализация [AppUpdateComponent].
  *
- * На текущем этапе компонент поддерживает mock-режим обновления через env-переменные:
+ * Поддерживаемые сценарии:
+ * - проверка обновлений через [appUpdateProvider];
+ * - in-app установка обновления (скачивание ZIP + запуск platform installer);
+ * - fallback в браузер, если in-app установка недоступна.
+ *
+ * Mock-режим обновления через env-переменные:
  * - `ADBDECK_UPDATE_MOCK_VERSION`
  * - `ADBDECK_UPDATE_MOCK_CHANGELOG`
  * - `ADBDECK_UPDATE_MOCK_URL`
- *
- * Приоритет проверки:
- * 1. Реальный провайдер [appUpdateProvider]
- * 2. Mock-режим через env (fallback для локальной проверки)
  */
 class DefaultAppUpdateComponent(
     componentContext: ComponentContext,
     private val appUpdateProvider: AppUpdateProvider,
     private val currentVersion: String,
+    private val appUpdateDownloader: AppUpdateDownloader,
+    private val appUpdateInstaller: AppUpdateInstaller,
     private val appUpdateLogger: AppUpdateLogger = NoOpAppUpdateLogger,
+    private val terminateApplicationForUpdate: () -> Unit = { exitProcess(0) },
 ) : AppUpdateComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -40,7 +57,9 @@ class DefaultAppUpdateComponent(
     override val state: StateFlow<AppUpdateUiState> = _state.asStateFlow()
 
     private var started: Boolean = false
-    private var downloadUrl: String? = null
+    private var installJob: Job? = null
+    private var installCancelledByUser: Boolean = false
+    private var availableUpdate: AvailableUpdate? = null
 
     override fun onStart() {
         if (started) return
@@ -69,39 +88,151 @@ class DefaultAppUpdateComponent(
     }
 
     override fun onInstallUpdateNow() {
-        val targetUrl = downloadUrl ?: run {
+        if (installJob?.isActive == true) return
+
+        val update = availableUpdate ?: run {
+            appUpdateLogger.warn("Install update requested but no update is currently available.")
+            return
+        }
+
+        val targetUrl = update.downloadUrl ?: run {
             appUpdateLogger.warn("Install update requested but download URL is missing.")
             return
         }
-        openInBrowser(targetUrl)
-        _state.value = AppUpdateUiState.Hidden
+
+        if (!appUpdateInstaller.canInstallInApp(targetUrl)) {
+            appUpdateLogger.info("In-app install is not supported for current platform/asset. URL: $targetUrl")
+            openInBrowser(targetUrl)
+            _state.value = AppUpdateUiState.Hidden
+            return
+        }
+
+        installCancelledByUser = false
+        installJob = scope.launch {
+            runInAppInstall(update, targetUrl)
+        }
+    }
+
+    override fun onOpenUpdateDialog() {
+        val update = availableUpdate ?: return
+        if (installJob?.isActive == true) {
+            _state.update { it.copy(visible = true) }
+            return
+        }
+        _state.value = buildAvailableState(
+            update = update,
+            visible = true,
+            details = null,
+        )
     }
 
     override fun onCancelUpdate() {
-        _state.value = AppUpdateUiState.Hidden
+        val activeInstall = installJob
+        if (activeInstall?.isActive == true && _state.value.phase == AppUpdatePhase.DOWNLOADING) {
+            installCancelledByUser = true
+            activeInstall.cancel()
+            return
+        }
+
+        if (_state.value.canDismiss) {
+            onDismissUpdate()
+        }
     }
 
     override fun onDismissUpdate() {
-        _state.update { it.copy(visible = false, canDismiss = false, canCancel = false, canInstallNow = false) }
+        _state.update { it.copy(visible = false) }
+    }
+
+    private suspend fun runInAppInstall(
+        update: AvailableUpdate,
+        downloadUrl: String,
+    ) {
+        _state.value = AppUpdateUiState(
+            visible = true,
+            blocking = true,
+            phase = AppUpdatePhase.DOWNLOADING,
+            currentVersion = currentVersion,
+            targetVersion = update.version,
+            progress = 0f,
+            details = getString(Res.string.app_update_details_download_start),
+            changelog = update.changelog,
+            canInstallNow = false,
+            canCancel = true,
+            canDismiss = false,
+        )
+
+        try {
+            val downloadedPackage = appUpdateDownloader.download(
+                url = downloadUrl,
+                targetVersion = update.version,
+            ) { progress ->
+                _state.update { current ->
+                    if (current.phase != AppUpdatePhase.DOWNLOADING) {
+                        current
+                    } else {
+                        current.copy(progress = progress ?: current.progress)
+                    }
+                }
+            }
+
+            _state.update { current ->
+                current.copy(
+                    phase = AppUpdatePhase.INSTALLING,
+                    progress = null,
+                    details = getString(Res.string.app_update_details_installing),
+                    canCancel = false,
+                    canDismiss = false,
+                    blocking = true,
+                )
+            }
+
+            appUpdateInstaller.installFromDownloadedPackage(downloadedPackage.file)
+
+            _state.update { current ->
+                current.copy(
+                    phase = AppUpdatePhase.RESTARTING,
+                    details = getString(Res.string.app_update_details_restarting),
+                    canCancel = false,
+                    canDismiss = false,
+                    canInstallNow = false,
+                    blocking = true,
+                )
+            }
+
+            delay(350)
+            terminateApplicationForUpdate()
+        } catch (cancellation: CancellationException) {
+            if (installCancelledByUser) {
+                _state.value = buildAvailableState(
+                    update = update,
+                    visible = true,
+                    details = getString(Res.string.app_update_details_cancelled),
+                )
+            } else {
+                throw cancellation
+            }
+        } catch (error: Throwable) {
+            appUpdateLogger.error("In-app update installation failed.", error)
+            _state.value = buildErrorState(
+                update = update,
+                details = getString(Res.string.app_update_error_install_failed),
+            )
+        } finally {
+            installJob = null
+            installCancelledByUser = false
+        }
     }
 
     private fun tryShowMockFallback(): Boolean {
         val mockedVersion = readMockVersion() ?: return false
         if (mockedVersion == currentVersion) return false
 
-        val mockedUrl = readMockUrl()
-        downloadUrl = mockedUrl
-        _state.value = AppUpdateUiState(
-            visible = true,
-            blocking = false,
-            phase = AppUpdatePhase.AVAILABLE,
-            currentVersion = currentVersion,
-            targetVersion = mockedVersion,
+        val mockedUpdate = AvailableUpdate(
+            version = mockedVersion,
             changelog = readMockChangelog(),
-            canInstallNow = mockedUrl != null,
-            canCancel = false,
-            canDismiss = true,
+            downloadUrl = readMockUrl(),
         )
+        showAvailableUpdateDialog(mockedUpdate)
         return true
     }
 
@@ -109,9 +240,16 @@ class DefaultAppUpdateComponent(
         return when (val update = appUpdateProvider.checkForUpdate(currentVersion)) {
             is AppUpdateCheckResult.UpToDate -> UpdateCheckOutcome.UP_TO_DATE
             is AppUpdateCheckResult.UpdateAvailable -> {
-                showAvailableUpdateDialog(update)
+                showAvailableUpdateDialog(
+                    AvailableUpdate(
+                        version = update.version,
+                        changelog = update.changelog,
+                        downloadUrl = update.downloadUrl,
+                    )
+                )
                 UpdateCheckOutcome.AVAILABLE
             }
+
             is AppUpdateCheckResult.Failed -> {
                 val reason = update.reason.ifBlank { "Failed to check updates." }
                 val mockShown = tryShowMockFallback()
@@ -147,16 +285,49 @@ class DefaultAppUpdateComponent(
         }
     }
 
-    private fun showAvailableUpdateDialog(update: AppUpdateCheckResult.UpdateAvailable) {
-        downloadUrl = update.downloadUrl
-        _state.value = AppUpdateUiState(
+    private fun showAvailableUpdateDialog(update: AvailableUpdate) {
+        availableUpdate = update
+        _state.value = buildAvailableState(
+            update = update,
             visible = true,
+            details = null,
+        )
+    }
+
+    private fun buildAvailableState(
+        update: AvailableUpdate,
+        visible: Boolean,
+        details: String?,
+    ): AppUpdateUiState {
+        return AppUpdateUiState(
+            visible = visible,
             blocking = false,
             phase = AppUpdatePhase.AVAILABLE,
             currentVersion = currentVersion,
             targetVersion = update.version,
+            progress = null,
+            details = details,
             changelog = update.changelog,
-            canInstallNow = true,
+            canInstallNow = update.downloadUrl != null,
+            canCancel = false,
+            canDismiss = true,
+        )
+    }
+
+    private fun buildErrorState(
+        update: AvailableUpdate,
+        details: String,
+    ): AppUpdateUiState {
+        return AppUpdateUiState(
+            visible = true,
+            blocking = false,
+            phase = AppUpdatePhase.ERROR,
+            currentVersion = currentVersion,
+            targetVersion = update.version,
+            progress = null,
+            details = details,
+            changelog = update.changelog,
+            canInstallNow = update.downloadUrl != null,
             canCancel = false,
             canDismiss = true,
         )
@@ -213,6 +384,12 @@ class DefaultAppUpdateComponent(
         val fallback = if (mockFallbackUsed) " Mock fallback was applied." else ""
         return "App update check failed ($source): $reason.$fallback"
     }
+
+    private data class AvailableUpdate(
+        val version: String,
+        val changelog: String,
+        val downloadUrl: String?,
+    )
 
     private companion object {
         private const val MOCK_VERSION_ENV = "ADBDECK_UPDATE_MOCK_VERSION"

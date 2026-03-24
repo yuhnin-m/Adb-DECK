@@ -29,6 +29,9 @@ interface AppUpdateComponent {
     /** Пользователь нажал "Install now". */
     fun onInstallUpdateNow()
 
+    /** Пользователь открыл диалог доступного обновления из баннера/настроек. */
+    fun onOpenUpdateDialog()
+
     /** Пользователь нажал "Cancel update". */
     fun onCancelUpdate()
 

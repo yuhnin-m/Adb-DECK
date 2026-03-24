@@ -11,6 +11,10 @@ import com.adbdeck.app.navigation.RootChildFactory
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.feature.update.AppUpdateComponent
 import com.adbdeck.feature.update.DefaultAppUpdateComponent
+import com.adbdeck.feature.update.download.AppUpdateDownloader
+import com.adbdeck.feature.update.download.HttpAppUpdateDownloader
+import com.adbdeck.feature.update.install.AppUpdateInstaller
+import com.adbdeck.feature.update.install.MacOsZipAppUpdateInstaller
 import com.adbdeck.feature.update.logging.AppUpdateLogger
 import com.adbdeck.feature.update.logging.JvmAppUpdateLogger
 import com.adbdeck.feature.update.provider.AppUpdateProvider
@@ -186,11 +190,21 @@ val appModule = module {
         JvmAppUpdateLogger()
     }
 
+    single<AppUpdateDownloader> {
+        HttpAppUpdateDownloader(appUpdateLogger = get())
+    }
+
+    single<AppUpdateInstaller> {
+        MacOsZipAppUpdateInstaller(appUpdateLogger = get())
+    }
+
     factory<AppUpdateComponent> { (componentContext: ComponentContext) ->
         DefaultAppUpdateComponent(
             componentContext = componentContext,
             appUpdateProvider = get(),
             currentVersion = APP_VERSION,
+            appUpdateDownloader = get(),
+            appUpdateInstaller = get(),
             appUpdateLogger = get(),
         )
     }

@@ -151,7 +151,11 @@ class GithubReleasesUpdateProvider(
         if (platform.archTokens.any(assetName::contains)) score += 15
 
         score += when (platform.kind) {
-            PlatformKind.MAC_OS -> if (assetName.endsWith(".dmg")) 40 else 0
+            PlatformKind.MAC_OS -> when {
+                assetName.endsWith(".zip") -> 45
+                assetName.endsWith(".dmg") -> 35
+                else -> 0
+            }
             PlatformKind.WINDOWS -> if (assetName.endsWith(".msi")) 40 else 0
             PlatformKind.LINUX -> when {
                 assetName.endsWith(".deb") -> 35

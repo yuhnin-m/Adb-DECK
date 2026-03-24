@@ -5,6 +5,11 @@
     <string name="app_update_action_hide">Hide</string>
     <string name="app_update_action_cancel">Cancel update</string>
     <string name="app_update_action_install_now">Install now</string>
+    <string name="app_update_details_download_start">Preparing update package download...</string>
+    <string name="app_update_details_installing">Installing downloaded update package...</string>
+    <string name="app_update_details_restarting">Closing app to complete update...</string>
+    <string name="app_update_details_cancelled">Update download cancelled.</string>
+    <string name="app_update_error_install_failed">Failed to install update. You can download and install it manually.</string>
 
     <string name="app_update_phase_checking">Checking for updates...</string>
     <string name="app_update_phase_available">Update available</string>

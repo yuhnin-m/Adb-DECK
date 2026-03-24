@@ -5,6 +5,11 @@
     <string name="app_update_action_hide">Скрыть</string>
     <string name="app_update_action_cancel">Отменить обновление</string>
     <string name="app_update_action_install_now">Установить сейчас</string>
+    <string name="app_update_details_download_start">Подготавливаем загрузку пакета обновления...</string>
+    <string name="app_update_details_installing">Устанавливаем загруженный пакет обновления...</string>
+    <string name="app_update_details_restarting">Закрываем приложение для завершения обновления...</string>
+    <string name="app_update_details_cancelled">Загрузка обновления отменена.</string>
+    <string name="app_update_error_install_failed">Не удалось установить обновление. Вы можете скачать и установить его вручную.</string>
 
     <string name="app_update_phase_checking">Проверяем обновления...</string>
     <string name="app_update_phase_available">Доступно обновление</string>
