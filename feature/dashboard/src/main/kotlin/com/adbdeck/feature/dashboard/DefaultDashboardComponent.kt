@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
  * @param onNavigateToContacts Callback навигации на экран Contacts.
  * @param onNavigateToSystemMonitor Callback навигации на экран System Monitor.
  * @param onNavigateToSettings Callback навигации на экран настроек.
+ * @param onOpenAppUpdate Callback открытия доступного обновления приложения.
  * @param availableAppUpdateFlow Flow с данными о доступном обновлении приложения для Dashboard-баннера.
  * @param openAdbShellInTerminal Launcher системного терминала для быстрых shell-действий.
  */
@@ -71,6 +72,7 @@ class DefaultDashboardComponent(
     private val onNavigateToContacts: () -> Unit,
     private val onNavigateToSystemMonitor: () -> Unit,
     private val onNavigateToSettings: () -> Unit,
+    private val openAppUpdateAction: () -> Unit = {},
     private val openAdbShellInTerminal: (adbPath: String, deviceId: String?, root: Boolean) -> Unit = TerminalLauncher::openAdbShell,
 ) : DashboardComponent, ComponentContext by componentContext {
 
@@ -275,6 +277,8 @@ class DefaultDashboardComponent(
         dismissedAppUpdateVersion = _state.value.appUpdateBanner?.version
         _state.update { it.copy(appUpdateBanner = null) }
     }
+
+    override fun onOpenAppUpdate() = openAppUpdateAction()
 
     private fun observeDevices() {
         scope.launch {

@@ -19,6 +19,7 @@ interface RootChildFactory {
         openPackageInLogcat: (String) -> Unit,
         openDeepLinkFromNotifications: (String) -> Unit,
         openPathInFileExplorer: (String) -> Unit,
+        openAppUpdate: () -> Unit,
         dashboardAppUpdateFlow: Flow<DashboardAppUpdateBanner?>,
         checkForAppUpdates: suspend () -> Result<Boolean>,
     ): RootComponent.Child

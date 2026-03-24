@@ -101,7 +101,14 @@ compose.desktop {
         }
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
+            targetFormats(
+                TargetFormat.Dmg,
+                TargetFormat.Msi,
+                TargetFormat.Deb,
+                TargetFormat.Rpm,
+            )
+            // macOS update ZIP is produced in CI from the built .app bundle
+            // and published alongside DMG assets.
             packageName = appPackageName
             packageVersion = appVersion
             description = "$appDisplayName desktop tool for ADB"

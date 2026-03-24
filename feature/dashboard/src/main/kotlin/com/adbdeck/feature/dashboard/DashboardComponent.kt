@@ -96,4 +96,7 @@ interface DashboardComponent {
 
     /** Скрыть баннер доступного обновления приложения. */
     fun onDismissAppUpdateBanner()
+
+    /** Открыть страницу доступного обновления приложения. */
+    fun onOpenAppUpdate()
 }

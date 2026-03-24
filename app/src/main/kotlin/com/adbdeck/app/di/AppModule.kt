@@ -11,6 +11,8 @@ import com.adbdeck.app.navigation.RootChildFactory
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.feature.update.AppUpdateComponent
 import com.adbdeck.feature.update.DefaultAppUpdateComponent
+import com.adbdeck.feature.update.logging.AppUpdateLogger
+import com.adbdeck.feature.update.logging.JvmAppUpdateLogger
 import com.adbdeck.feature.update.provider.AppUpdateProvider
 import com.adbdeck.feature.update.provider.GithubReleasesUpdateProvider
 import com.arkivanov.decompose.ComponentContext
@@ -180,11 +182,16 @@ val appModule = module {
         GithubReleasesUpdateProvider()
     }
 
+    single<AppUpdateLogger> {
+        JvmAppUpdateLogger()
+    }
+
     factory<AppUpdateComponent> { (componentContext: ComponentContext) ->
         DefaultAppUpdateComponent(
             componentContext = componentContext,
             appUpdateProvider = get(),
             currentVersion = APP_VERSION,
+            appUpdateLogger = get(),
         )
     }
 

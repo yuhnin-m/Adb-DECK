@@ -168,6 +168,7 @@ class DefaultRootComponent(
             openPackageInLogcat = ::openPackageInLogcat,
             openDeepLinkFromNotifications = ::openDeepLinkFromNotifications,
             openPathInFileExplorer = ::openPathInFileExplorer,
+            openAppUpdate = appUpdateComponent::onInstallUpdateNow,
             dashboardAppUpdateFlow = dashboardAppUpdateFlow,
             checkForAppUpdates = ::checkForAppUpdates,
         )

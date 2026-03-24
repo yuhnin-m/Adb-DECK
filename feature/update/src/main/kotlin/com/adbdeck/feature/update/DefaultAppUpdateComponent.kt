@@ -2,6 +2,8 @@ package com.adbdeck.feature.update
 
 import com.adbdeck.feature.update.provider.AppUpdateCheckResult
 import com.adbdeck.feature.update.provider.AppUpdateProvider
+import com.adbdeck.feature.update.logging.AppUpdateLogger
+import com.adbdeck.feature.update.logging.NoOpAppUpdateLogger
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
@@ -29,6 +31,7 @@ class DefaultAppUpdateComponent(
     componentContext: ComponentContext,
     private val appUpdateProvider: AppUpdateProvider,
     private val currentVersion: String,
+    private val appUpdateLogger: AppUpdateLogger = NoOpAppUpdateLogger,
 ) : AppUpdateComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -44,22 +47,32 @@ class DefaultAppUpdateComponent(
         started = true
 
         scope.launch {
-            runCatchingPreserveCancellation {
-                performUpdateCheck(failSilently = true)
-            }
+            runCatchingPreserveCancellation { performUpdateCheck(failSilently = true, isManual = false) }
+                .onFailure { error ->
+                    appUpdateLogger.error(
+                        message = "Unexpected error during startup update check.",
+                        throwable = error,
+                    )
+                }
         }
     }
 
     override suspend fun checkForUpdatesNow(): Boolean {
-        return when (performUpdateCheck(failSilently = false)) {
+        return when (performUpdateCheck(failSilently = false, isManual = true)) {
             UpdateCheckOutcome.AVAILABLE -> true
             UpdateCheckOutcome.UP_TO_DATE -> false
-            UpdateCheckOutcome.FAILED -> error("Updates check failed")
+            UpdateCheckOutcome.FAILED -> {
+                appUpdateLogger.error("Manual update check finished with FAILED result.")
+                error("Updates check failed")
+            }
         }
     }
 
     override fun onInstallUpdateNow() {
-        val targetUrl = downloadUrl ?: return
+        val targetUrl = downloadUrl ?: run {
+            appUpdateLogger.warn("Install update requested but download URL is missing.")
+            return
+        }
         openInBrowser(targetUrl)
         _state.value = AppUpdateUiState.Hidden
     }
@@ -92,7 +105,7 @@ class DefaultAppUpdateComponent(
         return true
     }
 
-    private suspend fun performUpdateCheck(failSilently: Boolean): UpdateCheckOutcome {
+    private suspend fun performUpdateCheck(failSilently: Boolean, isManual: Boolean): UpdateCheckOutcome {
         return when (val update = appUpdateProvider.checkForUpdate(currentVersion)) {
             is AppUpdateCheckResult.UpToDate -> UpdateCheckOutcome.UP_TO_DATE
             is AppUpdateCheckResult.UpdateAvailable -> {
@@ -100,15 +113,35 @@ class DefaultAppUpdateComponent(
                 UpdateCheckOutcome.AVAILABLE
             }
             is AppUpdateCheckResult.Failed -> {
+                val reason = update.reason.ifBlank { "Failed to check updates." }
                 val mockShown = tryShowMockFallback()
                 if (mockShown) {
+                    appUpdateLogger.warn(
+                        message = buildErrorLogMessage(
+                            reason = reason,
+                            isManual = isManual,
+                            mockFallbackUsed = true,
+                        ),
+                    )
                     UpdateCheckOutcome.AVAILABLE
                 } else if (failSilently) {
+                    appUpdateLogger.error(
+                        message = buildErrorLogMessage(
+                            reason = reason,
+                            isManual = isManual,
+                            mockFallbackUsed = false,
+                        ),
+                    )
                     UpdateCheckOutcome.FAILED
                 } else {
-                    throw IllegalStateException(
-                        update.reason.ifBlank { "Failed to check updates." },
+                    appUpdateLogger.error(
+                        message = buildErrorLogMessage(
+                            reason = reason,
+                            isManual = isManual,
+                            mockFallbackUsed = false,
+                        ),
                     )
+                    throw IllegalStateException(reason)
                 }
             }
         }
@@ -154,13 +187,31 @@ class DefaultAppUpdateComponent(
     }
 
     private fun openInBrowser(url: String) {
-        if (!Desktop.isDesktopSupported()) return
+        if (!Desktop.isDesktopSupported()) {
+            appUpdateLogger.warn("Desktop integration is not supported. Cannot open URL: $url")
+            return
+        }
         runCatching {
             val desktop = Desktop.getDesktop()
-            if (desktop.isSupported(Desktop.Action.BROWSE)) {
-                desktop.browse(URI(url))
+            if (!desktop.isSupported(Desktop.Action.BROWSE)) {
+                appUpdateLogger.warn("Desktop browse action is not supported. Cannot open URL: $url")
+                return@runCatching
             }
+            desktop.browse(URI(url))
+            appUpdateLogger.info("Opened update URL in browser: $url")
+        }.onFailure { error ->
+            appUpdateLogger.error("Failed to open update URL in browser: $url", error)
         }
+    }
+
+    private fun buildErrorLogMessage(
+        reason: String,
+        isManual: Boolean,
+        mockFallbackUsed: Boolean,
+    ): String {
+        val source = if (isManual) "manual" else "startup"
+        val fallback = if (mockFallbackUsed) " Mock fallback was applied." else ""
+        return "App update check failed ($source): $reason.$fallback"
     }
 
     private companion object {

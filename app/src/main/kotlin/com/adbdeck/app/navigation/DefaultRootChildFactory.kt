@@ -68,6 +68,7 @@ class DefaultRootChildFactory(
         openPackageInLogcat: (String) -> Unit,
         openDeepLinkFromNotifications: (String) -> Unit,
         openPathInFileExplorer: (String) -> Unit,
+        openAppUpdate: () -> Unit,
         dashboardAppUpdateFlow: Flow<DashboardAppUpdateBanner?>,
         checkForAppUpdates: suspend () -> Result<Boolean>,
     ): RootComponent.Child = when (screen) {
@@ -93,6 +94,7 @@ class DefaultRootChildFactory(
                 onNavigateToContacts = { navigate(Screen.Contacts) },
                 onNavigateToSystemMonitor = { navigate(Screen.SystemMonitor) },
                 onNavigateToSettings = { navigate(Screen.Settings) },
+                openAppUpdateAction = openAppUpdate,
             )
         )
 

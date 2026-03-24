@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.AdbBanner
 import com.adbdeck.core.ui.AdbBannerType
+import com.adbdeck.core.ui.buttons.AdbOutlinedButton
 import com.adbdeck.feature.dashboard.DashboardAdbCheckState
 import com.adbdeck.feature.dashboard.DashboardAdbServerAction
 import com.adbdeck.feature.dashboard.DashboardAdbServerState
@@ -173,12 +175,23 @@ private fun AppUpdateBannerHost(component: DashboardComponent) {
     val version = uiState.version?.takeIf { it.isNotBlank() } ?: return
     val message = stringResource(Res.string.dashboard_app_update_available, version)
     val onDismiss = remember(component) { { component.onDismissAppUpdateBanner() } }
-    AdbBanner(
-        message = message,
-        type = AdbBannerType.INFO,
-        onDismiss = onDismiss,
+    val onOpenAppUpdate = remember(component) { { component.onOpenAppUpdate() } }
+    Row(
         modifier = Modifier.fillMaxWidth(),
-    )
+        horizontalArrangement = Arrangement.spacedBy(Dimensions.paddingSmall),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AdbBanner(
+            message = message,
+            type = AdbBannerType.INFO,
+            onDismiss = onDismiss,
+            modifier = Modifier.weight(1f),
+        )
+        AdbOutlinedButton(
+            onClick = onOpenAppUpdate,
+            text = stringResource(Res.string.dashboard_app_update_open_action),
+        )
+    }
 }
 
 @Composable

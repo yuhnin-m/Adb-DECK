@@ -202,6 +202,7 @@ private class PreviewDashboardComponent : DashboardComponent {
     override fun onDismissAdbServerError() = Unit
     override fun onDismissTerminalLaunchError() = Unit
     override fun onDismissAppUpdateBanner() = Unit
+    override fun onOpenAppUpdate() = Unit
 }
 
 private class PreviewDevicesComponent : DevicesComponent {

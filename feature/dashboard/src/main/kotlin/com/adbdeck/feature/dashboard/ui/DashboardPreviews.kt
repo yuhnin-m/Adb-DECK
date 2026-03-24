@@ -58,6 +58,7 @@ private class DashboardPreviewComponent : DashboardComponent {
     override fun onDismissAdbServerError() = Unit
     override fun onDismissTerminalLaunchError() = Unit
     override fun onDismissAppUpdateBanner() = Unit
+    override fun onOpenAppUpdate() = Unit
 }
 
 @Composable
