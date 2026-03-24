@@ -6,6 +6,13 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.value.Value
+import com.adbdeck.app.update.AppUpdateComponent
+import com.adbdeck.app.update.AppUpdatePhase
+import com.adbdeck.app.update.AppUpdateUiState
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
+import com.adbdeck.feature.dashboard.DashboardAppUpdateBanner
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 /**
  * Реализация [RootComponent].
@@ -20,9 +27,13 @@ import com.arkivanov.decompose.value.Value
 class DefaultRootComponent(
     componentContext: ComponentContext,
     private val rootChildFactory: RootChildFactory,
+    private val appUpdateComponent: AppUpdateComponent,
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Screen>()
+    private val dashboardAppUpdateFlow = appUpdateComponent.state
+        .map { it.toDashboardAppUpdateBanner() }
+        .distinctUntilChanged()
 
     override val childStack: Value<ChildStack<*, RootComponent.Child>> = childStack(
         source = navigation,
@@ -35,6 +46,10 @@ class DefaultRootComponent(
     override fun navigate(screen: Screen) {
         // bringToFront переиспользует уже созданный компонент, если он есть в стеке
         navigation.bringToFront(screen)
+    }
+
+    private suspend fun checkForAppUpdates(): Result<Boolean> = runCatchingPreserveCancellation {
+        appUpdateComponent.checkForUpdatesNow()
     }
 
     /**
@@ -153,5 +168,14 @@ class DefaultRootComponent(
             openPackageInLogcat = ::openPackageInLogcat,
             openDeepLinkFromNotifications = ::openDeepLinkFromNotifications,
             openPathInFileExplorer = ::openPathInFileExplorer,
+            dashboardAppUpdateFlow = dashboardAppUpdateFlow,
+            checkForAppUpdates = ::checkForAppUpdates,
         )
+}
+
+private fun AppUpdateUiState.toDashboardAppUpdateBanner(): DashboardAppUpdateBanner? {
+    if (phase != AppUpdatePhase.AVAILABLE) return null
+    val version = targetVersion?.trim().orEmpty()
+    if (version.isBlank()) return null
+    return DashboardAppUpdateBanner(version = version)
 }

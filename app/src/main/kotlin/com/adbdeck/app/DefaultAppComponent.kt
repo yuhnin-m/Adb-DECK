@@ -2,6 +2,7 @@ package com.adbdeck.app
 
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
+import com.adbdeck.app.update.AppUpdateComponent
 
 /**
  * Реализация [AppComponent].
@@ -11,4 +12,5 @@ import com.adbdeck.app.navigation.RootComponent
 class DefaultAppComponent(
     override val rootComponent: RootComponent,
     override val deviceSelectorComponent: DeviceSelectorComponent,
+    override val appUpdateComponent: AppUpdateComponent,
 ) : AppComponent

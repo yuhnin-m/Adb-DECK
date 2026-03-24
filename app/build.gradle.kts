@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.coroutines.core)
     // Provides Dispatchers.Main backed by Swing EDT — required for desktop coroutines
     implementation(libs.coroutines.swing)
+    implementation(libs.serialization.json)
 
     // Dependency Injection
     implementation(libs.koin.core)
@@ -57,7 +58,7 @@ dependencies {
 
 val appDisplayName = "ADB Deck"
 val appPackageName = "ADBDeck"
-val appVersion = "1.1.1"
+val appVersion = "1.1.0"
 val generatedAppBuildInfoDir = layout.buildDirectory.dir("generated/source/appBuildInfo/kotlin")
 
 val generateAppBuildInfo by tasks.registering {

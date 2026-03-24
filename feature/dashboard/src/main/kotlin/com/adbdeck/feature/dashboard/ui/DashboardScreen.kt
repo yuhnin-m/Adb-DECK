@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.designsystem.Dimensions
+import com.adbdeck.core.ui.AdbBanner
+import com.adbdeck.core.ui.AdbBannerType
 import com.adbdeck.feature.dashboard.DashboardAdbCheckState
 import com.adbdeck.feature.dashboard.DashboardAdbServerAction
 import com.adbdeck.feature.dashboard.DashboardAdbServerState
@@ -54,6 +57,7 @@ fun DashboardScreen(component: DashboardComponent) {
                 verticalArrangement = Arrangement.spacedBy(Dimensions.paddingMedium),
             ) {
                 HeaderSection()
+                AppUpdateBannerHost(component = component)
                 AdbCoreSectionHost(component = component)
                 QuickActionsSectionHost(component = component)
                 FeedbackSectionHost(component = component)
@@ -88,6 +92,10 @@ internal data class FeedbackUiState(
     val refreshError: String?,
     val adbServerError: String?,
     val isTerminalLaunchFailed: Boolean,
+)
+
+internal data class AppUpdateBannerUiState(
+    val version: String?,
 )
 
 @Composable
@@ -142,6 +150,34 @@ private fun AdbCoreSectionHost(component: DashboardComponent) {
         onStopServer = onStopServer,
         onRestartServer = onRestartServer,
         onOpenSettings = onOpenSettings,
+    )
+}
+
+@Composable
+private fun AppUpdateBannerHost(component: DashboardComponent) {
+    val initialUi = remember(component) {
+        AppUpdateBannerUiState(
+            version = component.state.value.appUpdateBanner?.version,
+        )
+    }
+    val uiState by remember(component) {
+        component.state
+            .map {
+                AppUpdateBannerUiState(
+                    version = it.appUpdateBanner?.version,
+                )
+            }
+            .distinctUntilChanged()
+    }.collectAsState(initial = initialUi)
+
+    val version = uiState.version?.takeIf { it.isNotBlank() } ?: return
+    val message = stringResource(Res.string.dashboard_app_update_available, version)
+    val onDismiss = remember(component) { { component.onDismissAppUpdateBanner() } }
+    AdbBanner(
+        message = message,
+        type = AdbBannerType.INFO,
+        onDismiss = onDismiss,
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 

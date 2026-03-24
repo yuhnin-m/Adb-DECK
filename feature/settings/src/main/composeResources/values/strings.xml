@@ -94,6 +94,8 @@
     <string name="settings_about_license_value">MIT</string>
     <string name="settings_about_platforms_label">Platforms</string>
     <string name="settings_about_platforms_value">macOS, Windows, Linux</string>
+    <string name="settings_about_updates_label">Updates</string>
+    <string name="settings_action_check_updates">Check for updates</string>
 
     <string name="settings_status_available">Available: %1$s</string>
     <string name="settings_status_not_found">Not found: %1$s</string>
@@ -102,6 +104,9 @@
     <string name="settings_feedback_saved">Settings saved</string>
     <string name="settings_feedback_save_failed">Failed to save settings</string>
     <string name="settings_feedback_logcat_save_failed">Failed to save Logcat settings</string>
+    <string name="settings_feedback_updates_available">Update found. Details are shown in update dialog.</string>
+    <string name="settings_feedback_updates_latest">You are using the latest version.</string>
+    <string name="settings_feedback_updates_check_failed">Failed to check updates: %1$s</string>
     <string name="settings_help_loading">Loading instruction…</string>
     <string name="settings_help_load_failed">Failed to load local instruction page</string>
     <string name="settings_feedback_adb_autodetect_not_found">ADB was not found in PATH or standard SDK paths</string>

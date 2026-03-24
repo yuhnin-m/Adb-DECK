@@ -72,7 +72,7 @@ fun SettingsScreen(component: SettingsComponent) {
                         component = component,
                         onOpenGuide = { openedHelpTool = it },
                     )
-                    AboutSection()
+                    AboutSectionHost(component = component)
                     SaveActionHost(component = component)
                 }
 

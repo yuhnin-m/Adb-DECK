@@ -8,6 +8,10 @@ import com.adbdeck.app.navigation.DefaultRootChildFactory
 import com.adbdeck.app.navigation.DefaultRootComponent
 import com.adbdeck.app.navigation.RootChildFactory
 import com.adbdeck.app.navigation.RootComponent
+import com.adbdeck.app.update.AppUpdateComponent
+import com.adbdeck.app.update.DefaultAppUpdateComponent
+import com.adbdeck.app.update.provider.AppUpdateProvider
+import com.adbdeck.app.update.provider.GithubReleasesUpdateProvider
 import com.arkivanov.decompose.ComponentContext
 import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.adb.BundletoolClient
@@ -156,10 +160,11 @@ val appModule = module {
     // ── App-level component graph ─────────────────────────────────
     singleOf(::DefaultRootChildFactory) bind RootChildFactory::class
 
-    factory<RootComponent> { (componentContext: ComponentContext) ->
+    factory<RootComponent> { (componentContext: ComponentContext, appUpdateComponent: AppUpdateComponent) ->
         DefaultRootComponent(
             componentContext = componentContext,
             rootChildFactory = get(),
+            appUpdateComponent = appUpdateComponent,
         )
     }
 
@@ -170,10 +175,23 @@ val appModule = module {
         )
     }
 
+    single<AppUpdateProvider> {
+        GithubReleasesUpdateProvider()
+    }
+
+    factory<AppUpdateComponent> { (componentContext: ComponentContext) ->
+        DefaultAppUpdateComponent(
+            componentContext = componentContext,
+            appUpdateProvider = get(),
+        )
+    }
+
     factory<AppComponent> { (componentContext: ComponentContext) ->
+        val appUpdateComponent = get<AppUpdateComponent> { parametersOf(componentContext) }
         DefaultAppComponent(
-            rootComponent = get<RootComponent> { parametersOf(componentContext) },
+            rootComponent = get<RootComponent> { parametersOf(componentContext, appUpdateComponent) },
             deviceSelectorComponent = get<DeviceSelectorComponent> { parametersOf(componentContext) },
+            appUpdateComponent = appUpdateComponent,
         )
     }
 }

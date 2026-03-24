@@ -48,6 +48,13 @@ data class DashboardAdbServerUiState(
 }
 
 /**
+ * UI-модель баннера о доступном обновлении приложения.
+ */
+data class DashboardAppUpdateBanner(
+    val version: String,
+)
+
+/**
  * Состояние экрана Dashboard.
  *
  * @param adbCheckState     Статус последней проверки доступности adb.
@@ -55,6 +62,7 @@ data class DashboardAdbServerUiState(
  * @param deviceCount       Количество устройств в актуальном [com.adbdeck.core.adb.api.device.DeviceManager.devicesFlow].
  * @param refreshError      Сообщение ошибки последнего обновления устройств.
  * @param isTerminalLaunchFailed `true`, если запуск shell-терминала завершился ошибкой.
+ * @param appUpdateBanner   Баннер о доступном обновлении приложения.
  * @param adbServer         Состояние секции ADB server.
  */
 data class DashboardState(
@@ -63,5 +71,6 @@ data class DashboardState(
     val deviceCount: Int = 0,
     val refreshError: String? = null,
     val isTerminalLaunchFailed: Boolean = false,
+    val appUpdateBanner: DashboardAppUpdateBanner? = null,
     val adbServer: DashboardAdbServerUiState = DashboardAdbServerUiState(),
 )

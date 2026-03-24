@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
+import com.adbdeck.app.update.AppUpdatePhase
+import com.adbdeck.app.update.AppUpdateUiState
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.contacts.Contact
@@ -199,6 +201,7 @@ private class PreviewDashboardComponent : DashboardComponent {
     override fun onDismissRefreshError() = Unit
     override fun onDismissAdbServerError() = Unit
     override fun onDismissTerminalLaunchError() = Unit
+    override fun onDismissAppUpdateBanner() = Unit
 }
 
 private class PreviewDevicesComponent : DevicesComponent {
@@ -307,6 +310,7 @@ private class PreviewSettingsComponent : SettingsComponent {
     override fun onCheckBundletool() = Unit
     override fun onCheckScrcpy() = Unit
     override fun onDismissFeedback() = Unit
+    override fun onCheckForUpdates() = Unit
     override fun onThemeChanged(theme: AppTheme) = Unit
     override fun onLanguageChanged(language: AppLanguage) = Unit
     override fun onLogcatCompactModeChanged(value: Boolean) = Unit
@@ -855,6 +859,17 @@ private fun AppComponentPreviewContainer(
 
 @Composable
 private fun AppContentPreviewBody(isDarkTheme: Boolean) {
+    AppContentPreviewBody(
+        isDarkTheme = isDarkTheme,
+        appUpdateState = AppUpdateUiState.Hidden,
+    )
+}
+
+@Composable
+private fun AppContentPreviewBody(
+    isDarkTheme: Boolean,
+    appUpdateState: AppUpdateUiState,
+) {
     val root = remember { PreviewRootComponent(Screen.Dashboard) }
     val selector = remember { PreviewDeviceSelectorComponent() }
     val processHistoryStore = remember { InMemoryProcessHistoryStore() }
@@ -865,6 +880,10 @@ private fun AppContentPreviewBody(isDarkTheme: Boolean) {
             onToggleTheme = {},
             deviceSelectorComponent = selector,
             processHistoryStore = processHistoryStore,
+            appUpdateState = appUpdateState,
+            onInstallUpdateNow = {},
+            onCancelUpdate = {},
+            onDismissUpdate = {},
         )
     }
 }
@@ -879,6 +898,52 @@ private fun AppContentLightPreview() {
 @Composable
 private fun AppContentDarkPreview() {
     AppContentPreviewBody(isDarkTheme = true)
+}
+
+@Preview
+@Composable
+private fun AppContentUpdateAvailableLightPreview() {
+    AppContentPreviewBody(
+        isDarkTheme = false,
+        appUpdateState = AppUpdateUiState(
+            visible = true,
+            blocking = false,
+            phase = AppUpdatePhase.AVAILABLE,
+            currentVersion = "1.1.1",
+            targetVersion = "1.2.0",
+            changelog = """
+                - Added smarter Wi-Fi device reconnect flow
+                - Improved split APK installation fallback handling
+                - Added compact/full logcat display modes with wrapping
+            """.trimIndent(),
+            canInstallNow = true,
+            canDismiss = true,
+        ),
+    )
+}
+
+@Preview
+@Composable
+private fun AppContentUpdateInstallingDarkPreview() {
+    AppContentPreviewBody(
+        isDarkTheme = true,
+        appUpdateState = AppUpdateUiState(
+            visible = true,
+            blocking = true,
+            phase = AppUpdatePhase.INSTALLING,
+            currentVersion = "1.1.1",
+            targetVersion = "1.2.0",
+            progress = 0.64f,
+            details = "Replacing application files and preparing restart...",
+            changelog = """
+                - New update system with release changelog support
+                - Improved stability of process history and command execution
+            """.trimIndent(),
+            canInstallNow = false,
+            canCancel = false,
+            canDismiss = false,
+        ),
+    )
 }
 
 @Composable

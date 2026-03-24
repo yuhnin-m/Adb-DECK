@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
+import com.adbdeck.app.update.AppUpdateUiState
 import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.process.ProcessHistoryStore
@@ -63,6 +64,10 @@ fun AppContent(
     onToggleTheme: () -> Unit,
     deviceSelectorComponent: DeviceSelectorComponent,
     processHistoryStore: ProcessHistoryStore,
+    appUpdateState: AppUpdateUiState = AppUpdateUiState.Hidden,
+    onInstallUpdateNow: (() -> Unit)? = null,
+    onCancelUpdate: (() -> Unit)? = null,
+    onDismissUpdate: (() -> Unit)? = null,
 ) {
     // subscribeAsState() возвращает Compose State<ChildStack>
     val childStack by rootComponent.childStack.subscribeAsState()
@@ -130,71 +135,80 @@ fun AppContent(
         modifier = Modifier.fillMaxSize(),
         color = AdbTheme.colorScheme.surface,
     ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            // ── Sidebar ─────────────────────────────────────────
-            Sidebar(
-                activeScreen = activeScreen,
-                onNavigate = rootComponent::navigate,
-                isDarkTheme = isDarkTheme,
-                onToggleTheme = onToggleTheme,
-                historyCount = processHistoryEntries.size,
-                isHistoryOpen = isHistoryPanelOpen,
-                onToggleHistory = { isHistoryPanelOpen = !isHistoryPanelOpen },
-                devicesCount = devices.size,
-                isLogcatRunning = isLogcatRunning,
-                hasUnsavedSettings = hasUnsavedSettings,
-                isProcessMonitoring = isProcessMonitoring,
-            )
-
-            // ── Основная область ──────────────────────────────────
-            Column(modifier = Modifier.fillMaxSize()) {
-                // TopBar с DeviceBar в trailing-слоте
-                TopBar(
-                    title = activeScreen.title(),
-                    trailingContent = {
-                        DeviceBar(component = deviceSelectorComponent)
-                    },
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                // ── Sidebar ─────────────────────────────────────────
+                Sidebar(
+                    activeScreen = activeScreen,
+                    onNavigate = rootComponent::navigate,
+                    isDarkTheme = isDarkTheme,
+                    onToggleTheme = onToggleTheme,
+                    historyCount = processHistoryEntries.size,
+                    isHistoryOpen = isHistoryPanelOpen,
+                    onToggleHistory = { isHistoryPanelOpen = !isHistoryPanelOpen },
+                    devicesCount = devices.size,
+                    isLogcatRunning = isLogcatRunning,
+                    hasUnsavedSettings = hasUnsavedSettings,
+                    isProcessMonitoring = isProcessMonitoring,
                 )
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                ) {
-                    // Рендерим активный экран напрямую по типу активного Child
-                    when (activeChild) {
-                        is RootComponent.Child.Dashboard -> DashboardScreen(activeChild.component)
-                        is RootComponent.Child.Devices -> DevicesScreen(activeChild.component)
-                        is RootComponent.Child.Logcat -> LogcatScreen(activeChild.component)
-                        is RootComponent.Child.Settings -> SettingsScreen(activeChild.component)
-                        is RootComponent.Child.Packages -> PackagesScreen(activeChild.component)
-                        is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(activeChild.component)
-                        is RootComponent.Child.FileSystem -> FileSystemScreen(activeChild.component)
-                        is RootComponent.Child.FileExplorer -> FileExplorerScreen(activeChild.component)
-                        is RootComponent.Child.Contacts -> ContactsScreen(activeChild.component)
-                        is RootComponent.Child.ScreenTools -> ScreenToolsScreen(activeChild.component)
-                        is RootComponent.Child.ApkInstall -> ApkInstallScreen(activeChild.component)
-                        is RootComponent.Child.DeepLinks -> DeepLinksScreen(activeChild.component)
-                        is RootComponent.Child.Notifications -> NotificationsScreen(activeChild.component)
-                        is RootComponent.Child.DeviceInfo -> DeviceInfoScreen(activeChild.component)
-                        is RootComponent.Child.QuickToggles -> QuickTogglesScreen(activeChild.component)
-                        is RootComponent.Child.Scrcpy -> ScrcpyScreen(activeChild.component)
-                    }
-                }
-
-                if (isHistoryPanelOpen) {
-                    ProcessHistoryPanel(
-                        entries = processHistoryEntries,
-                        onClose = { isHistoryPanelOpen = false },
-                        onClear = processHistoryStore::clear,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(Dimensions.sidebarWidth + Dimensions.paddingSmall),
+                // ── Основная область ──────────────────────────────────
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // TopBar с DeviceBar в trailing-слоте
+                    TopBar(
+                        title = activeScreen.title(),
+                        trailingContent = {
+                            DeviceBar(component = deviceSelectorComponent)
+                        },
                     )
-                }
 
-                StatusBar()
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                    ) {
+                        // Рендерим активный экран напрямую по типу активного Child
+                        when (activeChild) {
+                            is RootComponent.Child.Dashboard -> DashboardScreen(activeChild.component)
+                            is RootComponent.Child.Devices -> DevicesScreen(activeChild.component)
+                            is RootComponent.Child.Logcat -> LogcatScreen(activeChild.component)
+                            is RootComponent.Child.Settings -> SettingsScreen(activeChild.component)
+                            is RootComponent.Child.Packages -> PackagesScreen(activeChild.component)
+                            is RootComponent.Child.SystemMonitor -> SystemMonitorScreen(activeChild.component)
+                            is RootComponent.Child.FileSystem -> FileSystemScreen(activeChild.component)
+                            is RootComponent.Child.FileExplorer -> FileExplorerScreen(activeChild.component)
+                            is RootComponent.Child.Contacts -> ContactsScreen(activeChild.component)
+                            is RootComponent.Child.ScreenTools -> ScreenToolsScreen(activeChild.component)
+                            is RootComponent.Child.ApkInstall -> ApkInstallScreen(activeChild.component)
+                            is RootComponent.Child.DeepLinks -> DeepLinksScreen(activeChild.component)
+                            is RootComponent.Child.Notifications -> NotificationsScreen(activeChild.component)
+                            is RootComponent.Child.DeviceInfo -> DeviceInfoScreen(activeChild.component)
+                            is RootComponent.Child.QuickToggles -> QuickTogglesScreen(activeChild.component)
+                            is RootComponent.Child.Scrcpy -> ScrcpyScreen(activeChild.component)
+                        }
+                    }
+
+                    if (isHistoryPanelOpen) {
+                        ProcessHistoryPanel(
+                            entries = processHistoryEntries,
+                            onClose = { isHistoryPanelOpen = false },
+                            onClear = processHistoryStore::clear,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(Dimensions.sidebarWidth + Dimensions.paddingSmall),
+                        )
+                    }
+
+                    StatusBar()
+                }
             }
+
+            AppUpdateOverlay(
+                state = appUpdateState,
+                onInstallNow = onInstallUpdateNow,
+                onCancel = onCancelUpdate,
+                onDismiss = onDismissUpdate,
+            )
         }
     }
 }

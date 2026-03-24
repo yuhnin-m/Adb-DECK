@@ -18,6 +18,7 @@ import com.adbdeck.core.adb.api.scrcpy.ScrcpyClient
 import com.adbdeck.core.settings.SettingsRepository
 import com.adbdeck.feature.apkinstall.createApkInstallComponent
 import com.adbdeck.feature.contacts.DefaultContactsComponent
+import com.adbdeck.feature.dashboard.DashboardAppUpdateBanner
 import com.adbdeck.feature.dashboard.DefaultDashboardComponent
 import com.adbdeck.feature.deeplinks.DefaultDeepLinksComponent
 import com.adbdeck.feature.deviceinfo.DefaultDeviceInfoComponent
@@ -35,6 +36,7 @@ import com.adbdeck.feature.scrcpy.DefaultScrcpyComponent
 import com.adbdeck.feature.settings.DefaultSettingsComponent
 import com.adbdeck.feature.systemmonitor.DefaultSystemMonitorComponent
 import com.arkivanov.decompose.ComponentContext
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Реализация [RootChildFactory], которая знает как собрать каждый feature-child.
@@ -66,6 +68,8 @@ class DefaultRootChildFactory(
         openPackageInLogcat: (String) -> Unit,
         openDeepLinkFromNotifications: (String) -> Unit,
         openPathInFileExplorer: (String) -> Unit,
+        dashboardAppUpdateFlow: Flow<DashboardAppUpdateBanner?>,
+        checkForAppUpdates: suspend () -> Result<Boolean>,
     ): RootComponent.Child = when (screen) {
         is Screen.Dashboard -> RootComponent.Child.Dashboard(
             DefaultDashboardComponent(
@@ -73,6 +77,7 @@ class DefaultRootChildFactory(
                 adbClient = adbClient,
                 deviceManager = deviceManager,
                 settingsRepository = settingsRepository,
+                availableAppUpdateFlow = dashboardAppUpdateFlow,
                 onNavigateToDevices = { navigate(Screen.Devices) },
                 onNavigateToDeviceInfo = { navigate(Screen.DeviceInfo) },
                 onNavigateToQuickToggles = { navigate(Screen.QuickToggles) },
@@ -125,6 +130,7 @@ class DefaultRootChildFactory(
                 bundletoolClient = bundletoolClient,
                 scrcpyClient = scrcpyClient,
                 settingsRepository = settingsRepository,
+                checkForAppUpdates = checkForAppUpdates,
             )
         )
 
@@ -255,4 +261,3 @@ class DefaultRootChildFactory(
         )
     }
 }
-

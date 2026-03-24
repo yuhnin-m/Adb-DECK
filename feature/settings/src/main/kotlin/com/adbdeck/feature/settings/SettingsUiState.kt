@@ -36,6 +36,7 @@ data class SettingsUiState(
     val scrcpyCheckState: ToolCheckState = ToolCheckState.Idle,
     val saveFeedback: SettingsFeedback? = null,
     val isSaving: Boolean = false,
+    val isCheckingUpdates: Boolean = false,
     val hasPendingChanges: Boolean = false,
     val currentTheme: AppTheme = AppTheme.SYSTEM,
     val currentLanguage: AppLanguage = AppLanguage.SYSTEM,

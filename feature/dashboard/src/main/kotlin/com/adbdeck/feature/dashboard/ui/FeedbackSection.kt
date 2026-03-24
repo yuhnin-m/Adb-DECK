@@ -21,12 +21,17 @@ internal fun FeedbackSection(
     onDismissAdbServerError: () -> Unit,
     onDismissTerminalLaunchError: () -> Unit,
 ) {
+    var hasVisibleBanner = false
+
     when (val adbState = state.adbCheckState) {
         DashboardAdbCheckState.Idle,
         DashboardAdbCheckState.Checking,
         -> Unit
 
         is DashboardAdbCheckState.Available -> {
+            if (hasVisibleBanner) {
+                Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
+            }
             val message = stringResource(Res.string.dashboard_adb_available, adbState.version)
             AdbBanner(
                 message = message,
@@ -34,9 +39,13 @@ internal fun FeedbackSection(
                 onDismiss = onDismissAdbCheck,
                 modifier = Modifier.fillMaxWidth(),
             )
+            hasVisibleBanner = true
         }
 
         is DashboardAdbCheckState.NotAvailable -> {
+            if (hasVisibleBanner) {
+                Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
+            }
             val reason = adbState.reason.ifBlank {
                 stringResource(Res.string.dashboard_unknown_error)
             }
@@ -47,37 +56,46 @@ internal fun FeedbackSection(
                 onDismiss = onDismissAdbCheck,
                 modifier = Modifier.fillMaxWidth(),
             )
+            hasVisibleBanner = true
         }
     }
 
     state.refreshError?.takeIf { it.isNotBlank() }?.let { error ->
+        if (hasVisibleBanner) {
+            Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
+        }
         val message = stringResource(Res.string.dashboard_refresh_failed, error)
-        Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
         AdbBanner(
             message = message,
             type = AdbBannerType.ERROR,
             onDismiss = onDismissRefreshError,
             modifier = Modifier.fillMaxWidth(),
         )
+        hasVisibleBanner = true
     }
 
     state.adbServerError?.let { error ->
+        if (hasVisibleBanner) {
+            Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
+        }
         val reason = error.ifBlank {
             stringResource(Res.string.dashboard_unknown_error)
         }
         val message = stringResource(Res.string.dashboard_adb_server_action_failed, reason)
-        Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
         AdbBanner(
             message = message,
             type = AdbBannerType.ERROR,
             onDismiss = onDismissAdbServerError,
             modifier = Modifier.fillMaxWidth(),
         )
+        hasVisibleBanner = true
     }
 
     if (state.isTerminalLaunchFailed) {
+        if (hasVisibleBanner) {
+            Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
+        }
         val message = stringResource(Res.string.dashboard_terminal_launch_failed)
-        Spacer(modifier = Modifier.height(Dimensions.paddingXSmall))
         AdbBanner(
             message = message,
             type = AdbBannerType.ERROR,

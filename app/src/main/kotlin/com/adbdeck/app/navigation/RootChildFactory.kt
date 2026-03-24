@@ -1,6 +1,8 @@
 package com.adbdeck.app.navigation
 
 import com.arkivanov.decompose.ComponentContext
+import com.adbdeck.feature.dashboard.DashboardAppUpdateBanner
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Фабрика дочерних компонентов root-навигации.
@@ -17,6 +19,7 @@ interface RootChildFactory {
         openPackageInLogcat: (String) -> Unit,
         openDeepLinkFromNotifications: (String) -> Unit,
         openPathInFileExplorer: (String) -> Unit,
+        dashboardAppUpdateFlow: Flow<DashboardAppUpdateBanner?>,
+        checkForAppUpdates: suspend () -> Result<Boolean>,
     ): RootComponent.Child
 }
-

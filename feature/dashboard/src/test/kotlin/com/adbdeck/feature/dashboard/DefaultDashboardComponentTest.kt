@@ -18,8 +18,11 @@ import com.arkivanov.essenty.lifecycle.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -421,6 +424,34 @@ class DefaultDashboardComponentTest {
         }
     }
 
+    @Test
+    fun `available app update banner can be dismissed and reappears on next version`() = runTest(context = testDispatcher) {
+        val appUpdateFlow = MutableSharedFlow<DashboardAppUpdateBanner?>(replay = 1).apply {
+            tryEmit(null)
+        }
+        val fixture = createFixture(availableAppUpdateFlow = appUpdateFlow)
+        try {
+            appUpdateFlow.emit(DashboardAppUpdateBanner(version = "1.2.3"))
+            awaitCondition("Ожидался баннер доступного обновления") {
+                fixture.component.state.value.appUpdateBanner?.version == "1.2.3"
+            }
+
+            fixture.component.onDismissAppUpdateBanner()
+            assertEquals(null, fixture.component.state.value.appUpdateBanner)
+
+            appUpdateFlow.emit(DashboardAppUpdateBanner(version = "1.2.3"))
+            testDispatcher.scheduler.runCurrent()
+            assertEquals(null, fixture.component.state.value.appUpdateBanner)
+
+            appUpdateFlow.emit(DashboardAppUpdateBanner(version = "1.2.4"))
+            awaitCondition("Ожидался показ баннера для новой версии") {
+                fixture.component.state.value.appUpdateBanner?.version == "1.2.4"
+            }
+        } finally {
+            fixture.close()
+        }
+    }
+
     private suspend fun awaitCondition(
         errorMessage: String,
         timeoutMs: Long = 5_000,
@@ -441,6 +472,7 @@ class DefaultDashboardComponentTest {
         adbClient: FakeAdbClient = FakeAdbClient(),
         deviceManager: FakeDeviceManager = FakeDeviceManager(),
         settingsRepository: SettingsRepository = FakeSettingsRepository(),
+        availableAppUpdateFlow: Flow<DashboardAppUpdateBanner?> = emptyFlow(),
         openAdbShellInTerminal: (adbPath: String, deviceId: String?, root: Boolean) -> Unit =
             { _, _, _ -> Unit },
     ): DashboardFixture {
@@ -452,6 +484,7 @@ class DefaultDashboardComponentTest {
             adbClient = adbClient,
             deviceManager = deviceManager,
             settingsRepository = settingsRepository,
+            availableAppUpdateFlow = availableAppUpdateFlow,
             onNavigateToDevices = {},
             onNavigateToDeviceInfo = {},
             onNavigateToQuickToggles = {},
