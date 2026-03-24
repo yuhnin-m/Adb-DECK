@@ -218,7 +218,7 @@ private class PreviewDevicesComponent : DevicesComponent {
     )
 
     override fun onRefresh() = Unit
-    override fun onConnectHistoryDevice(device: SavedWifiDevice) = Unit
+    override fun onConnectHistoryDevice(device: SavedWifiDevice, portOverride: Int?) = Unit
     override fun onRemoveHistoryDevice(device: SavedWifiDevice) = Unit
     override fun onSelectDevice(device: AdbDevice) = Unit
     override fun onOpenDetails(device: AdbDevice) = Unit
@@ -269,6 +269,7 @@ private class PreviewLogcatComponent : LogcatComponent {
     override fun onToggleColoredLevels() = Unit
     override fun onAutoScrollChanged(value: Boolean) = Unit
     override fun onSmoothStreamAnimationChanged(value: Boolean) = Unit
+    override fun onWrapTextChanged(value: Boolean) = Unit
     override fun onFontFamilyChanged(family: com.adbdeck.feature.logcat.LogcatFontFamily) = Unit
     override fun onFontSizeChanged(size: Int) = Unit
 }

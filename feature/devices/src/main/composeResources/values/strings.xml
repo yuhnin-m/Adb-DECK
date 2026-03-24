@@ -87,4 +87,9 @@
     <string name="devices_history_card_badge_previous">PREVIOUSLY CONNECTED</string>
     <string name="devices_history_card_action_connect_content_desc">Connect to saved Wi-Fi device</string>
     <string name="devices_history_card_action_remove_content_desc">Remove from Wi-Fi history</string>
+    <string name="devices_history_connect_dialog_title">Connect network device</string>
+    <string name="devices_history_connect_dialog_action_connect">Connect</string>
+    <string name="devices_history_connect_dialog_host_value">Host: %1$s</string>
+    <string name="devices_history_connect_dialog_port_placeholder">ADB port (1-65535)</string>
+    <string name="devices_history_connect_dialog_port_error">Port must be between 1 and 65535</string>
 </resources>

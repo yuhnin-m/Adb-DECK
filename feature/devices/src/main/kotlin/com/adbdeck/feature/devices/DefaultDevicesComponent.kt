@@ -120,8 +120,11 @@ class DefaultDevicesComponent(
         refreshDeviceList()
     }
 
-    override fun onConnectHistoryDevice(device: SavedWifiDevice) {
-        val endpoint = DeviceEndpoint.fromAddress(device.address) ?: return
+    override fun onConnectHistoryDevice(device: SavedWifiDevice, portOverride: Int?) {
+        val baseEndpoint = DeviceEndpoint.fromAddress(device.address) ?: return
+        val targetPort = portOverride ?: baseEndpoint.port
+        if (targetPort !in 1..65_535) return
+        val endpoint = baseEndpoint.copy(port = targetPort)
 
         scope.launch {
             deviceManager.clearError()
@@ -131,13 +134,23 @@ class DefaultDevicesComponent(
 
             result.fold(
                 onSuccess = {
+                    if (endpoint.address != device.address) {
+                        deviceManager.removeWifiHistory(device.address)
+                    }
+
+                    val updatedDeviceId = resolveUpdatedHistoryDeviceId(
+                        currentDeviceId = device.deviceId,
+                        previousAddress = device.address,
+                        newAddress = endpoint.address,
+                    )
+
                     deviceManager.saveEndpoint(endpoint)
                     deviceManager.upsertWifiHistory(
                         device.copy(
                             address = endpoint.address,
-                            deviceId = device.deviceId.ifBlank { endpoint.address },
+                            deviceId = updatedDeviceId,
                             displayName = device.displayName.ifBlank {
-                                device.deviceId.ifBlank { endpoint.address }
+                                updatedDeviceId
                             },
                             lastSeenAt = System.currentTimeMillis(),
                         )
@@ -154,6 +167,15 @@ class DefaultDevicesComponent(
     override fun onRemoveHistoryDevice(device: SavedWifiDevice) {
         scope.launch {
             deviceManager.removeWifiHistory(device.address)
+
+            val endpointHost = DeviceEndpoint.fromAddress(device.address)?.host
+            if (endpointHost != null) {
+                val savedForSameHost = deviceManager.savedEndpointsFlow.value
+                    .filter { it.host.equals(endpointHost, ignoreCase = true) }
+                savedForSameHost.forEach { endpoint ->
+                    deviceManager.removeEndpoint(endpoint)
+                }
+            }
         }
     }
 
@@ -366,6 +388,26 @@ class DefaultDevicesComponent(
 
     private fun isWifiDevice(deviceId: String): Boolean =
         deviceId.contains(':') && !deviceId.startsWith("emulator-")
+
+    /**
+     * Для Wi-Fi serial-идентификаторов (`host:port`) синхронизирует порт с новым endpoint.
+     */
+    private fun resolveUpdatedHistoryDeviceId(
+        currentDeviceId: String,
+        previousAddress: String,
+        newAddress: String,
+    ): String {
+        if (currentDeviceId.isBlank()) return newAddress
+        if (currentDeviceId == previousAddress) return newAddress
+
+        val currentDeviceEndpoint = DeviceEndpoint.fromAddress(currentDeviceId) ?: return currentDeviceId
+        val previousEndpoint = DeviceEndpoint.fromAddress(previousAddress) ?: return currentDeviceId
+        return if (currentDeviceEndpoint.host == previousEndpoint.host) {
+            newAddress
+        } else {
+            currentDeviceId
+        }
+    }
 
     private data class DevicesSnapshot(
         val listState: DeviceListState,

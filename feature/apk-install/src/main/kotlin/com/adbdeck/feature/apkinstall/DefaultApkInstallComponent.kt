@@ -2,6 +2,9 @@ package com.adbdeck.feature.apkinstall
 
 import adbdeck.feature.apk_install.generated.resources.Res
 import adbdeck.feature.apk_install.generated.resources.*
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallProgress
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallProgressEvent
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallStage
 import com.adbdeck.core.adb.api.apkinstall.ApkInstallOptions
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceManager
@@ -268,6 +271,7 @@ class DefaultApkInstallComponent(
         allowTestOnly: Boolean,
     ) {
         val statusInstalling = getString(Res.string.apk_install_status_installing)
+        val stageMessages = loadInstallStageMessages()
         val logStarted = getString(Res.string.apk_install_log_started, apkPath)
         _state.update { current ->
             current.copy(
@@ -289,17 +293,13 @@ class DefaultApkInstallComponent(
                 allowTestOnly = allowTestOnly,
                 bundletoolPath = settingsRepository.getSettings().bundletoolPath,
             ),
-        ) { progress, message ->
+        ) { progress ->
             _state.update { current ->
-                current.copy(
-                    status = ApkInstallStatus(
-                        message = message,
-                        progress = progress,
-                    ),
-                    logLines = appendLog(
-                        current = current.logLines,
-                        line = message,
-                    ),
+                applyInstallProgress(
+                    current = current,
+                    progress = progress,
+                    stageMessages = stageMessages,
+                    fallbackStatusMessage = statusInstalling,
                 )
             }
         }
@@ -370,6 +370,69 @@ class DefaultApkInstallComponent(
     /** Текущий путь к adb из настроек приложения. */
     private fun adbPath(): String =
         settingsRepository.resolvedAdbPath()
+
+    /** Локализованные сообщения стадий установки из ADB-слоя. */
+    private suspend fun loadInstallStageMessages(): Map<ApkInstallStage, String> =
+        mapOf(
+            ApkInstallStage.USING_BUNDLETOOL_INSTALL_APKS to getString(
+                Res.string.apk_install_status_using_bundletool_install_apks
+            ),
+            ApkInstallStage.BUNDLETOOL_FAILED_FALLBACK_TO_ADB to getString(
+                Res.string.apk_install_status_bundletool_failed_fallback_to_adb
+            ),
+            ApkInstallStage.APKS_WITHOUT_TOC_FALLBACK_TO_ADB to getString(
+                Res.string.apk_install_status_apks_without_toc_fallback_to_adb
+            ),
+            ApkInstallStage.BUILDING_APKS_FROM_AAB to getString(
+                Res.string.apk_install_status_building_apks_from_aab
+            ),
+            ApkInstallStage.INSTALLING_GENERATED_APKS to getString(
+                Res.string.apk_install_status_installing_generated_apks
+            ),
+        )
+
+    /**
+     * Применяет типизированный прогресс установки к состоянию экрана.
+     *
+     * UI-строки для status-card формируются только во feature-слое.
+     * Сырые строки adb/bundletool попадают в log-блок как технический вывод.
+     */
+    private fun applyInstallProgress(
+        current: ApkInstallState,
+        progress: ApkInstallProgress,
+        stageMessages: Map<ApkInstallStage, String>,
+        fallbackStatusMessage: String,
+    ): ApkInstallState =
+        when (val event = progress.event) {
+            is ApkInstallProgressEvent.Stage -> {
+                val message = stageMessages[event.stage] ?: fallbackStatusMessage
+                current.copy(
+                    status = ApkInstallStatus(
+                        message = message,
+                        isError = false,
+                        progress = progress.progress ?: current.status.progress,
+                    ),
+                    logLines = appendLog(
+                        current = current.logLines,
+                        line = message,
+                    ),
+                )
+            }
+
+            is ApkInstallProgressEvent.OutputLine -> {
+                current.copy(
+                    status = current.status.copy(
+                        message = current.status.message.ifBlank { fallbackStatusMessage },
+                        isError = false,
+                        progress = progress.progress ?: current.status.progress,
+                    ),
+                    logLines = appendLog(
+                        current = current.logLines,
+                        line = event.line,
+                    ),
+                )
+            }
+        }
 
     /** Обработать typed-ошибку с единым UX-пайплайном. */
     private suspend fun handleError(

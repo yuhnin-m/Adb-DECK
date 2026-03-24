@@ -3,6 +3,8 @@ package com.adbdeck.core.adb.impl.apkinstall
 import com.adbdeck.core.adb.api.apkinstall.ApkInstallClient
 import com.adbdeck.core.adb.api.apkinstall.ApkInstallOptions
 import com.adbdeck.core.adb.api.apkinstall.ApkInstallProgress
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallProgressEvent
+import com.adbdeck.core.adb.api.apkinstall.ApkInstallStage
 import com.adbdeck.core.process.ProcessRunner
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import java.io.File
@@ -10,6 +12,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 /**
@@ -142,8 +145,10 @@ class SystemApkInstallClient(
     /**
      * Установка архива split APK (`.apks` / `.xapk`).
      *
-     * Для `.apks` сначала пробуем `bundletool install-apks` (более корректно для формата).
-     * При недоступности bundletool — fallback на распаковку и `adb install-multiple`.
+     * Для `.apks`, собранных bundletool (в архиве есть `toc.pb`), сначала пробуем
+     * `bundletool install-apks` (корректно подбирает splits под устройство).
+     * Для обычных zip-архивов со split APK (без `toc.pb`) сразу используем распаковку
+     * и `adb install-multiple`, чтобы избежать падения `bundletool install-apks`.
      */
     private suspend fun installArchiveWithSplits(
         deviceId: String,
@@ -154,28 +159,38 @@ class SystemApkInstallClient(
         onProgress: (ApkInstallProgress) -> Unit,
     ) {
         if (archiveFile.extension.equals("apks", ignoreCase = true)) {
-            val installedByBundletool = runCatchingPreserveCancellation {
-                onProgress(ApkInstallProgress(null, "Using bundletool install-apks..."))
-                installApksArchiveWithBundletool(
-                    deviceId = deviceId,
-                    apksFile = archiveFile,
-                    adbPath = adbPath,
-                    bundletoolPath = bundletoolPath,
-                    onProgress = onProgress,
+            if (isBundletoolApksArchive(archiveFile)) {
+                val installedByBundletool = runCatchingPreserveCancellation {
+                    onProgress(
+                        ApkInstallProgress(
+                            progress = null,
+                            event = ApkInstallProgressEvent.Stage(ApkInstallStage.USING_BUNDLETOOL_INSTALL_APKS),
+                        )
+                    )
+                    installApksArchiveWithBundletool(
+                        deviceId = deviceId,
+                        apksFile = archiveFile,
+                        adbPath = adbPath,
+                        bundletoolPath = bundletoolPath,
+                        onProgress = onProgress,
+                    )
+                }
+                if (installedByBundletool.isSuccess) return
+
+                onProgress(
+                    ApkInstallProgress(
+                        progress = null,
+                        event = ApkInstallProgressEvent.Stage(ApkInstallStage.BUNDLETOOL_FAILED_FALLBACK_TO_ADB),
+                    )
+                )
+            } else {
+                onProgress(
+                    ApkInstallProgress(
+                        progress = null,
+                        event = ApkInstallProgressEvent.Stage(ApkInstallStage.APKS_WITHOUT_TOC_FALLBACK_TO_ADB),
+                    )
                 )
             }
-            if (installedByBundletool.isSuccess) return
-            val details = installedByBundletool.exceptionOrNull()?.message.orEmpty()
-            onProgress(
-                ApkInstallProgress(
-                    progress = null,
-                    message = if (details.isBlank()) {
-                        "bundletool install-apks failed, fallback to adb install-multiple"
-                    } else {
-                        "bundletool install-apks failed: $details; fallback to adb install-multiple"
-                    },
-                )
-            )
         }
 
         val tempDir = Files.createTempDirectory("adbdeck-install-archive-").toFile()
@@ -205,9 +220,15 @@ class SystemApkInstallClient(
             error("Expected .aab file: ${aabFile.absolutePath}")
         }
 
-        val outputApks = File.createTempFile("adbdeck-bundletool-", ".apks")
+        val outputApksDir = Files.createTempDirectory("adbdeck-bundletool-").toFile()
+        val outputApks = File(outputApksDir, "generated.apks")
         try {
-            onProgress(ApkInstallProgress(null, "Building APKS from AAB via bundletool..."))
+            onProgress(
+                ApkInstallProgress(
+                    progress = null,
+                    event = ApkInstallProgressEvent.Stage(ApkInstallStage.BUILDING_APKS_FROM_AAB),
+                )
+            )
             val buildCommand = bundletoolCommand(
                 bundletoolPath = bundletoolPath,
                 "build-apks",
@@ -224,7 +245,12 @@ class SystemApkInstallClient(
                 failurePrefix = "bundletool build-apks failed",
             )
 
-            onProgress(ApkInstallProgress(null, "Installing generated APKS on device..."))
+            onProgress(
+                ApkInstallProgress(
+                    progress = null,
+                    event = ApkInstallProgressEvent.Stage(ApkInstallStage.INSTALLING_GENERATED_APKS),
+                )
+            )
             installApksArchiveWithBundletool(
                 deviceId = deviceId,
                 apksFile = outputApks,
@@ -233,7 +259,7 @@ class SystemApkInstallClient(
                 onProgress = onProgress,
             )
         } finally {
-            outputApks.delete()
+            outputApksDir.deleteRecursively()
         }
     }
 
@@ -279,7 +305,7 @@ class SystemApkInstallClient(
             onProgress(
                 ApkInstallProgress(
                     progress = parseApkInstallProgress(line),
-                    message = line,
+                    event = ApkInstallProgressEvent.OutputLine(line),
                 )
             )
         }
@@ -309,7 +335,7 @@ class SystemApkInstallClient(
             onProgress(
                 ApkInstallProgress(
                     progress = parseApkInstallProgress(line),
-                    message = line,
+                    event = ApkInstallProgressEvent.OutputLine(line),
                 )
             )
         }
@@ -446,4 +472,23 @@ class SystemApkInstallClient(
 
         return percent / 100f
     }
+
+    /**
+     * Проверяет, является ли `.apks` bundletool-архивом (по наличию `toc.pb`).
+     */
+    private fun isBundletoolApksArchive(archiveFile: File): Boolean = runCatching {
+        ZipFile(archiveFile).use { zip ->
+            if (zip.getEntry("toc.pb") != null) return@use true
+
+            val entries = zip.entries()
+            while (entries.hasMoreElements()) {
+                val name = entries.nextElement().name
+                if (name.endsWith("/toc.pb", ignoreCase = true)) {
+                    return@use true
+                }
+            }
+            false
+        }
+    }.getOrDefault(false)
+
 }

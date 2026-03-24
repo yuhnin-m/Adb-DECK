@@ -4,6 +4,7 @@ import adbdeck.feature.devices.generated.resources.*
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,10 +17,15 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.adbdeck.core.adb.api.device.AdbDevice
+import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.SavedWifiDevice
 import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
@@ -30,6 +36,9 @@ import com.adbdeck.core.ui.alertdialogs.AdbAlertDialogAction
 import com.adbdeck.core.ui.buttons.AdbButtonSize
 import com.adbdeck.core.ui.buttons.AdbButtonType
 import com.adbdeck.core.ui.buttons.AdbFilledButton
+import com.adbdeck.core.ui.textfields.AdbOutlinedTextField
+import com.adbdeck.core.ui.textfields.AdbTextFieldSize
+import com.adbdeck.core.ui.textfields.AdbTextFieldType
 import com.adbdeck.feature.devices.*
 import org.jetbrains.compose.resources.stringResource
 
@@ -41,6 +50,19 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun DevicesScreen(component: DevicesComponent) {
     val state by component.state.collectAsState()
+    var wifiConnectDialogState by remember { mutableStateOf<WifiHistoryConnectDialogState?>(null) }
+    fun requestConnectHistoryDevice(historyItem: SavedWifiDevice) {
+        val endpoint = DeviceEndpoint.fromAddress(historyItem.address)
+        if (endpoint != null) {
+            wifiConnectDialogState = WifiHistoryConnectDialogState(
+                device = historyItem,
+                host = endpoint.host,
+                portText = endpoint.port.toString(),
+            )
+        } else {
+            component.onConnectHistoryDevice(historyItem)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -75,6 +97,7 @@ fun DevicesScreen(component: DevicesComponent) {
                                     wifiHistory = state.wifiHistory,
                                     state     = state,
                                     component = component,
+                                    onRequestConnectHistoryDevice = ::requestConnectHistoryDevice,
                                 )
                             }
 
@@ -87,6 +110,7 @@ fun DevicesScreen(component: DevicesComponent) {
                                 wifiHistory = state.wifiHistory,
                                 state     = state,
                                 component = component,
+                                onRequestConnectHistoryDevice = ::requestConnectHistoryDevice,
                             )
                     }
                 }
@@ -134,6 +158,64 @@ fun DevicesScreen(component: DevicesComponent) {
                         )
                     }
                 }
+            }
+        }
+
+        val connectDialogState = wifiConnectDialogState
+        if (connectDialogState != null) {
+            val parsedPort = connectDialogState.portText.toIntOrNull()
+            val isPortValid = parsedPort != null && parsedPort in 1..65_535
+            val showPortError = connectDialogState.portText.isNotBlank() && !isPortValid
+
+            AdbAlertDialog(
+                onDismissRequest = { wifiConnectDialogState = null },
+                title = stringResource(Res.string.devices_history_connect_dialog_title),
+                confirmAction = AdbAlertDialogAction(
+                    text = stringResource(Res.string.devices_history_connect_dialog_action_connect),
+                    enabled = isPortValid,
+                    onClick = {
+                        val current = wifiConnectDialogState ?: return@AdbAlertDialogAction
+                        val port = current.portText.toIntOrNull() ?: return@AdbAlertDialogAction
+                        if (port !in 1..65_535) return@AdbAlertDialogAction
+
+                        component.onConnectHistoryDevice(current.device, port)
+                        wifiConnectDialogState = null
+                    },
+                    type = AdbButtonType.NEUTRAL,
+                    size = AdbButtonSize.MEDIUM,
+                ),
+                dismissAction = AdbAlertDialogAction(
+                    text = stringResource(AdbCommonStringRes.actionCancel),
+                    onClick = { wifiConnectDialogState = null },
+                    type = AdbButtonType.NEUTRAL,
+                    size = AdbButtonSize.MEDIUM,
+                ),
+            ) {
+                Text(
+                    text = stringResource(
+                        Res.string.devices_history_connect_dialog_host_value,
+                        connectDialogState.host,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                AdbOutlinedTextField(
+                    value = connectDialogState.portText,
+                    onValueChange = { next ->
+                        wifiConnectDialogState = connectDialogState.copy(
+                            portText = next.filter(Char::isDigit).take(5),
+                        )
+                    },
+                    placeholder = stringResource(Res.string.devices_history_connect_dialog_port_placeholder),
+                    type = if (showPortError) AdbTextFieldType.DANGER else AdbTextFieldType.NEUTRAL,
+                    size = AdbTextFieldSize.MEDIUM,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    supportingText = if (showPortError) {
+                        stringResource(Res.string.devices_history_connect_dialog_port_error)
+                    } else {
+                        null
+                    },
+                )
             }
         }
 
@@ -217,6 +299,7 @@ private fun DevicesList(
     wifiHistory: List<SavedWifiDevice>,
     state: DevicesState,
     component: DevicesComponent,
+    onRequestConnectHistoryDevice: (SavedWifiDevice) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
@@ -259,13 +342,19 @@ private fun DevicesList(
             items(wifiHistory, key = { it.address }) { historyItem ->
                 WifiHistoryCard(
                     device = historyItem,
-                    onConnect = { component.onConnectHistoryDevice(historyItem) },
+                    onConnect = { onRequestConnectHistoryDevice(historyItem) },
                     onRemove = { component.onRemoveHistoryDevice(historyItem) },
                 )
             }
         }
     }
 }
+
+private data class WifiHistoryConnectDialogState(
+    val device: SavedWifiDevice,
+    val host: String,
+    val portText: String,
+)
 
 @Composable
 private fun localizePendingActionTitle(action: PendingDeviceAction): String =

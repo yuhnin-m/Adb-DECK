@@ -87,4 +87,9 @@
     <string name="devices_history_card_badge_previous">РАНЕЕ ПОДКЛЮЧЕНО</string>
     <string name="devices_history_card_action_connect_content_desc">Подключить сохраненное Wi-Fi-устройство</string>
     <string name="devices_history_card_action_remove_content_desc">Удалить из истории Wi-Fi</string>
+    <string name="devices_history_connect_dialog_title">Подключение сетевого устройства</string>
+    <string name="devices_history_connect_dialog_action_connect">Подключить</string>
+    <string name="devices_history_connect_dialog_host_value">Хост: %1$s</string>
+    <string name="devices_history_connect_dialog_port_placeholder">ADB порт (1-65535)</string>
+    <string name="devices_history_connect_dialog_port_error">Порт должен быть от 1 до 65535</string>
 </resources>

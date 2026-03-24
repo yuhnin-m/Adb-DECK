@@ -36,8 +36,11 @@ interface DevicesComponent {
 
     /**
      * Подключиться к устройству из истории Wi-Fi (`adb connect host:port`).
+     *
+     * @param device Элемент Wi-Fi истории.
+     * @param portOverride Опциональный порт для подключения (если пользователь изменил его в диалоге).
      */
-    fun onConnectHistoryDevice(device: SavedWifiDevice)
+    fun onConnectHistoryDevice(device: SavedWifiDevice, portOverride: Int? = null)
 
     /**
      * Удалить устройство из локальной истории Wi-Fi.

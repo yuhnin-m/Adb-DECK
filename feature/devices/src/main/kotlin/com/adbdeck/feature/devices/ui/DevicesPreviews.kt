@@ -55,7 +55,7 @@ private class DevicesPreviewComponent : DevicesComponent {
     )
 
     override fun onRefresh() = Unit
-    override fun onConnectHistoryDevice(device: SavedWifiDevice) = Unit
+    override fun onConnectHistoryDevice(device: SavedWifiDevice, portOverride: Int?) = Unit
     override fun onRemoveHistoryDevice(device: SavedWifiDevice) = Unit
     override fun onSelectDevice(device: AdbDevice) = Unit
     override fun onOpenDetails(device: AdbDevice) = Unit

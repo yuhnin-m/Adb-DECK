@@ -55,6 +55,7 @@ import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.device.DeviceEndpoint
 import com.adbdeck.core.adb.api.device.DeviceState
+import java.util.Locale
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource
 
@@ -82,9 +83,12 @@ fun DeviceBar(
     val isConnecting by component.isConnecting.collectAsState()
     val error by component.error.collectAsState()
     val savedEndpoints by component.savedEndpoints.collectAsState()
+    val visibleSavedEndpoints = remember(savedEndpoints) {
+        savedEndpoints.deduplicateByHostKeepLatest()
+    }
 
     var showDropdown by remember { mutableStateOf(false) }
-    var showConnectDialog by remember { mutableStateOf(false) }
+    var connectDialogRequest by remember { mutableStateOf<ConnectDialogRequest?>(null) }
 
     // Автоматически скрывать ошибку через 5 секунд
     LaunchedEffect(error) {
@@ -126,13 +130,17 @@ fun DeviceBar(
                 DeviceDropdownContent(
                     devices = devices,
                     selectedDevice = selectedDevice,
-                    savedEndpoints = savedEndpoints,
+                    savedEndpoints = visibleSavedEndpoints,
                     onSelectDevice = { device ->
                         component.onSelectDevice(device)
                         showDropdown = false
                     },
                     onConnectSaved = { endpoint ->
-                        component.onConnectSaved(endpoint)
+                        connectDialogRequest = ConnectDialogRequest(
+                            host = endpoint.host,
+                            port = endpoint.port,
+                            hostEditable = false,
+                        )
                         showDropdown = false
                     },
                     onRemoveEndpoint = { endpoint ->
@@ -140,7 +148,11 @@ fun DeviceBar(
                     },
                     onConnectNew = {
                         showDropdown = false
-                        showConnectDialog = true
+                        connectDialogRequest = ConnectDialogRequest(
+                            host = "",
+                            port = 5555,
+                            hostEditable = true,
+                        )
                     },
                     onSwitchToTcpIp = { serialId ->
                         component.onSwitchToTcpIp(serialId)
@@ -194,7 +206,13 @@ fun DeviceBar(
         // ── Подключить новое (только если устройств нет) ─────────
         if (devices.isEmpty() && !isConnecting) {
             IconButton(
-                onClick = { showConnectDialog = true },
+                onClick = {
+                    connectDialogRequest = ConnectDialogRequest(
+                        host = "",
+                        port = 5555,
+                        hostEditable = true,
+                    )
+                },
                 modifier = Modifier.size(32.dp),
             ) {
                 Icon(
@@ -208,12 +226,16 @@ fun DeviceBar(
     }
 
     // ── Диалог подключения по IP ─────────────────────────────────
-    if (showConnectDialog) {
+    val dialogRequest = connectDialogRequest
+    if (dialogRequest != null) {
         ConnectDialog(
-            onDismiss = { showConnectDialog = false },
+            onDismiss = { connectDialogRequest = null },
+            initialHost = dialogRequest.host,
+            initialPort = dialogRequest.port,
+            hostEditable = dialogRequest.hostEditable,
             onConnect = { host, port ->
                 component.onConnect(host, port)
-                showConnectDialog = false
+                connectDialogRequest = null
             },
         )
     }
@@ -390,19 +412,17 @@ private fun DeviceDropdownContent(
                 },
                 trailingIcon = {
                     Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                        // Переподключить
-                        if (!isAlreadyConnected) {
-                            IconButton(
-                                onClick = { onConnectSaved(endpoint) },
-                                modifier = Modifier.size(28.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Link,
-                                    contentDescription = stringResource(Res.string.app_devicebar_connect_saved_content_desc),
-                                    modifier = Modifier.size(14.dp),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
+                        // Переподключить / отредактировать порт
+                        IconButton(
+                            onClick = { onConnectSaved(endpoint) },
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Link,
+                                contentDescription = stringResource(Res.string.app_devicebar_connect_saved_content_desc),
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
                         }
                         // Удалить из сохраненных
                         IconButton(
@@ -418,7 +438,7 @@ private fun DeviceDropdownContent(
                         }
                     }
                 },
-                onClick = { if (!isAlreadyConnected) onConnectSaved(endpoint) },
+                onClick = { onConnectSaved(endpoint) },
             )
         }
     }
@@ -466,9 +486,12 @@ private fun DropdownSectionLabel(text: String) {
 private fun ConnectDialog(
     onDismiss: () -> Unit,
     onConnect: (host: String, port: Int) -> Unit,
+    initialHost: String = "",
+    initialPort: Int = 5555,
+    hostEditable: Boolean = true,
 ) {
-    var host by remember { mutableStateOf("") }
-    var portText by remember { mutableStateOf("5555") }
+    var host by remember(initialHost) { mutableStateOf(initialHost) }
+    var portText by remember(initialPort) { mutableStateOf(initialPort.toString()) }
     val portValid = portText.toIntOrNull()?.let { it in 1..65535 } == true
     val canConnect = host.isNotBlank() && portValid
 
@@ -483,6 +506,7 @@ private fun ConnectDialog(
                     label = { Text(stringResource(Res.string.app_connect_dialog_host_label)) },
                     placeholder = { Text(stringResource(Res.string.app_connect_dialog_host_placeholder)) },
                     singleLine = true,
+                    readOnly = !hostEditable,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                 )
                 OutlinedTextField(
@@ -534,4 +558,24 @@ private fun deviceStateName(state: DeviceState): String = when (state) {
     DeviceState.OFFLINE -> stringResource(Res.string.app_device_state_unavailable)
     DeviceState.UNAUTHORIZED -> stringResource(Res.string.app_device_state_auth_required)
     DeviceState.UNKNOWN -> stringResource(Res.string.app_device_state_unknown)
+}
+
+private data class ConnectDialogRequest(
+    val host: String,
+    val port: Int,
+    val hostEditable: Boolean,
+)
+
+private fun List<DeviceEndpoint>.deduplicateByHostKeepLatest(): List<DeviceEndpoint> {
+    if (size <= 1) return this
+
+    val seenHosts = hashSetOf<String>()
+    val reversedUnique = mutableListOf<DeviceEndpoint>()
+    asReversed().forEach { endpoint ->
+        val hostKey = endpoint.host.trim().lowercase(Locale.ROOT)
+        if (hostKey.isNotEmpty() && seenHosts.add(hostKey)) {
+            reversedUnique += endpoint
+        }
+    }
+    return reversedUnique.asReversed()
 }

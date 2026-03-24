@@ -82,6 +82,7 @@ class DefaultLogcatComponent(
                 coloredLevels = s.logcatColoredLevels,
                 autoScroll = s.logcatAutoScroll,
                 smoothStreamAnimation = s.logcatSmoothStreamAnimation,
+                wrapText = s.logcatWrapText,
                 maxBufferedLines = s.logcatMaxBufferedLines.coerceAtLeast(100),
                 activeDeviceId = deviceManager.selectedDeviceFlow.value?.deviceId,
                 fontFamily = LogcatFontFamily.fromString(s.logcatFontFamily),
@@ -729,6 +730,11 @@ class DefaultLogcatComponent(
         saveLogcatVisualSettings()
     }
 
+    override fun onWrapTextChanged(value: Boolean) {
+        _state.update { it.copy(wrapText = value) }
+        saveLogcatVisualSettings()
+    }
+
     // ── Font ───────────────────────────────────────────────────────────────────
 
     override fun onFontFamilyChanged(family: LogcatFontFamily) {
@@ -751,6 +757,7 @@ class DefaultLogcatComponent(
                     logcatFontFamily = _state.value.fontFamily.name,
                     logcatFontSizeSp = _state.value.fontSizeSp,
                     logcatSmoothStreamAnimation = _state.value.smoothStreamAnimation,
+                    logcatWrapText = _state.value.wrapText,
                 )
             )
         }

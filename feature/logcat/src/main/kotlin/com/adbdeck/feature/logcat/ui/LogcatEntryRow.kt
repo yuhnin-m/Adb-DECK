@@ -133,7 +133,7 @@ internal fun LogEntryRow(
 // ── Режимы отображения строки ─────────────────────────────────────────────────
 
 /**
- * Компактная строка: `[L] [timestamp] tag: message` — одна строка моноширинного текста.
+ * Компактная строка: `[L] [timestamp] tag: message` в одну или несколько строк.
  */
 @Composable
 private fun CompactRow(entry: LogcatEntry, state: LogcatState) {
@@ -142,6 +142,7 @@ private fun CompactRow(entry: LogcatEntry, state: LogcatState) {
         buildTimestamp(entry, state)
     }
     val fontFamily = remember(state.fontFamily) { state.fontFamily.toComposeFontFamily() }
+    val isWrapEnabled = state.wrapText
 
     Text(
         text = buildString {
@@ -160,8 +161,9 @@ private fun CompactRow(entry: LogcatEntry, state: LogcatState) {
             fontSize = state.fontSizeSp.sp,
         ),
         color = color,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+        softWrap = isWrapEnabled,
+        maxLines = if (isWrapEnabled) Int.MAX_VALUE else 1,
+        overflow = if (isWrapEnabled) TextOverflow.Clip else TextOverflow.Ellipsis,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = Dimensions.paddingSmall, vertical = COMPACT_ROW_VERTICAL_PADDING),
@@ -178,6 +180,7 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
     val ts = remember(entry.id, state.showDate, state.showTime, state.showMillis) {
         buildTimestamp(entry, state)
     }
+    val isWrapEnabled = state.wrapText
     val metaText = buildString {
         if (ts.isNotEmpty()) {
             append(ts)
@@ -238,8 +241,9 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
                 ),
                 color = textColor,
                 modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                softWrap = isWrapEnabled,
+                maxLines = if (isWrapEnabled) Int.MAX_VALUE else 1,
+                overflow = if (isWrapEnabled) TextOverflow.Clip else TextOverflow.Ellipsis,
             )
         }
 
@@ -251,6 +255,9 @@ private fun FullRow(entry: LogcatEntry, state: LogcatState) {
                 fontSize = logFontSize,
             ),
             color = MaterialTheme.colorScheme.onSurface,
+            softWrap = isWrapEnabled,
+            maxLines = if (isWrapEnabled) Int.MAX_VALUE else 1,
+            overflow = if (isWrapEnabled) TextOverflow.Clip else TextOverflow.Ellipsis,
         )
 
         HorizontalDivider(
