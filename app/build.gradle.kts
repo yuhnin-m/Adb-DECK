@@ -53,11 +53,12 @@ dependencies {
     implementation(project(":feature:device-info"))
     implementation(project(":feature:quick-toggles"))
     implementation(project(":feature:scrcpy"))
+    implementation(project(":feature:update"))
 }
 
 val appDisplayName = "ADB Deck"
 val appPackageName = "ADBDeck"
-val appVersion = "1.1.1"
+val appVersion = "1.1.0"
 val generatedAppBuildInfoDir = layout.buildDirectory.dir("generated/source/appBuildInfo/kotlin")
 
 val generateAppBuildInfo by tasks.registering {
@@ -100,7 +101,14 @@ compose.desktop {
         }
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
+            targetFormats(
+                TargetFormat.Dmg,
+                TargetFormat.Msi,
+                TargetFormat.Deb,
+                TargetFormat.Rpm,
+            )
+            // macOS update ZIP is produced in CI from the built .app bundle
+            // and published alongside DMG assets.
             packageName = appPackageName
             packageVersion = appVersion
             description = "$appDisplayName desktop tool for ADB"

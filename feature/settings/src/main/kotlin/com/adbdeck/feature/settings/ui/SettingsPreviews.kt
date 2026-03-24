@@ -48,6 +48,7 @@ private class SettingsPreviewComponent : SettingsComponent {
     override fun onScrcpyPathChanged(path: String) {}
     override fun onCheckScrcpy() {}
     override fun onDismissFeedback() = Unit
+    override fun onCheckForUpdates() = Unit
     override fun onThemeChanged(theme: AppTheme) = Unit
     override fun onLanguageChanged(language: AppLanguage) = Unit
     override fun onLogcatCompactModeChanged(value: Boolean) = Unit

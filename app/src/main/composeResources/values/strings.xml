@@ -41,4 +41,5 @@
     <string name="app_device_state_unavailable">Unavailable</string>
     <string name="app_device_state_auth_required">Authorization required</string>
     <string name="app_device_state_unknown">Unknown state</string>
+
 </resources>

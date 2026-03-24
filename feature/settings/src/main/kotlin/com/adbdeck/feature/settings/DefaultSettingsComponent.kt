@@ -5,6 +5,9 @@ import adbdeck.feature.settings.generated.resources.settings_feedback_adb_autode
 import adbdeck.feature.settings.generated.resources.settings_feedback_adb_autodetect_multiple
 import adbdeck.feature.settings.generated.resources.settings_feedback_adb_autodetect_not_found
 import adbdeck.feature.settings.generated.resources.settings_feedback_logcat_save_failed
+import adbdeck.feature.settings.generated.resources.settings_feedback_updates_available
+import adbdeck.feature.settings.generated.resources.settings_feedback_updates_check_failed
+import adbdeck.feature.settings.generated.resources.settings_feedback_updates_latest
 import adbdeck.feature.settings.generated.resources.settings_feedback_save_failed
 import adbdeck.feature.settings.generated.resources.settings_feedback_saved
 import adbdeck.feature.settings.generated.resources.settings_status_available
@@ -59,6 +62,7 @@ class DefaultSettingsComponent(
     private val bundletoolClient: BundletoolClient,
     private val scrcpyClient: ScrcpyClient,
     private val settingsRepository: SettingsRepository,
+    private val checkForAppUpdates: suspend () -> Result<Boolean> = { Result.success(false) },
 ) : SettingsComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -70,6 +74,7 @@ class DefaultSettingsComponent(
     private var adbAutoDetectJob: Job? = null
     private var bundletoolCheckJob: Job? = null
     private var scrcpyCheckJob: Job? = null
+    private var appUpdateCheckJob: Job? = null
     private var logcatSaveJob: Job? = null
     private var feedbackJob: Job? = null
 
@@ -386,6 +391,46 @@ class DefaultSettingsComponent(
         feedbackJob?.cancel()
         feedbackJob = null
         _state.update { it.copy(saveFeedback = null) }
+    }
+
+    override fun onCheckForUpdates() {
+        if (appUpdateCheckJob?.isActive == true) return
+
+        appUpdateCheckJob = scope.launch {
+            _state.update { it.copy(isCheckingUpdates = true) }
+
+            val checkResult = runCatchingPreserveCancellation {
+                checkForAppUpdates()
+            }.getOrElse { error ->
+                Result.failure(error)
+            }
+
+            checkResult.fold(
+                onSuccess = { hasUpdate ->
+                    val message = if (hasUpdate) {
+                        getString(Res.string.settings_feedback_updates_available)
+                    } else {
+                        getString(Res.string.settings_feedback_updates_latest)
+                    }
+                    showFeedback(message = message, isError = false)
+                },
+                onFailure = { error ->
+                    val details = error.message
+                        ?.trim()
+                        ?.ifBlank { null }
+                        ?.take(MAX_TOOL_ERROR_DETAILS_LENGTH)
+                        ?: error::class.simpleName.orEmpty().ifBlank { "Unknown error" }
+
+                    showFeedback(
+                        message = getString(Res.string.settings_feedback_updates_check_failed, details),
+                        isError = true,
+                    )
+                },
+            )
+
+            _state.update { it.copy(isCheckingUpdates = false) }
+            appUpdateCheckJob = null
+        }
     }
 
     override fun onThemeChanged(theme: AppTheme) {

@@ -80,6 +80,7 @@ fun main() = application {
 
         // Подписка на настройки — управляет темой на уровне всего приложения
         val settings by settingsRepository.settingsFlow.collectAsState()
+        val appUpdateState by appComponent.appUpdateComponent.state.collectAsState()
         val scope = rememberCoroutineScope()
         val startupLocale = remember { Locale.getDefault() }
         var languageReloadKey by remember { mutableIntStateOf(0) }
@@ -97,6 +98,10 @@ fun main() = application {
             }
         }
 
+        LaunchedEffect(appComponent.appUpdateComponent) {
+            appComponent.appUpdateComponent.onStart()
+        }
+
         key(languageReloadKey) {
             AdbDeckTheme(isDarkTheme = isDark) {
                 AppContent(
@@ -110,6 +115,10 @@ fun main() = application {
                     },
                     deviceSelectorComponent = appComponent.deviceSelectorComponent,
                     processHistoryStore = processHistoryStore,
+                    appUpdateState = appUpdateState,
+                    onInstallUpdateNow = appComponent.appUpdateComponent::onInstallUpdateNow,
+                    onCancelUpdate = appComponent.appUpdateComponent::onCancelUpdate,
+                    onDismissUpdate = appComponent.appUpdateComponent::onDismissUpdate,
                 )
             }
         }

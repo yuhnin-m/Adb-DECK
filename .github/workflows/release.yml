@@ -96,7 +96,7 @@ jobs:
           if-no-files-found: error
 
   macos-dmg-arm64:
-    name: macOS DMG (arm64)
+    name: macOS DMG + ZIP (arm64)
     runs-on: macos-15
     needs: validate-tag
 
@@ -122,20 +122,37 @@ jobs:
           java -version
           jpackage --version
 
-      - name: Build DMG
+      - name: Build macOS packages (DMG + ZIP)
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace --max-workers=1 :app:packageDmg
 
-      - name: Upload DMG artifact
+      - name: Build macOS update ZIP from app bundle
+        run: |
+          set -euo pipefail
+          APP_BUNDLE="$(find app/build/compose -type d -name '*.app' | head -n 1)"
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "ERROR: .app bundle not found after packageDmg"
+            find app/build/compose -maxdepth 6 -print | sort
+            exit 1
+          fi
+
+          mkdir -p app/build/compose/binaries/update
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$APP_BUNDLE" \
+            "app/build/compose/binaries/update/ADBDeck-macos-update.zip"
+
+      - name: Upload macOS artifacts (arm64)
         uses: actions/upload-artifact@v4
         with:
           name: adbdeck-macos-dmg-arm64
-          path: app/build/compose/binaries/**/*.dmg
+          path: |
+            app/build/compose/binaries/**/*.dmg
+            app/build/compose/binaries/update/ADBDeck-macos-update.zip
           if-no-files-found: error
 
   macos-dmg-x64:
-    name: macOS DMG (x64)
+    name: macOS DMG + ZIP (x64)
     runs-on: macos-15-intel
     needs: validate-tag
 
@@ -161,16 +178,33 @@ jobs:
           java -version
           jpackage --version
 
-      - name: Build DMG
+      - name: Build macOS packages (DMG + ZIP)
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace --max-workers=1 :app:packageDmg
 
-      - name: Upload DMG artifact
+      - name: Build macOS update ZIP from app bundle
+        run: |
+          set -euo pipefail
+          APP_BUNDLE="$(find app/build/compose -type d -name '*.app' | head -n 1)"
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "ERROR: .app bundle not found after packageDmg"
+            find app/build/compose -maxdepth 6 -print | sort
+            exit 1
+          fi
+
+          mkdir -p app/build/compose/binaries/update
+          ditto -c -k --sequesterRsrc --keepParent \
+            "$APP_BUNDLE" \
+            "app/build/compose/binaries/update/ADBDeck-macos-update.zip"
+
+      - name: Upload macOS artifacts (x64)
         uses: actions/upload-artifact@v4
         with:
           name: adbdeck-macos-dmg-x64
-          path: app/build/compose/binaries/**/*.dmg
+          path: |
+            app/build/compose/binaries/**/*.dmg
+            app/build/compose/binaries/update/ADBDeck-macos-update.zip
           if-no-files-found: error
 
   linux-packages:
@@ -248,15 +282,21 @@ jobs:
 
           MSI_FILE="$(find release-assets/adbdeck-windows-msi-x64 -type f -name '*.msi' | head -n 1)"
           ARM_DMG_FILE="$(find release-assets/adbdeck-macos-dmg-arm64 -type f -name '*.dmg' | head -n 1)"
+          ARM_ZIP_FILE="$(find release-assets/adbdeck-macos-dmg-arm64 -type f -name 'ADBDeck-macos-update.zip' | head -n 1)"
           X64_DMG_FILE="$(find release-assets/adbdeck-macos-dmg-x64 -type f -name '*.dmg' | head -n 1)"
+          X64_ZIP_FILE="$(find release-assets/adbdeck-macos-dmg-x64 -type f -name 'ADBDeck-macos-update.zip' | head -n 1)"
 
           test -n "$MSI_FILE"
           test -n "$ARM_DMG_FILE"
+          test -n "$ARM_ZIP_FILE"
           test -n "$X64_DMG_FILE"
+          test -n "$X64_ZIP_FILE"
 
           cp "$MSI_FILE" "release-upload/ADBDeck-${TAG}-windows-x64.msi"
           cp "$ARM_DMG_FILE" "release-upload/ADBDeck-${TAG}-macos-arm64.dmg"
+          cp "$ARM_ZIP_FILE" "release-upload/ADBDeck-${TAG}-macos-arm64.zip"
           cp "$X64_DMG_FILE" "release-upload/ADBDeck-${TAG}-macos-x64.dmg"
+          cp "$X64_ZIP_FILE" "release-upload/ADBDeck-${TAG}-macos-x64.zip"
 
           while IFS= read -r DEB_FILE; do
             cp "$DEB_FILE" "release-upload/$(basename "$DEB_FILE")"
@@ -265,6 +305,16 @@ jobs:
           while IFS= read -r RPM_FILE; do
             cp "$RPM_FILE" "release-upload/$(basename "$RPM_FILE")"
           done < <(find release-assets/adbdeck-linux-deb-rpm-x64 -type f -name '*.rpm' | sort)
+
+      - name: Generate update metadata (latest-*.yml)
+        env:
+          TAG: ${{ needs.validate-tag.outputs.tag }}
+        run: |
+          chmod +x .github/scripts/generate-update-yml.sh
+          .github/scripts/generate-update-yml.sh \
+            --tag "$TAG" \
+            --assets-dir release-upload \
+            --output-dir release-upload
 
       - name: List prepared assets
         run: find release-upload -type f | sort

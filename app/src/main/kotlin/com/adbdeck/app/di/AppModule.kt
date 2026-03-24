@@ -1,5 +1,6 @@
 package com.adbdeck.app.di
 
+import com.adbdeck.app.APP_VERSION
 import com.adbdeck.app.AppComponent
 import com.adbdeck.app.DefaultAppComponent
 import com.adbdeck.app.devicemanager.DefaultDeviceSelectorComponent
@@ -8,6 +9,16 @@ import com.adbdeck.app.navigation.DefaultRootChildFactory
 import com.adbdeck.app.navigation.DefaultRootComponent
 import com.adbdeck.app.navigation.RootChildFactory
 import com.adbdeck.app.navigation.RootComponent
+import com.adbdeck.feature.update.AppUpdateComponent
+import com.adbdeck.feature.update.DefaultAppUpdateComponent
+import com.adbdeck.feature.update.download.AppUpdateDownloader
+import com.adbdeck.feature.update.download.HttpAppUpdateDownloader
+import com.adbdeck.feature.update.install.AppUpdateInstaller
+import com.adbdeck.feature.update.install.MacOsZipAppUpdateInstaller
+import com.adbdeck.feature.update.logging.AppUpdateLogger
+import com.adbdeck.feature.update.logging.JvmAppUpdateLogger
+import com.adbdeck.feature.update.provider.AppUpdateProvider
+import com.adbdeck.feature.update.provider.GithubReleasesUpdateProvider
 import com.arkivanov.decompose.ComponentContext
 import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.adb.BundletoolClient
@@ -156,10 +167,11 @@ val appModule = module {
     // ── App-level component graph ─────────────────────────────────
     singleOf(::DefaultRootChildFactory) bind RootChildFactory::class
 
-    factory<RootComponent> { (componentContext: ComponentContext) ->
+    factory<RootComponent> { (componentContext: ComponentContext, appUpdateComponent: AppUpdateComponent) ->
         DefaultRootComponent(
             componentContext = componentContext,
             rootChildFactory = get(),
+            appUpdateComponent = appUpdateComponent,
         )
     }
 
@@ -170,10 +182,39 @@ val appModule = module {
         )
     }
 
+    single<AppUpdateProvider> {
+        GithubReleasesUpdateProvider()
+    }
+
+    single<AppUpdateLogger> {
+        JvmAppUpdateLogger()
+    }
+
+    single<AppUpdateDownloader> {
+        HttpAppUpdateDownloader(appUpdateLogger = get())
+    }
+
+    single<AppUpdateInstaller> {
+        MacOsZipAppUpdateInstaller(appUpdateLogger = get())
+    }
+
+    factory<AppUpdateComponent> { (componentContext: ComponentContext) ->
+        DefaultAppUpdateComponent(
+            componentContext = componentContext,
+            appUpdateProvider = get(),
+            currentVersion = APP_VERSION,
+            appUpdateDownloader = get(),
+            appUpdateInstaller = get(),
+            appUpdateLogger = get(),
+        )
+    }
+
     factory<AppComponent> { (componentContext: ComponentContext) ->
+        val appUpdateComponent = get<AppUpdateComponent> { parametersOf(componentContext) }
         DefaultAppComponent(
-            rootComponent = get<RootComponent> { parametersOf(componentContext) },
+            rootComponent = get<RootComponent> { parametersOf(componentContext, appUpdateComponent) },
             deviceSelectorComponent = get<DeviceSelectorComponent> { parametersOf(componentContext) },
+            appUpdateComponent = appUpdateComponent,
         )
     }
 }

@@ -41,4 +41,5 @@
     <string name="app_device_state_unavailable">Недоступно</string>
     <string name="app_device_state_auth_required">Требуется авторизация</string>
     <string name="app_device_state_unknown">Неизвестное состояние</string>
+
 </resources>

@@ -93,4 +93,10 @@ interface DashboardComponent {
 
     /** Скрыть баннер ошибки запуска терминала. */
     fun onDismissTerminalLaunchError()
+
+    /** Скрыть баннер доступного обновления приложения. */
+    fun onDismissAppUpdateBanner()
+
+    /** Открыть страницу доступного обновления приложения. */
+    fun onOpenAppUpdate()
 }

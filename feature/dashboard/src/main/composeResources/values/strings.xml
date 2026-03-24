@@ -98,6 +98,8 @@
 
     <string name="dashboard_adb_available">ADB is available: %1$s</string>
     <string name="dashboard_adb_unavailable">ADB is unavailable: %1$s</string>
+    <string name="dashboard_app_update_available">New version %1$s is available.</string>
+    <string name="dashboard_app_update_open_action">Open</string>
     <string name="dashboard_refresh_failed">Failed to refresh devices: %1$s</string>
     <string name="dashboard_terminal_launch_failed">Failed to launch terminal</string>
     <string name="dashboard_unknown_error">Unknown error</string>

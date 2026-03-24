@@ -11,11 +11,13 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -45,6 +47,8 @@ import kotlinx.coroutines.launch
  * @param onNavigateToContacts Callback навигации на экран Contacts.
  * @param onNavigateToSystemMonitor Callback навигации на экран System Monitor.
  * @param onNavigateToSettings Callback навигации на экран настроек.
+ * @param onOpenAppUpdate Callback открытия доступного обновления приложения.
+ * @param availableAppUpdateFlow Flow с данными о доступном обновлении приложения для Dashboard-баннера.
  * @param openAdbShellInTerminal Launcher системного терминала для быстрых shell-действий.
  */
 class DefaultDashboardComponent(
@@ -52,6 +56,7 @@ class DefaultDashboardComponent(
     private val adbClient: AdbClient,
     private val deviceManager: DeviceManager,
     private val settingsRepository: SettingsRepository,
+    private val availableAppUpdateFlow: Flow<DashboardAppUpdateBanner?> = emptyFlow(),
     private val onNavigateToDevices: () -> Unit,
     private val onNavigateToDeviceInfo: () -> Unit,
     private val onNavigateToQuickToggles: () -> Unit,
@@ -67,6 +72,7 @@ class DefaultDashboardComponent(
     private val onNavigateToContacts: () -> Unit,
     private val onNavigateToSystemMonitor: () -> Unit,
     private val onNavigateToSettings: () -> Unit,
+    private val openAppUpdateAction: () -> Unit = {},
     private val openAdbShellInTerminal: (adbPath: String, deviceId: String?, root: Boolean) -> Unit = TerminalLauncher::openAdbShell,
 ) : DashboardComponent, ComponentContext by componentContext {
 
@@ -74,6 +80,7 @@ class DefaultDashboardComponent(
     private var refreshJob: Job? = null
     private var adbCheckJob: Job? = null
     private var adbServerJob: Job? = null
+    private var dismissedAppUpdateVersion: String? = null
 
     private val _state = MutableStateFlow(
         DashboardState(
@@ -88,6 +95,7 @@ class DefaultDashboardComponent(
     init {
         observeDevices()
         observeAdbPath()
+        observeAvailableAppUpdates()
     }
 
     override fun onOpenDevices() = onNavigateToDevices()
@@ -265,6 +273,13 @@ class DefaultDashboardComponent(
         _state.update { it.copy(isTerminalLaunchFailed = false) }
     }
 
+    override fun onDismissAppUpdateBanner() {
+        dismissedAppUpdateVersion = _state.value.appUpdateBanner?.version
+        _state.update { it.copy(appUpdateBanner = null) }
+    }
+
+    override fun onOpenAppUpdate() = openAppUpdateAction()
+
     private fun observeDevices() {
         scope.launch {
             deviceManager.devicesFlow.collect { devices ->
@@ -295,6 +310,25 @@ class DefaultDashboardComponent(
                         }
                     }
                 }
+        }
+    }
+
+    private fun observeAvailableAppUpdates() {
+        scope.launch {
+            availableAppUpdateFlow.collect { banner ->
+                if (banner == null) {
+                    dismissedAppUpdateVersion = null
+                }
+
+                _state.update { current ->
+                    val shouldShowBanner = banner != null &&
+                        banner.version.isNotBlank() &&
+                        banner.version != dismissedAppUpdateVersion
+                    current.copy(
+                        appUpdateBanner = if (shouldShowBanner) banner else null,
+                    )
+                }
+            }
         }
     }
 

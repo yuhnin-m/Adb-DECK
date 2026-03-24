@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_update_title">Обновление приложения</string>
+    <string name="app_update_versions">Версия: %1$s → %2$s</string>
+    <string name="app_update_changelog_title">Что нового</string>
+    <string name="app_update_action_hide">Скрыть</string>
+    <string name="app_update_action_cancel">Отменить обновление</string>
+    <string name="app_update_action_install_now">Установить сейчас</string>
+    <string name="app_update_details_download_start">Подготавливаем загрузку пакета обновления...</string>
+    <string name="app_update_details_verifying">Проверяем целостность загруженного пакета...</string>
+    <string name="app_update_details_installing">Устанавливаем загруженный пакет обновления...</string>
+    <string name="app_update_details_restarting">Закрываем приложение для завершения обновления...</string>
+    <string name="app_update_details_cancelled">Загрузка обновления отменена.</string>
+    <string name="app_update_error_install_failed">Не удалось установить обновление. Вы можете скачать и установить его вручную.</string>
+    <string name="app_update_error_checksum_mismatch">Проверка целостности загруженного пакета не пройдена. Повторите попытку.</string>
+    <string name="app_update_error_preflight_failed">Не удалось запустить in-app обновление: %1$s</string>
+    <string name="app_update_error_preflight_unknown_reason">Нет прав на запись в каталог установленного приложения.</string>
+    <string name="app_update_error_preflight_reason_unsupported_platform_or_asset">In-app обновление не поддерживается для текущей платформы или пакета обновления.</string>
+    <string name="app_update_error_preflight_reason_app_bundle_not_found">Не удалось определить установленный .app bundle для самообновления.</string>
+    <string name="app_update_error_preflight_reason_app_bundle_invalid">Путь к установленному .app bundle некорректен.</string>
+    <string name="app_update_error_preflight_reason_target_directory_missing">Каталог установки приложения не найден.</string>
+    <string name="app_update_error_preflight_reason_target_directory_not_writable">Нет прав на запись в каталог установки приложения.</string>
+
+    <string name="app_update_phase_checking">Проверяем обновления...</string>
+    <string name="app_update_phase_available">Доступно обновление</string>
+    <string name="app_update_phase_downloading">Загружаем обновление...</string>
+    <string name="app_update_phase_ready_to_install">Готово к установке</string>
+    <string name="app_update_phase_installing">Устанавливаем обновление...</string>
+    <string name="app_update_phase_restarting">Перезапускаем приложение...</string>
+    <string name="app_update_phase_error">Ошибка обновления</string>
+</resources>

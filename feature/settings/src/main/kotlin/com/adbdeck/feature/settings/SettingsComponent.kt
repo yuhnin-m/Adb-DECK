@@ -57,6 +57,9 @@ interface SettingsComponent {
     /** Скрыть баннер обратной связи. */
     fun onDismissFeedback()
 
+    /** Проверить наличие обновлений приложения. */
+    fun onCheckForUpdates()
+
     /**
      * Пользователь выбрал другую тему.
      *
