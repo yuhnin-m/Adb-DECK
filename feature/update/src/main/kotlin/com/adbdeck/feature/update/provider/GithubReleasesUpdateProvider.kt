@@ -1,5 +1,6 @@
 package com.adbdeck.feature.update.provider
 
+import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -33,7 +34,7 @@ class GithubReleasesUpdateProvider(
         .build()
 
     override suspend fun checkForUpdate(currentVersion: String): AppUpdateCheckResult = withContext(Dispatchers.IO) {
-        runCatching {
+        runCatchingPreserveCancellation {
             val latestRelease = fetchLatestRelease()
 
             if (!isNewerVersion(
@@ -41,29 +42,29 @@ class GithubReleasesUpdateProvider(
                     candidateVersion = latestRelease.version,
                 )
             ) {
-                return@runCatching AppUpdateCheckResult.UpToDate
-            }
-
-            val currentPlatform = detectPlatform()
-            val selectedAsset = selectBestAsset(
-                assets = latestRelease.assets,
-                platform = currentPlatform,
-            )
-            val downloadUrl = selectedAsset?.downloadUrl ?: latestRelease.releasePageUrl
-            val expectedSha512 = selectedAsset?.let { asset ->
-                findExpectedSha512ForAsset(
-                    selectedAsset = asset,
+                AppUpdateCheckResult.UpToDate
+            } else {
+                val currentPlatform = detectPlatform()
+                val selectedAsset = selectBestAsset(
                     assets = latestRelease.assets,
                     platform = currentPlatform,
                 )
-            }
+                val downloadUrl = selectedAsset?.downloadUrl ?: latestRelease.releasePageUrl
+                val expectedSha512 = selectedAsset?.let { asset ->
+                    findExpectedSha512ForAsset(
+                        selectedAsset = asset,
+                        assets = latestRelease.assets,
+                        platform = currentPlatform,
+                    )
+                }
 
-            AppUpdateCheckResult.UpdateAvailable(
-                version = latestRelease.version,
-                changelog = latestRelease.changelog,
-                downloadUrl = downloadUrl,
-                expectedSha512 = expectedSha512,
-            )
+                AppUpdateCheckResult.UpdateAvailable(
+                    version = latestRelease.version,
+                    changelog = latestRelease.changelog,
+                    downloadUrl = downloadUrl,
+                    expectedSha512 = expectedSha512,
+                )
+            }
         }.getOrElse { error ->
             AppUpdateCheckResult.Failed(
                 reason = error.message.orEmpty(),
@@ -208,16 +209,17 @@ class GithubReleasesUpdateProvider(
 
         content.lineSequence().forEach { line ->
             val trimmed = line.trim()
+            val pending = pendingFileName
 
             if (trimmed.startsWith("- url:")) {
                 pendingFileName = trimmed.substringAfter(":").trim().trim('"', '\'')
                 return@forEach
             }
 
-            if (pendingFileName != null && trimmed.startsWith("sha512:")) {
+            if (pending != null && trimmed.startsWith("sha512:")) {
                 val hash = trimmed.substringAfter(":").trim().trim('"', '\'')
                 if (hash.isNotBlank()) {
-                    map[pendingFileName!!] = hash
+                    map[pending] = hash
                 }
                 pendingFileName = null
             }

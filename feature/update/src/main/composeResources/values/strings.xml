@@ -14,6 +14,11 @@
     <string name="app_update_error_checksum_mismatch">Integrity check failed for downloaded update package. Please retry.</string>
     <string name="app_update_error_preflight_failed">Cannot start in-app update: %1$s</string>
     <string name="app_update_error_preflight_unknown_reason">No write access to app bundle directory.</string>
+    <string name="app_update_error_preflight_reason_unsupported_platform_or_asset">In-app update is not supported for the current platform or update package.</string>
+    <string name="app_update_error_preflight_reason_app_bundle_not_found">Cannot locate installed app bundle for self-update.</string>
+    <string name="app_update_error_preflight_reason_app_bundle_invalid">Installed app bundle path is invalid.</string>
+    <string name="app_update_error_preflight_reason_target_directory_missing">Application install directory is missing.</string>
+    <string name="app_update_error_preflight_reason_target_directory_not_writable">No write access to the application install directory.</string>
 
     <string name="app_update_phase_checking">Checking for updates...</string>
     <string name="app_update_phase_available">Update available</string>

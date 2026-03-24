@@ -30,14 +30,20 @@ class MacOsZipAppUpdateInstaller(
     }
 
     override suspend fun preflightInstall(downloadUrl: String): Unit = withContext(Dispatchers.IO) {
-        check(canInstallInApp(downloadUrl)) {
-            "In-app update is not supported for current platform or asset URL."
+        if (!canInstallInApp(downloadUrl)) {
+            throw AppUpdatePreflightException(
+                reason = AppUpdatePreflightFailureReason.UNSUPPORTED_PLATFORM_OR_ASSET,
+            )
         }
 
         val currentAppBundle = resolveCurrentAppBundlePath()
-            ?: error("Cannot locate current .app bundle path for self-update")
-        check(Files.isDirectory(currentAppBundle)) {
-            "Current app bundle path is not a directory: $currentAppBundle"
+            ?: throw AppUpdatePreflightException(
+                reason = AppUpdatePreflightFailureReason.CURRENT_APP_BUNDLE_NOT_FOUND,
+            )
+        if (!Files.isDirectory(currentAppBundle)) {
+            throw AppUpdatePreflightException(
+                reason = AppUpdatePreflightFailureReason.CURRENT_APP_BUNDLE_INVALID,
+            )
         }
 
         verifyTargetDirectoryWritable(currentAppBundle)
@@ -85,21 +91,34 @@ class MacOsZipAppUpdateInstaller(
 
     private fun verifyTargetDirectoryWritable(currentAppBundle: Path) {
         val targetDirectory = currentAppBundle.parent
-            ?: error("Cannot resolve target directory for app bundle: $currentAppBundle")
+            ?: throw AppUpdatePreflightException(
+                reason = AppUpdatePreflightFailureReason.TARGET_DIRECTORY_MISSING,
+            )
 
-        check(Files.isDirectory(targetDirectory)) {
-            "App bundle target directory is missing: $targetDirectory"
+        if (!Files.isDirectory(targetDirectory)) {
+            throw AppUpdatePreflightException(
+                reason = AppUpdatePreflightFailureReason.TARGET_DIRECTORY_MISSING,
+            )
         }
-        check(Files.isWritable(targetDirectory)) {
-            "No write access to app bundle directory: $targetDirectory"
+        if (!Files.isWritable(targetDirectory)) {
+            throw AppUpdatePreflightException(
+                reason = AppUpdatePreflightFailureReason.TARGET_DIRECTORY_NOT_WRITABLE,
+            )
         }
 
-        val probeFile = Files.createTempFile(
-            targetDirectory,
-            ".adbdeck-update-permission-check-",
-            ".tmp",
-        )
-        Files.deleteIfExists(probeFile)
+        try {
+            val probeFile = Files.createTempFile(
+                targetDirectory,
+                ".adbdeck-update-permission-check-",
+                ".tmp",
+            )
+            Files.deleteIfExists(probeFile)
+        } catch (error: Throwable) {
+            throw AppUpdatePreflightException(
+                reason = AppUpdatePreflightFailureReason.TARGET_DIRECTORY_NOT_WRITABLE,
+                cause = error,
+            )
+        }
     }
 
     private fun unpackWithDitto(zipFile: Path, targetDir: Path) {

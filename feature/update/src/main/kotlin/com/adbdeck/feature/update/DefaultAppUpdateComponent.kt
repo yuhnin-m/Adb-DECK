@@ -9,11 +9,18 @@ import adbdeck.feature.update.generated.resources.app_update_details_verifying
 import adbdeck.feature.update.generated.resources.app_update_error_checksum_mismatch
 import adbdeck.feature.update.generated.resources.app_update_error_install_failed
 import adbdeck.feature.update.generated.resources.app_update_error_preflight_failed
+import adbdeck.feature.update.generated.resources.app_update_error_preflight_reason_app_bundle_invalid
+import adbdeck.feature.update.generated.resources.app_update_error_preflight_reason_app_bundle_not_found
+import adbdeck.feature.update.generated.resources.app_update_error_preflight_reason_target_directory_missing
+import adbdeck.feature.update.generated.resources.app_update_error_preflight_reason_target_directory_not_writable
+import adbdeck.feature.update.generated.resources.app_update_error_preflight_reason_unsupported_platform_or_asset
 import adbdeck.feature.update.generated.resources.app_update_error_preflight_unknown_reason
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.update.download.AppUpdateDownloader
 import com.adbdeck.feature.update.download.Sha512ChecksumVerifier
 import com.adbdeck.feature.update.install.AppUpdateInstaller
+import com.adbdeck.feature.update.install.AppUpdatePreflightException
+import com.adbdeck.feature.update.install.AppUpdatePreflightFailureReason
 import com.adbdeck.feature.update.logging.AppUpdateLogger
 import com.adbdeck.feature.update.logging.NoOpAppUpdateLogger
 import com.adbdeck.feature.update.provider.AppUpdateCheckResult
@@ -158,11 +165,7 @@ class DefaultAppUpdateComponent(
         if (preflightResult.isFailure) {
             val error = preflightResult.exceptionOrNull()
             appUpdateLogger.error("In-app update preflight failed.", error)
-            val reason = error
-                ?.message
-                ?.trim()
-                .orEmpty()
-                .ifBlank { getString(Res.string.app_update_error_preflight_unknown_reason) }
+            val reason = resolvePreflightFailureReason(error)
             _state.value = buildErrorState(
                 update = update,
                 details = getString(Res.string.app_update_error_preflight_failed, reason),
@@ -392,6 +395,29 @@ class DefaultAppUpdateComponent(
             ?.trim()
             ?.removePrefix("v")
             ?.takeIf { it.isNotBlank() }
+    }
+
+    private suspend fun resolvePreflightFailureReason(error: Throwable?): String {
+        val reason = (error as? AppUpdatePreflightException)?.reason
+        return when (reason) {
+            AppUpdatePreflightFailureReason.UNSUPPORTED_PLATFORM_OR_ASSET ->
+                getString(Res.string.app_update_error_preflight_reason_unsupported_platform_or_asset)
+
+            AppUpdatePreflightFailureReason.CURRENT_APP_BUNDLE_NOT_FOUND ->
+                getString(Res.string.app_update_error_preflight_reason_app_bundle_not_found)
+
+            AppUpdatePreflightFailureReason.CURRENT_APP_BUNDLE_INVALID ->
+                getString(Res.string.app_update_error_preflight_reason_app_bundle_invalid)
+
+            AppUpdatePreflightFailureReason.TARGET_DIRECTORY_MISSING ->
+                getString(Res.string.app_update_error_preflight_reason_target_directory_missing)
+
+            AppUpdatePreflightFailureReason.TARGET_DIRECTORY_NOT_WRITABLE ->
+                getString(Res.string.app_update_error_preflight_reason_target_directory_not_writable)
+
+            null ->
+                getString(Res.string.app_update_error_preflight_unknown_reason)
+        }
     }
 
     private fun readMockChangelog(): String {
