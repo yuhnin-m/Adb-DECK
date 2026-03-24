@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_update_title">Обновление приложения</string>
+    <string name="app_update_versions">Версия: %1$s → %2$s</string>
+    <string name="app_update_changelog_title">Что нового</string>
+    <string name="app_update_action_hide">Скрыть</string>
+    <string name="app_update_action_cancel">Отменить обновление</string>
+    <string name="app_update_action_install_now">Установить сейчас</string>
+
+    <string name="app_update_phase_checking">Проверяем обновления...</string>
+    <string name="app_update_phase_available">Доступно обновление</string>
+    <string name="app_update_phase_downloading">Загружаем обновление...</string>
+    <string name="app_update_phase_ready_to_install">Готово к установке</string>
+    <string name="app_update_phase_installing">Устанавливаем обновление...</string>
+    <string name="app_update_phase_restarting">Перезапускаем приложение...</string>
+    <string name="app_update_phase_error">Ошибка обновления</string>
+</resources>

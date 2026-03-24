@@ -1,8 +1,7 @@
-package com.adbdeck.app.update
+package com.adbdeck.feature.update
 
-import com.adbdeck.app.APP_VERSION
-import com.adbdeck.app.update.provider.AppUpdateCheckResult
-import com.adbdeck.app.update.provider.AppUpdateProvider
+import com.adbdeck.feature.update.provider.AppUpdateCheckResult
+import com.adbdeck.feature.update.provider.AppUpdateProvider
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
@@ -29,6 +28,7 @@ import java.net.URI
 class DefaultAppUpdateComponent(
     componentContext: ComponentContext,
     private val appUpdateProvider: AppUpdateProvider,
+    private val currentVersion: String,
 ) : AppUpdateComponent, ComponentContext by componentContext {
 
     private val scope = coroutineScope()
@@ -74,7 +74,7 @@ class DefaultAppUpdateComponent(
 
     private fun tryShowMockFallback(): Boolean {
         val mockedVersion = readMockVersion() ?: return false
-        if (mockedVersion == APP_VERSION) return false
+        if (mockedVersion == currentVersion) return false
 
         val mockedUrl = readMockUrl()
         downloadUrl = mockedUrl
@@ -82,7 +82,7 @@ class DefaultAppUpdateComponent(
             visible = true,
             blocking = false,
             phase = AppUpdatePhase.AVAILABLE,
-            currentVersion = APP_VERSION,
+            currentVersion = currentVersion,
             targetVersion = mockedVersion,
             changelog = readMockChangelog(),
             canInstallNow = mockedUrl != null,
@@ -93,7 +93,7 @@ class DefaultAppUpdateComponent(
     }
 
     private suspend fun performUpdateCheck(failSilently: Boolean): UpdateCheckOutcome {
-        return when (val update = appUpdateProvider.checkForUpdate(APP_VERSION)) {
+        return when (val update = appUpdateProvider.checkForUpdate(currentVersion)) {
             is AppUpdateCheckResult.UpToDate -> UpdateCheckOutcome.UP_TO_DATE
             is AppUpdateCheckResult.UpdateAvailable -> {
                 showAvailableUpdateDialog(update)
@@ -120,7 +120,7 @@ class DefaultAppUpdateComponent(
             visible = true,
             blocking = false,
             phase = AppUpdatePhase.AVAILABLE,
-            currentVersion = APP_VERSION,
+            currentVersion = currentVersion,
             targetVersion = update.version,
             changelog = update.changelog,
             canInstallNow = true,

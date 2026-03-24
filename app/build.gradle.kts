@@ -23,7 +23,6 @@ dependencies {
     implementation(libs.coroutines.core)
     // Provides Dispatchers.Main backed by Swing EDT — required for desktop coroutines
     implementation(libs.coroutines.swing)
-    implementation(libs.serialization.json)
 
     // Dependency Injection
     implementation(libs.koin.core)
@@ -54,6 +53,7 @@ dependencies {
     implementation(project(":feature:device-info"))
     implementation(project(":feature:quick-toggles"))
     implementation(project(":feature:scrcpy"))
+    implementation(project(":feature:update"))
 }
 
 val appDisplayName = "ADB Deck"

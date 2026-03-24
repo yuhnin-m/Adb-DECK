@@ -18,10 +18,11 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
-import com.adbdeck.app.update.AppUpdateUiState
 import com.adbdeck.core.designsystem.AdbTheme
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.process.ProcessHistoryStore
+import com.adbdeck.feature.update.AppUpdateUiState
+import com.adbdeck.feature.update.ui.AppUpdateOverlay
 import com.adbdeck.feature.contacts.ui.ContactsScreen
 import com.adbdeck.feature.dashboard.ui.DashboardScreen
 import com.adbdeck.feature.deviceinfo.ui.DeviceInfoScreen

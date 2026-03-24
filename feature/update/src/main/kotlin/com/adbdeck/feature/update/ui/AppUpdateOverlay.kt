@@ -1,7 +1,7 @@
-package com.adbdeck.app.ui
+package com.adbdeck.feature.update.ui
 
-import adbdeck.app.generated.resources.Res
-import adbdeck.app.generated.resources.*
+import adbdeck.feature.update.generated.resources.Res
+import adbdeck.feature.update.generated.resources.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,8 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
-import com.adbdeck.app.update.AppUpdatePhase
-import com.adbdeck.app.update.AppUpdateUiState
+import com.adbdeck.feature.update.AppUpdatePhase
+import com.adbdeck.feature.update.AppUpdateUiState
 import com.adbdeck.core.designsystem.AdbCornerRadius
 import com.adbdeck.core.designsystem.Dimensions
 import com.adbdeck.core.ui.alertdialogs.AdbAlertDialog
@@ -36,7 +36,7 @@ private const val AppUpdateDialogWidthFraction = 0.68f
  * (установка, отмена, просмотр changelog).
  */
 @Composable
-internal fun AppUpdateOverlay(
+fun AppUpdateOverlay(
     state: AppUpdateUiState,
     onInstallNow: (() -> Unit)?,
     onCancel: (() -> Unit)?,

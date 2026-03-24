@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
 import com.adbdeck.app.navigation.Screen
-import com.adbdeck.app.update.AppUpdatePhase
-import com.adbdeck.app.update.AppUpdateUiState
+import com.adbdeck.feature.update.AppUpdatePhase
+import com.adbdeck.feature.update.AppUpdateUiState
 import com.adbdeck.core.adb.api.packages.AppPackage
 import com.adbdeck.core.adb.api.device.AdbDevice
 import com.adbdeck.core.adb.api.contacts.Contact

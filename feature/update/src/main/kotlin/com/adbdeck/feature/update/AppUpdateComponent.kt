@@ -1,4 +1,4 @@
-package com.adbdeck.app.update
+package com.adbdeck.feature.update
 
 import kotlinx.coroutines.flow.StateFlow
 

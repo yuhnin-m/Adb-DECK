@@ -2,7 +2,7 @@ package com.adbdeck.app
 
 import com.adbdeck.app.devicemanager.DeviceSelectorComponent
 import com.adbdeck.app.navigation.RootComponent
-import com.adbdeck.app.update.AppUpdateComponent
+import com.adbdeck.feature.update.AppUpdateComponent
 
 /**
  * Верхнеуровневый компонент приложения.

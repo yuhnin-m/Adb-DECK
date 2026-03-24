@@ -1,4 +1,4 @@
-package com.adbdeck.app.update
+package com.adbdeck.feature.update
 
 /**
  * Фазы UI-состояния обновления приложения.

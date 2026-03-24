@@ -1,5 +1,6 @@
 package com.adbdeck.app.di
 
+import com.adbdeck.app.APP_VERSION
 import com.adbdeck.app.AppComponent
 import com.adbdeck.app.DefaultAppComponent
 import com.adbdeck.app.devicemanager.DefaultDeviceSelectorComponent
@@ -8,10 +9,10 @@ import com.adbdeck.app.navigation.DefaultRootChildFactory
 import com.adbdeck.app.navigation.DefaultRootComponent
 import com.adbdeck.app.navigation.RootChildFactory
 import com.adbdeck.app.navigation.RootComponent
-import com.adbdeck.app.update.AppUpdateComponent
-import com.adbdeck.app.update.DefaultAppUpdateComponent
-import com.adbdeck.app.update.provider.AppUpdateProvider
-import com.adbdeck.app.update.provider.GithubReleasesUpdateProvider
+import com.adbdeck.feature.update.AppUpdateComponent
+import com.adbdeck.feature.update.DefaultAppUpdateComponent
+import com.adbdeck.feature.update.provider.AppUpdateProvider
+import com.adbdeck.feature.update.provider.GithubReleasesUpdateProvider
 import com.arkivanov.decompose.ComponentContext
 import com.adbdeck.core.adb.api.adb.AdbClient
 import com.adbdeck.core.adb.api.adb.BundletoolClient
@@ -183,6 +184,7 @@ val appModule = module {
         DefaultAppUpdateComponent(
             componentContext = componentContext,
             appUpdateProvider = get(),
+            currentVersion = APP_VERSION,
         )
     }
 

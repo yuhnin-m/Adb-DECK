@@ -1,4 +1,4 @@
-package com.adbdeck.app.update.provider
+package com.adbdeck.feature.update.provider
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

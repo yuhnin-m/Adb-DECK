@@ -6,11 +6,11 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.value.Value
-import com.adbdeck.app.update.AppUpdateComponent
-import com.adbdeck.app.update.AppUpdatePhase
-import com.adbdeck.app.update.AppUpdateUiState
 import com.adbdeck.core.utils.runCatchingPreserveCancellation
 import com.adbdeck.feature.dashboard.DashboardAppUpdateBanner
+import com.adbdeck.feature.update.AppUpdateComponent
+import com.adbdeck.feature.update.AppUpdatePhase
+import com.adbdeck.feature.update.AppUpdateUiState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 

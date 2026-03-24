@@ -1,4 +1,4 @@
-package com.adbdeck.app.update.provider
+package com.adbdeck.feature.update.provider
 
 /**
  * Контракт источника данных об обновлениях приложения.

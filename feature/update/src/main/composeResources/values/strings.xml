@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_update_title">Application update</string>
+    <string name="app_update_versions">Version: %1$s → %2$s</string>
+    <string name="app_update_changelog_title">What's new</string>
+    <string name="app_update_action_hide">Hide</string>
+    <string name="app_update_action_cancel">Cancel update</string>
+    <string name="app_update_action_install_now">Install now</string>
+
+    <string name="app_update_phase_checking">Checking for updates...</string>
+    <string name="app_update_phase_available">Update available</string>
+    <string name="app_update_phase_downloading">Downloading update...</string>
+    <string name="app_update_phase_ready_to_install">Ready to install</string>
+    <string name="app_update_phase_installing">Installing update...</string>
+    <string name="app_update_phase_restarting">Restarting app...</string>
+    <string name="app_update_phase_error">Update failed</string>
+</resources>
