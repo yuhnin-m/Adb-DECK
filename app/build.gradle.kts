@@ -58,7 +58,7 @@ dependencies {
 
 val appDisplayName = "ADB Deck"
 val appPackageName = "ADBDeck"
-val appVersion = "1.1.0"
+val appVersion = "1.2.0"
 val generatedAppBuildInfoDir = layout.buildDirectory.dir("generated/source/appBuildInfo/kotlin")
 
 val generateAppBuildInfo by tasks.registering {
