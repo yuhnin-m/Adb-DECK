@@ -13,6 +13,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.extension
 
 /**
+ * [Отключено до лучших времен]
  * In-app установщик обновления для macOS ZIP-ассетов.
  *
  * Логика:

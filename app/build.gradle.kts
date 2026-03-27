@@ -107,6 +107,13 @@ compose.desktop {
                 TargetFormat.Deb,
                 TargetFormat.Rpm,
             )
+            modules(
+                "java.instrument",
+                "java.net.http",
+                "jdk.jfr",
+                "jdk.unsupported",
+                "jdk.unsupported.desktop",
+            )
             // macOS update ZIP is produced in CI from the built .app bundle
             // and published alongside DMG assets.
             packageName = appPackageName

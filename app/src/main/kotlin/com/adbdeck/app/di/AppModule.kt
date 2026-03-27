@@ -14,7 +14,7 @@ import com.adbdeck.feature.update.DefaultAppUpdateComponent
 import com.adbdeck.feature.update.download.AppUpdateDownloader
 import com.adbdeck.feature.update.download.HttpAppUpdateDownloader
 import com.adbdeck.feature.update.install.AppUpdateInstaller
-import com.adbdeck.feature.update.install.MacOsZipAppUpdateInstaller
+import com.adbdeck.feature.update.install.BrowserOnlyAppUpdateInstaller
 import com.adbdeck.feature.update.logging.AppUpdateLogger
 import com.adbdeck.feature.update.logging.JvmAppUpdateLogger
 import com.adbdeck.feature.update.provider.AppUpdateProvider
@@ -195,7 +195,7 @@ val appModule = module {
     }
 
     single<AppUpdateInstaller> {
-        MacOsZipAppUpdateInstaller(appUpdateLogger = get())
+        BrowserOnlyAppUpdateInstaller()
     }
 
     factory<AppUpdateComponent> { (componentContext: ComponentContext) ->
